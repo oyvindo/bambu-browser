@@ -8,7 +8,9 @@ export type BambuPropertyTooltip = {
   related?: string;
 };
 
-export const BAMBU_PROPERTY_TOOLTIPS = {
+export const BAMBU_PROPERTY_TOOLTIPS: Readonly<
+  Record<string, BambuPropertyTooltip>
+> = {
   layer_height: {
     impact:
       "Sets how thick each printed layer is. Smaller values improve detail and surface finish but increase print time and the number of seams.",
@@ -284,14 +286,16 @@ export const BAMBU_PROPERTY_TOOLTIPS = {
     related:
       "enable_prime_tower must be on; material volumes per swap should match tower capacity.",
   },
-} as const satisfies Readonly<Record<string, BambuPropertyTooltip>>;
+};
+
+const DEFAULT_BAMBU_PROPERTY_TOOLTIP: BambuPropertyTooltip = {
+  impact:
+    "This process parameter is carried through the inheritance chain. Overriding it in a derived profile replaces the parent value for this key only.",
+};
 
 export function propertyTooltipForKey(key: string): BambuPropertyTooltip {
   if (Object.prototype.hasOwnProperty.call(BAMBU_PROPERTY_TOOLTIPS, key)) {
-    return BAMBU_PROPERTY_TOOLTIPS[key as keyof typeof BAMBU_PROPERTY_TOOLTIPS];
+    return BAMBU_PROPERTY_TOOLTIPS[key]!;
   }
-  return {
-    impact:
-      "This process parameter is carried through the inheritance chain. Overriding it in a derived profile replaces the parent value for this key only.",
-  };
+  return DEFAULT_BAMBU_PROPERTY_TOOLTIP;
 }
