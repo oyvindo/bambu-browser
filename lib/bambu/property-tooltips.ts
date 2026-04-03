@@ -17,7 +17,7 @@ export const BAMBU_PROPERTY_TOOLTIPS = {
   },
   initial_layer_print_height: {
     impact:
-      "First-layer thickness only. Slightly thicker layer one improves bed adhesion and forgives small bed unevenness; too thin risks failed first layers.",
+      "First-layer thickness only. A slightly thicker first layer improves bed adhesion and forgives small bed unevenness; too thin risks failed first layers.",
     related:
       "Works with initial_layer_line_width and initial_layer_speed—those three together define first-layer squish and reliability.",
   },
@@ -287,7 +287,7 @@ export const BAMBU_PROPERTY_TOOLTIPS = {
 } as const satisfies Readonly<Record<string, BambuPropertyTooltip>>;
 
 export function propertyTooltipForKey(key: string): BambuPropertyTooltip {
-  if (Object.hasOwn(BAMBU_PROPERTY_TOOLTIPS, key)) {
+  if (Object.prototype.hasOwnProperty.call(BAMBU_PROPERTY_TOOLTIPS, key)) {
     return BAMBU_PROPERTY_TOOLTIPS[key as keyof typeof BAMBU_PROPERTY_TOOLTIPS];
   }
   return {
