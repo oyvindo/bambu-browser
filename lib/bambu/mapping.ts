@@ -37,8 +37,7 @@ export type BambuMappedGroup = {
 
 /**
  * Ordered TreeGrid: Quality → Strength → Speed → Support → Others.
- */
-export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
+ */ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
   {
     id: "quality",
     label: "Quality",
@@ -89,43 +88,14 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
           {
             key: "wall_generator",
             label: "Wall generator",
-            unit: "string",
+            unit: "enum",
             advanced: true,
           },
+          { key: "seam_position", label: "Seam position", unit: "enum" },
           {
-            key: "seam_position",
-            label: "Seam position",
-            unit: "string",
-            advanced: true,
-          },
-        ],
-      },
-      {
-        id: "quality-ironing",
-        label: "Ironing",
-        properties: [
-          {
-            key: "ironing_type",
-            label: "Ironing type",
-            unit: "string",
-            advanced: true,
-          },
-          {
-            key: "ironing_speed",
-            label: "Ironing speed",
-            unit: "mm/s",
-            advanced: true,
-          },
-          {
-            key: "ironing_flow",
-            label: "Ironing flow",
-            unit: "%",
-            advanced: true,
-          },
-          {
-            key: "ironing_spacing",
-            label: "Ironing line spacing",
-            unit: "mm",
+            key: "detect_thin_wall",
+            label: "Detect thin wall",
+            unit: "boolean",
             advanced: true,
           },
         ],
@@ -138,6 +108,18 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
             key: "elefant_foot_compensation",
             label: "Elephant foot compensation",
             unit: "mm",
+            advanced: true,
+          },
+          {
+            key: "enable_arc_fitting",
+            label: "Enable arc fitting",
+            unit: "boolean",
+            advanced: true,
+          },
+          {
+            key: "bridge_flow",
+            label: "Bridge flow",
+            unit: "count",
             advanced: true,
           },
         ],
@@ -159,6 +141,12 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
             label: "Bottom shell layers",
             unit: "count",
           },
+          {
+            key: "wall_infill_order",
+            label: "Wall in-fill order",
+            unit: "enum",
+            advanced: true,
+          },
         ],
       },
       {
@@ -173,13 +161,7 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
           {
             key: "sparse_infill_pattern",
             label: "Sparse infill pattern",
-            unit: "string",
-          },
-          {
-            key: "wall_infill_order",
-            label: "Wall order",
-            unit: "string",
-            advanced: true,
+            unit: "enum",
           },
           {
             key: "infill_direction",
@@ -209,31 +191,7 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
           { key: "outer_wall_speed", label: "Outer wall", unit: "mm/s" },
           { key: "inner_wall_speed", label: "Inner wall", unit: "mm/s" },
           { key: "sparse_infill_speed", label: "Sparse infill", unit: "mm/s" },
-          {
-            key: "internal_solid_infill_speed",
-            label: "Internal solid infill",
-            unit: "mm/s",
-            advanced: true,
-          },
-          {
-            key: "top_surface_speed",
-            label: "Top surface",
-            unit: "mm/s",
-            advanced: true,
-          },
-          {
-            key: "gap_infill_speed",
-            label: "Gap infill",
-            unit: "mm/s",
-            advanced: true,
-          },
           { key: "travel_speed", label: "Travel", unit: "mm/s" },
-          {
-            key: "bridge_speed",
-            label: "Bridge",
-            unit: "mm/s",
-            advanced: true,
-          },
         ],
       },
       {
@@ -245,29 +203,7 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
             label: "Normal printing",
             unit: "mm/s²",
           },
-          {
-            key: "outer_wall_acceleration",
-            label: "Outer wall",
-            unit: "mm/s²",
-            advanced: true,
-          },
-          {
-            key: "inner_wall_acceleration",
-            label: "Inner wall",
-            unit: "mm/s²",
-            advanced: true,
-          },
-          {
-            key: "travel_acceleration",
-            label: "Travel acceleration",
-            unit: "mm/s²",
-          },
-          {
-            key: "initial_layer_travel_acceleration",
-            label: "First layer travel",
-            unit: "mm/s²",
-            advanced: true,
-          },
+          { key: "travel_acceleration", label: "Travel", unit: "mm/s²" },
         ],
       },
     ],
@@ -281,8 +217,13 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
         label: "Support",
         properties: [
           { key: "enable_support", label: "Enable support", unit: "boolean" },
-          { key: "support_type", label: "Type", unit: "string" },
-          { key: "support_style", label: "Style", unit: "string" },
+          { key: "support_type", label: "Type", unit: "enum" },
+          { key: "support_style", label: "Style", unit: "enum" },
+          {
+            key: "support_on_build_plate_only",
+            label: "On build plate only",
+            unit: "boolean",
+          },
         ],
       },
       {
@@ -299,17 +240,10 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
             key: "support_top_z_distance",
             label: "Top Z distance",
             unit: "mm",
-            advanced: true,
           },
           {
             key: "support_bottom_z_distance",
             label: "Bottom Z distance",
-            unit: "mm",
-            advanced: true,
-          },
-          {
-            key: "support_interface_spacing",
-            label: "Base pattern spacing",
             unit: "mm",
             advanced: true,
           },
@@ -329,10 +263,43 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
     subgroups: [
       {
         id: "others-brim",
-        label: "Brim",
+        label: "Brim", // Nivået som manglet (Splittet ut fra Bed Adhesion)
         properties: [
+          { key: "brim_type", label: "Brim type", unit: "enum" },
           { key: "brim_width", label: "Brim width", unit: "mm" },
-          { key: "brim_object_gap", label: "Brim-object gap", unit: "mm" },
+          {
+            key: "brim_object_gap",
+            label: "Brim-object gap",
+            unit: "mm",
+            advanced: true,
+          },
+        ],
+      },
+      {
+        id: "others-skirt",
+        label: "Brim skirt", // Nivået som manglet (Splittet ut fra Bed Adhesion)
+        properties: [
+          { key: "skirt_loops", label: "Skirt loops", unit: "count" },
+          { key: "skirt_distance", label: "Skirt distance", unit: "mm" },
+          { key: "skirt_height", label: "Skirt height", unit: "count" },
+        ],
+      },
+      {
+        id: "others-prime-tower",
+        label: "Prime tower",
+        properties: [
+          {
+            key: "enable_prime_tower",
+            label: "Enable prime tower",
+            unit: "boolean",
+            advanced: true,
+          },
+          {
+            key: "prime_tower_width",
+            label: "Width",
+            unit: "mm",
+            advanced: true,
+          },
         ],
       },
     ],
@@ -547,14 +514,16 @@ export function iterateMappedProperties(): MappedPropertyRow[] {
   return out;
 }
 
-export function propertyExpectsArray(_property: MappedProperty): boolean {
+export function propertyExpectsArray(property: MappedProperty): boolean {
+  void property;
   return false;
 }
 
 export function segmentsForProfileValue(
   value: unknown,
-  _layout: PropertyValueLayout,
+  layout: PropertyValueLayout,
 ): { index: number | null; text: string }[] {
+  void layout;
   if (Array.isArray(value)) {
     return value.map((v, i) => ({ index: i, text: formatJsonLeaf(v) }));
   }

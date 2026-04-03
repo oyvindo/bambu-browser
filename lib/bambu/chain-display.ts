@@ -1,5 +1,36 @@
 import type { InheritanceChainLevel } from "./resolver";
 
+/** One column in the TreeGrid: merged state up this inheritance step (root → … → profile). */
+export type InheritanceColumnMeta = {
+  index: number;
+  level: InheritanceChainLevel;
+  /** Short header role */
+  roleLabel: string;
+};
+
+/**
+ * One column per resolver level: chain[0] = root template … chain[n-1] = selected profile.
+ */
+export function getInheritanceColumns(
+  chain: readonly InheritanceChainLevel[],
+): InheritanceColumnMeta[] {
+  const n = chain.length;
+  if (n === 0) return [];
+  return chain.map((level, index) => ({
+    index,
+    level,
+    roleLabel: columnRoleLabel(index, n),
+  }));
+}
+
+function columnRoleLabel(index: number, n: number): string {
+  if (n === 1) return "Profile";
+  if (index === 0) return "Root";
+  if (index === n - 1) return "Profile";
+  if (index === n - 2) return "Parent";
+  return `Level ${index + 1}`;
+}
+
 export type ThreeColumnSlice = {
   root: InheritanceChainLevel | null;
   system: InheritanceChainLevel | null;
@@ -10,8 +41,8 @@ export type ThreeColumnSlice = {
 };
 
 /**
- * Maps a full resolver chain to Root / System / User columns.
- * System = immediate parent of the user file (second-to-last level).
+ * @deprecated Prefer {@link getInheritanceColumns} for full-chain columns.
+ * Collapses chain to Root / System / User only.
  */
 export function getThreeColumnSlice(
   chain: readonly InheritanceChainLevel[],

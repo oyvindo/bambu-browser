@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone Node script (CommonJS require)
+    "server.js",
   ]),
   eslintConfigPrettier,
 ]);
