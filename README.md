@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bambu browser
 
-## Getting Started
+A small **local** web app for exploring **Bambu Studio** user profiles: browse accounts, open profile trees, and inspect inheritance chains from the JSON and preset files Studio keeps on disk. The UI is a Next.js application; a companion **Node HTTP server** reads your Bambu Studio data directory with normal filesystem APIs, which browsers cannot do on their own.
 
-First, run the development server:
+## What it does
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Bambu Studio stores machine, process, and filament presets under an application-support folder (on macOS, typically `~/Library/Application Support/BambuStudio`). This project lists those profiles, resolves how profiles inherit from one another, and presents that structure in the browser. Nothing is uploaded to the cloud: all data stays on your machine and is served only through the local API you start yourself.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Requirements
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Node.js** (current LTS is fine)
+- **Bambu Studio** installed and used at least once so its data directory exists (or point the API at a copy of that tree with `BAMBUSTUDIO_ROOT`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Usage
 
-## Learn More
+1. **Install dependencies**
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Start the local JSON API** (in a separate terminal). It serves read-only metadata and file paths from your Bambu Studio root.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   npm run api
+   ```
 
-## Deploy on Vercel
+   Optional environment variables:
+   - **`BAMBUSTUDIO_ROOT`** — absolute path to the Bambu Studio data folder. If omitted, the server uses the default for your OS (on macOS: `~/Library/Application Support/BambuStudio`).
+   - **`PORT`** — API port (default **3847**).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   Example:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" PORT=3847 npm run api
+   ```
+
+3. **Start the Next.js app**
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000). The UI talks to the API at **http://127.0.0.1:3847** by default.
+
+   If the API runs on another host or port, set **`NEXT_PUBLIC_BAMBU_API_URL`** before `npm run dev`, for example:
+
+   ```bash
+   NEXT_PUBLIC_BAMBU_API_URL=http://127.0.0.1:3847 npm run dev
+   ```
+
+4. **Production build** (UI only; you still need the API process for full functionality)
+
+   ```bash
+   npm run build
+   npm start
+   ```
+
+### Other scripts
+
+- **`npm run lint`** — ESLint
+- **`npm run format`** — Prettier write
+- **`npm run format:check`** — Prettier check (e.g. for CI)
+
+## Limitations and security
+
+**Intended use is on your own machine, bound to localhost (or loopback), not as a service on the open internet.**
+
+- The helper server (`server.js`) **reads files under your Bambu Studio directory** and exposes them through HTTP. It is a **development-style local tool**, not a hardened production API.
+- The API enables **broad CORS** so the browser can call it from your dev origin. Combined with filesystem access under the configured root, exposing this server on a **LAN IP or hostname** would let **any site or client that can reach the port** request that data. **Do not** bind it to `0.0.0.0` or deploy it where untrusted networks can reach it unless you fully understand and accept that risk.
+- The Next.js app and browser features involved (secure context, optional file-picker flows) are **designed around local development** on `http://localhost` / `http://127.0.0.1`. Running the stack elsewhere may hit browser or mixed-content restrictions.
+
+Treat this repository as a **personal, localhost-only utility**. If you need remote access, use an explicit, reviewed approach (VPN, SSH tunnel, or a proper authenticated backend), not an open local API.
