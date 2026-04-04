@@ -127,7 +127,7 @@ export function ProfileTreeGrid({
   return (
     <Tooltip.Provider delay={400}>
       <div className={cn("w-full space-y-3", className)}>
-        <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
+        <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pl-4 text-xs">
           <input
             type="checkbox"
             checked={showAdvanced}
@@ -140,7 +140,7 @@ export function ProfileTreeGrid({
           <Table className="border-collapse">
             <TableHeader className="[&_tr]:border-0">
               <TableRow className="border-0 hover:bg-transparent">
-                <TableHead className="min-w-[220px] border-b-2 border-slate-200/90 bg-background px-6 py-5 align-bottom dark:border-slate-600/60">
+                <TableHead className="min-w-[220px] border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60">
                   <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
                     {t("treeGrid.columnProperty")}
                   </span>
@@ -150,7 +150,7 @@ export function ProfileTreeGrid({
                   return (
                     <TableHead
                       key={col.index}
-                      className="min-w-[120px] max-w-[200px] border-b-2 border-slate-200/90 bg-background px-6 py-5 align-bottom dark:border-slate-600/60"
+                      className="min-w-[120px] max-w-[200px] border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60"
                       title={col.level.relativePath}
                     >
                       <span className="mb-1 block text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
@@ -176,7 +176,7 @@ export function ProfileTreeGrid({
                         <button
                           type="button"
                           onClick={() => toggleGroup(group.id)}
-                          className="flex w-full items-center gap-2 px-6 py-3 text-left text-sm font-semibold tracking-tight text-slate-900 uppercase dark:text-slate-100"
+                          className="flex w-full items-center gap-2 py-3 text-left text-sm font-semibold tracking-tight text-slate-900 uppercase dark:text-slate-100"
                         >
                           {groupOpen ? (
                             <ChevronDown
@@ -210,7 +210,7 @@ export function ProfileTreeGrid({
                                 <button
                                   type="button"
                                   onClick={() => toggleSubgroup(subgroup.id)}
-                                  className="flex w-full items-center gap-2 px-6 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400"
+                                  className="flex w-full items-center gap-2 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400"
                                 >
                                   {subOpen ? (
                                     <ChevronDown
@@ -267,7 +267,7 @@ export function ProfileTreeGrid({
                                   >
                                     <TableCell
                                       className={cn(
-                                        "whitespace-normal border-b border-slate-100/50 py-3 pr-6 pl-28 align-middle dark:border-slate-800/40",
+                                        "whitespace-normal border-b border-slate-100/50 py-3 pl-28 align-middle dark:border-slate-800/40",
                                         rowStripe,
                                       )}
                                     >
@@ -291,7 +291,7 @@ export function ProfileTreeGrid({
                                       <TableCell
                                         key={col.index}
                                         className={cn(
-                                          "border-b border-slate-100/50 px-6 py-3 align-middle dark:border-slate-800/40",
+                                          "border-b border-slate-100/50 py-3 align-middle dark:border-slate-800/40",
                                           rowStripe,
                                         )}
                                         title={col.level.relativePath}

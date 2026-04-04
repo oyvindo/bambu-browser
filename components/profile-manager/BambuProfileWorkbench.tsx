@@ -23,6 +23,14 @@ import { useTranslations } from "@/localization/context";
 
 import { ProfileTreeGrid } from "./ProfileTreeGrid";
 
+/** Sidebar group label is `kind` or `userId · kind`. */
+function profileGroupKind(label: string): "filament" | "process" {
+  const tail = label.includes(" · ")
+    ? label.slice(label.lastIndexOf(" · ") + 3)
+    : label;
+  return tail === "filament" ? "filament" : "process";
+}
+
 export function BambuProfileWorkbench() {
   const t = useTranslations();
   const [apiBase] = React.useState(() => getBambuApiBaseUrl());
@@ -165,8 +173,18 @@ export function BambuProfileWorkbench() {
       arr.push(p);
       m.set(key, arr);
     }
-    return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return Array.from(m.entries()).sort(([a], [b]) => {
+      const ka = profileGroupKind(a);
+      const kb = profileGroupKind(b);
+      if (ka !== kb) return ka === "filament" ? -1 : 1;
+      return a.localeCompare(b);
+    });
   }, [profiles, showAllAccounts]);
+
+  const firstProcessGroupIndex = React.useMemo(
+    () => grouped.findIndex(([label]) => profileGroupKind(label) === "process"),
+    [grouped],
+  );
 
   return (
     <div className="bg-background flex min-h-full flex-1 flex-col">
@@ -207,84 +225,6 @@ export function BambuProfileWorkbench() {
             </label>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void loadAccounts()}
-            disabled={scanning}
-          >
-            <Server className="size-4" />
-            {apiOk === false ? t("controls.retryApi") : t("controls.pingApi")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setScanning(true);
-              const p = showAllAccounts
-                ? fetchApiProfilesFull()
-                : selectedUsername
-                  ? fetchApiProfilesForAccount(selectedUsername)
-                  : Promise.resolve({ profiles: [] });
-              p.then((r) => setProfiles(r.profiles))
-                .catch((e) =>
-                  setError(
-                    e instanceof Error ? e.message : t("errors.refreshFailed"),
-                  ),
-                )
-                .finally(() => setScanning(false));
-            }}
-            disabled={scanning || apiOk !== true}
-          >
-            {scanning ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <RefreshCw className="size-4" />
-            )}
-            {t("controls.refreshList")}
-          </Button>
-          <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={showAllAccounts}
-              onChange={(e) => setShowAllAccounts(e.target.checked)}
-              disabled={apiOk !== true}
-            />
-            {t("controls.allAccounts")}
-          </label>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-xs">
-            {t("controls.bambuAccount")}
-          </span>
-          {!showAllAccounts ? (
-            <select
-              className="border-input bg-background h-9 max-w-xs min-w-40 rounded-md border px-2 text-sm"
-              value={selectedUsername ?? ""}
-              onChange={(e) => setSelectedUsername(e.target.value || null)}
-              disabled={apiOk !== true || accountNames.length === 0}
-            >
-              {accountNames.length === 0 ? (
-                <option value="">{t("controls.noAccounts")}</option>
-              ) : (
-                accountNames.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))
-              )}
-            </select>
-          ) : (
-            <span className="text-muted-foreground text-xs">
-              {t("controls.allAccountsHint")}
-            </span>
-          )}
-        </div>
       </header>
 
       {error ? (
@@ -323,8 +263,96 @@ export function BambuProfileWorkbench() {
             "max-h-[40vh] md:max-h-none",
           )}
         >
-          <div className="text-muted-foreground border-border border-b px-3 py-2 text-xs font-medium">
-            {t("sidebar.profilesHeading")}
+          <div className="space-y-3 px-3 py-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-w-26 flex-1"
+                onClick={() => void loadAccounts()}
+                disabled={scanning}
+              >
+                <Server className="size-4" />
+                {apiOk === false
+                  ? t("controls.retryApi")
+                  : t("controls.pingApi")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-w-26 flex-1"
+                onClick={() => {
+                  setScanning(true);
+                  const p = showAllAccounts
+                    ? fetchApiProfilesFull()
+                    : selectedUsername
+                      ? fetchApiProfilesForAccount(selectedUsername)
+                      : Promise.resolve({ profiles: [] });
+                  p.then((r) => setProfiles(r.profiles))
+                    .catch((e) =>
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : t("errors.refreshFailed"),
+                      ),
+                    )
+                    .finally(() => setScanning(false));
+                }}
+                disabled={scanning || apiOk !== true}
+              >
+                {scanning ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                {t("controls.refreshList")}
+              </Button>
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-muted-foreground block text-xs font-medium">
+                {t("controls.bambuAccount")}
+              </span>
+              {!showAllAccounts ? (
+                <select
+                  className="border-input bg-background h-9 w-full max-w-full rounded-md border px-2 text-sm"
+                  value={selectedUsername ?? ""}
+                  onChange={(e) => setSelectedUsername(e.target.value || null)}
+                  disabled={apiOk !== true || accountNames.length === 0}
+                >
+                  {accountNames.length === 0 ? (
+                    <option value="">{t("controls.noAccounts")}</option>
+                  ) : (
+                    accountNames.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))
+                  )}
+                </select>
+              ) : (
+                <p className="text-muted-foreground text-xs leading-snug">
+                  {t("controls.allAccountsHint")}
+                </p>
+              )}
+              <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pt-0.5 text-xs">
+                <input
+                  type="checkbox"
+                  checked={showAllAccounts}
+                  onChange={(e) => setShowAllAccounts(e.target.checked)}
+                  disabled={apiOk !== true}
+                />
+                {t("controls.allAccounts")}
+              </label>
+            </div>
+          </div>
+
+          <div className="border-border border-t">
+            <div className="text-muted-foreground border-border border-b px-3 py-2 text-xs font-medium">
+              {t("sidebar.profilesHeading")}
+            </div>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
             {apiOk !== true ? (
@@ -342,8 +370,15 @@ export function BambuProfileWorkbench() {
               </p>
             ) : (
               <ul className="flex flex-col gap-3">
-                {grouped.map(([label, items]) => (
-                  <li key={label}>
+                {grouped.map(([label, items], index) => (
+                  <li
+                    key={label}
+                    className={cn(
+                      index === firstProcessGroupIndex &&
+                        firstProcessGroupIndex > 0 &&
+                        "border-border mt-1 border-t pt-3",
+                    )}
+                  >
                     <div className="text-muted-foreground mb-1 px-2 text-[11px] font-semibold tracking-wide uppercase">
                       {label}
                     </div>
@@ -371,7 +406,7 @@ export function BambuProfileWorkbench() {
           </div>
         </aside>
 
-        <main className="min-h-0 min-w-0 flex-1 overflow-auto p-4">
+        <main className="min-h-0 min-w-0 flex-1 overflow-auto py-4">
           {resolving ? (
             <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
               <Loader2 className="size-4 animate-spin" />

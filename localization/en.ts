@@ -21,7 +21,7 @@ export const messagesEn = {
     retryApi: "Retry API",
     refreshList: "Refresh list",
     allAccounts: "All accounts",
-    bambuAccount: "Bambu Lab account",
+    bambuAccount: "Bambu Lab Account",
     noAccounts: "No accounts",
     allAccountsHint: "Showing every profile under users/ or user/",
   },
