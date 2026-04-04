@@ -9,7 +9,7 @@ export type BambuPropertyTooltip = {
 };
 
 export const BAMBU_PROPERTY_TOOLTIPS: Readonly<
-  Record<string, BambuPropertyTooltip>
+  Partial<Record<string, BambuPropertyTooltip>>
 > = {
   layer_height: {
     impact:
@@ -294,8 +294,9 @@ const DEFAULT_BAMBU_PROPERTY_TOOLTIP: BambuPropertyTooltip = {
 };
 
 export function propertyTooltipForKey(key: string): BambuPropertyTooltip {
-  if (Object.prototype.hasOwnProperty.call(BAMBU_PROPERTY_TOOLTIPS, key)) {
-    return BAMBU_PROPERTY_TOOLTIPS[key]!;
+  if (!Object.prototype.hasOwnProperty.call(BAMBU_PROPERTY_TOOLTIPS, key)) {
+    return DEFAULT_BAMBU_PROPERTY_TOOLTIP;
   }
-  return DEFAULT_BAMBU_PROPERTY_TOOLTIP;
+  const entry = BAMBU_PROPERTY_TOOLTIPS[key];
+  return entry ?? DEFAULT_BAMBU_PROPERTY_TOOLTIP;
 }

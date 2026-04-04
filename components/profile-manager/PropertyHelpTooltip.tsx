@@ -17,7 +17,6 @@ export function PropertyHelpTooltip({
     <Tooltip.Root>
       <Tooltip.Trigger
         type="button"
-        delay={250}
         className={cn(
           "text-muted-foreground hover:text-foreground -mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-sm",
           "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",

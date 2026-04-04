@@ -19,7 +19,6 @@ import {
 import {
   BAMBU_PROCESS_UI_TREE,
   formatBambuMappedValue,
-  mappedFormattedValuesEqual,
   propertyRowTitle,
 } from "@/lib/bambu/mapping";
 import { propertyTooltipForKey } from "@/lib/bambu/property-tooltips";
@@ -207,16 +206,9 @@ export function ProfileTreeGrid({
                                   ),
                                 );
 
-                                const overridesParent = effectiveValues.map(
-                                  (_, i) => {
-                                    if (i === 0) return false;
-                                    return !mappedFormattedValuesEqual(
-                                      effectiveValues[i],
-                                      effectiveValues[i - 1],
-                                      unit,
-                                      activeExtruderIndex,
-                                    );
-                                  },
+                                const overridesParent = cellTexts.map(
+                                  (text, i) =>
+                                    i > 0 && text !== cellTexts[i - 1],
                                 );
 
                                 return (
