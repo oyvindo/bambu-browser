@@ -300,7 +300,7 @@ export function ProfileTreeGrid({
                                           className={cn(
                                             "inline-flex min-h-[1.625rem] items-center font-mono text-sm tabular-nums text-slate-900 dark:text-slate-100",
                                             overridesParent[i] &&
-                                              "rounded-full bg-emerald-100/85 px-3 py-1 text-slate-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-100",
+                                              "rounded-[calc(var(--radius-md)/2)] bg-emerald-100/85 px-3 py-1 text-slate-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-100",
                                           )}
                                         >
                                           {cellTexts[i]}

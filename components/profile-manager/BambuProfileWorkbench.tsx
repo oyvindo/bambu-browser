@@ -187,8 +187,8 @@ export function BambuProfileWorkbench() {
   );
 
   return (
-    <div className="bg-background flex min-h-full flex-1 flex-col">
-      <header className="border-border space-y-2 border-b px-4 py-3">
+    <div className="bg-background flex min-h-0 flex-1 flex-col">
+      <header className="border-border bg-background sticky top-0 z-50 shrink-0 space-y-2 border-b px-4 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-foreground text-lg font-semibold tracking-tight">
@@ -228,13 +228,13 @@ export function BambuProfileWorkbench() {
       </header>
 
       {error ? (
-        <div className="bg-destructive/10 text-destructive border-destructive/20 mx-4 mt-3 rounded-md border px-3 py-2 text-sm">
+        <div className="bg-destructive/10 text-destructive border-destructive/20 mx-4 mt-3 shrink-0 rounded-md border px-3 py-2 text-sm">
           {error}
         </div>
       ) : null}
 
       {apiOk === false ? (
-        <div className="text-muted-foreground mx-4 mt-3 rounded-md border border-dashed px-3 py-3 text-sm">
+        <div className="text-muted-foreground mx-4 mt-3 shrink-0 rounded-md border border-dashed px-3 py-3 text-sm">
           <p className="font-medium text-foreground">{t("offline.title")}</p>
           <pre className="bg-muted mt-2 overflow-x-auto rounded p-2 font-mono text-xs">
             cd /path/to/bambu_browser{"\n"}
@@ -256,14 +256,15 @@ export function BambuProfileWorkbench() {
         </div>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <aside
           className={cn(
-            "border-border flex w-full shrink-0 flex-col border-b md:w-72 md:border-r md:border-b-0",
-            "max-h-[40vh] md:max-h-none",
+            "border-border bg-background flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-b px-2 md:w-72 md:border-r md:border-b-0",
+            "max-h-[40vh] md:h-full md:max-h-none",
+            "md:shadow-[2px_0_18px_-4px_rgb(15_23_42_/0.09)] dark:md:shadow-[2px_0_20px_-4px_rgb(0_0_0/0.32)]",
           )}
         >
-          <div className="space-y-3 px-3 py-3">
+          <div className="space-y-3 py-3">
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -350,36 +351,36 @@ export function BambuProfileWorkbench() {
           </div>
 
           <div className="border-border border-t">
-            <div className="text-muted-foreground border-border border-b px-3 py-2 text-xs font-medium">
+            <div className="text-muted-foreground border-border border-b py-2 text-xs font-medium">
               {t("sidebar.profilesHeading")}
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          <div className="min-h-0 flex-1 overflow-y-auto py-2">
             {apiOk !== true ? (
-              <p className="text-muted-foreground px-2 py-4 text-sm">
+              <p className="text-muted-foreground py-4 text-sm">
                 {t("sidebar.connectFirst")}
               </p>
             ) : scanning ? (
-              <div className="text-muted-foreground flex items-center gap-2 px-2 py-4 text-sm">
+              <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
                 <Loader2 className="size-4 animate-spin" />
                 {t("sidebar.loading")}
               </div>
             ) : profiles.length === 0 ? (
-              <p className="text-muted-foreground px-2 py-4 text-sm">
+              <p className="text-muted-foreground py-4 text-sm">
                 {t("sidebar.emptyProfiles")}
               </p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {grouped.map(([label, items], index) => (
-                  <li
-                    key={label}
-                    className={cn(
-                      index === firstProcessGroupIndex &&
-                        firstProcessGroupIndex > 0 &&
-                        "border-border mt-1 border-t pt-3",
-                    )}
-                  >
-                    <div className="text-muted-foreground mb-1 px-2 text-[11px] font-semibold tracking-wide uppercase">
+                  <li key={label}>
+                    {index === firstProcessGroupIndex &&
+                    firstProcessGroupIndex > 0 ? (
+                      <div
+                        className="border-border mt-1 w-full border-t pt-3 shadow-[0_2px_5px_-2px_rgb(15_23_42_/_0.12)] dark:shadow-[0_2px_6px_-1px_rgb(0_0_0_/_0.35)]"
+                        aria-hidden
+                      />
+                    ) : null}
+                    <div className="text-muted-foreground mb-1 px-1 text-[11px] font-semibold tracking-wide uppercase">
                       {label}
                     </div>
                     <ul className="flex flex-col gap-0.5">
@@ -389,7 +390,7 @@ export function BambuProfileWorkbench() {
                             type="button"
                             onClick={() => setSelectedPath(p.relativePath)}
                             className={cn(
-                              "hover:bg-muted w-full rounded-md px-2 py-1.5 text-left text-sm",
+                              "hover:bg-muted w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
                               selectedPath === p.relativePath &&
                                 "bg-muted font-medium",
                             )}
@@ -406,7 +407,7 @@ export function BambuProfileWorkbench() {
           </div>
         </aside>
 
-        <main className="min-h-0 min-w-0 flex-1 overflow-auto py-4">
+        <main className="relative z-0 min-h-0 min-w-0 flex-1 overflow-auto bg-background py-4 shadow-[0_2px_16px_-4px_rgb(15_23_42_/0.1),0_8px_28px_-12px_rgb(15_23_42_/0.06)] dark:shadow-[0_2px_18px_-3px_rgb(0_0_0/0.35),0_10px_32px_-14px_rgb(0_0_0/0.2)]">
           {resolving ? (
             <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
               <Loader2 className="size-4 animate-spin" />
