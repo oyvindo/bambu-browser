@@ -21,11 +21,28 @@ import {
   formatBambuMappedValue,
   propertyRowTitle,
 } from "@/lib/bambu/mapping";
-import { propertyTooltipForKey } from "@/lib/bambu/property-tooltips";
 import type { InheritanceChainLevel } from "@/lib/bambu/resolver";
 import { cn } from "@/lib/utils/index";
 
-import { PropertyHelpTooltip } from "./PropertyHelpTooltip";
+const LazyPropertyHelpTooltip = React.lazy(async () => {
+  const mod = await import("./PropertyHelpTooltip");
+  return { default: mod.PropertyHelpTooltip };
+});
+
+function PropertyHelpTooltipLazy(props: {
+  label: string;
+  propertyKey: string;
+}) {
+  return (
+    <React.Suspense
+      fallback={
+        <span className="-mt-0.5 inline-block size-5 shrink-0" aria-hidden />
+      }
+    >
+      <LazyPropertyHelpTooltip {...props} />
+    </React.Suspense>
+  );
+}
 
 function fileLabel(relativePath: string): string {
   const parts = relativePath.split("/").filter(Boolean);
@@ -221,9 +238,9 @@ export function ProfileTreeGrid({
                                         <span className="text-foreground">
                                           {title}
                                         </span>
-                                        <PropertyHelpTooltip
+                                        <PropertyHelpTooltipLazy
                                           label={title}
-                                          tooltip={propertyTooltipForKey(key)}
+                                          propertyKey={key}
                                         />
                                       </div>
                                       <span className="mt-0.5 block font-mono text-[10px] opacity-50">

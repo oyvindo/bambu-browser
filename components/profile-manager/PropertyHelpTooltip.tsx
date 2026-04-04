@@ -3,16 +3,17 @@
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Info } from "lucide-react";
 
-import type { BambuPropertyTooltip } from "@/lib/bambu/property-tooltips";
+import { propertyTooltipForKey } from "@/lib/bambu/property-tooltips";
 import { cn } from "@/lib/utils/index";
 
 export function PropertyHelpTooltip({
   label,
-  tooltip,
+  propertyKey,
 }: {
   label: string;
-  tooltip: BambuPropertyTooltip;
+  propertyKey: string;
 }) {
+  const tooltip = propertyTooltipForKey(propertyKey);
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
