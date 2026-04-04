@@ -1,6 +1,6 @@
-export type AppLocale = "en" | "nb";
+export const APP_LOCALES = ["en", "nb"] as const;
 
-export const APP_LOCALES: readonly AppLocale[] = ["en", "nb"];
+export type AppLocale = (typeof APP_LOCALES)[number];
 
 export const DEFAULT_LOCALE: AppLocale = "en";
 
