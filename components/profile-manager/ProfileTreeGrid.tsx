@@ -122,9 +122,11 @@ export function ProfileTreeGrid({
     );
   }
 
+  let zebraDataRow = 0;
+
   return (
     <Tooltip.Provider delay={400}>
-      <div className={cn("w-full space-y-2", className)}>
+      <div className={cn("w-full space-y-3", className)}>
         <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
           <input
             type="checkbox"
@@ -135,24 +137,26 @@ export function ProfileTreeGrid({
         </label>
 
         <div className="w-full overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="sticky left-0 z-10 min-w-[200px] bg-background">
-                  {t("treeGrid.columnProperty")}
+          <Table className="border-collapse">
+            <TableHeader className="[&_tr]:border-0">
+              <TableRow className="border-0 hover:bg-transparent">
+                <TableHead className="sticky left-0 z-20 min-w-[220px] border-b-2 border-slate-200/90 bg-background px-6 py-5 align-bottom dark:border-slate-600/60">
+                  <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                    {t("treeGrid.columnProperty")}
+                  </span>
                 </TableHead>
                 {columns.map((col) => {
                   const name = fileLabel(col.level.relativePath);
                   return (
                     <TableHead
                       key={col.index}
-                      className="min-w-[110px] max-w-[180px] bg-background"
+                      className="min-w-[120px] max-w-[200px] border-b-2 border-slate-200/90 bg-background px-6 py-5 align-bottom dark:border-slate-600/60"
                       title={col.level.relativePath}
                     >
-                      <span className="text-muted-foreground block text-[10px] font-medium tracking-wide uppercase">
+                      <span className="mb-1 block text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
                         {col.roleLabel}
                       </span>
-                      <span className="block truncate text-xs font-normal leading-tight">
+                      <span className="block truncate font-mono text-xs font-bold tabular-nums leading-snug text-slate-900 dark:text-slate-100">
                         {name}
                       </span>
                     </TableHead>
@@ -160,17 +164,19 @@ export function ProfileTreeGrid({
                 })}
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {BAMBU_PROCESS_UI_TREE.map((group) => {
+            <TableBody className="[&_tr]:border-0">
+              {BAMBU_PROCESS_UI_TREE.map((group, groupIndex) => {
                 const groupOpen = openGroups[group.id] !== false;
+                const isLastGroup =
+                  groupIndex === BAMBU_PROCESS_UI_TREE.length - 1;
                 return (
                   <React.Fragment key={group.id}>
-                    <TableRow className="bg-muted/40 hover:bg-muted/50">
+                    <TableRow className="border-0 bg-slate-100/90 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/65">
                       <TableCell colSpan={colCount} className="p-0">
                         <button
                           type="button"
                           onClick={() => toggleGroup(group.id)}
-                          className="text-foreground flex w-full items-center gap-2 px-2 py-2 text-left text-sm font-bold"
+                          className="flex w-full items-center gap-2 px-6 py-3 text-left text-sm font-semibold tracking-tight text-slate-900 uppercase dark:text-slate-100"
                         >
                           {groupOpen ? (
                             <ChevronDown
@@ -196,15 +202,15 @@ export function ProfileTreeGrid({
                         if (visibleProps.length === 0) return null;
                         return (
                           <React.Fragment key={subgroup.id}>
-                            <TableRow className="bg-muted/20 hover:bg-muted/30">
+                            <TableRow className="border-0 bg-slate-50/90 hover:bg-slate-100/70 dark:bg-slate-900/35 dark:hover:bg-slate-900/50">
                               <TableCell
                                 colSpan={colCount}
-                                className="p-0 pl-8"
+                                className="p-0 pl-10"
                               >
                                 <button
                                   type="button"
                                   onClick={() => toggleSubgroup(subgroup.id)}
-                                  className="text-foreground flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm font-semibold"
+                                  className="flex w-full items-center gap-2 px-6 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400"
                                 >
                                   {subOpen ? (
                                     <ChevronDown
@@ -244,14 +250,29 @@ export function ProfileTreeGrid({
                                     i > 0 && text !== cellTexts[i - 1],
                                 );
 
+                                const isOddStripe = zebraDataRow % 2 === 1;
+                                zebraDataRow += 1;
+                                const rowStripe = isOddStripe
+                                  ? "bg-slate-50/50 dark:bg-slate-900/15"
+                                  : "bg-background";
+
                                 return (
                                   <TableRow
                                     key={key}
-                                    className="hover:bg-muted/30"
+                                    className={cn(
+                                      "border-0 border-slate-100/60 transition-colors dark:border-slate-800/50",
+                                      rowStripe,
+                                      "hover:bg-slate-100/35 dark:hover:bg-slate-800/25",
+                                    )}
                                   >
-                                    <TableCell className="bg-background sticky left-0 z-10 whitespace-normal pl-18 text-muted-foreground shadow-[1px_0_0_var(--border)]">
+                                    <TableCell
+                                      className={cn(
+                                        "sticky left-0 z-10 whitespace-normal border-b border-slate-100/50 px-6 py-3 align-middle shadow-[1px_0_0_0_rgb(224,224,224,0.45)] dark:border-slate-800/40 dark:shadow-[1px_0_0_0_rgb(55,55,55,0.45)]",
+                                        rowStripe,
+                                      )}
+                                    >
                                       <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                                        <span className="text-foreground">
+                                        <span className="text-sm font-normal text-slate-700 dark:text-slate-300">
                                           {title}
                                         </span>
                                         <PropertyHelpTooltipLazy
@@ -259,7 +280,10 @@ export function ProfileTreeGrid({
                                           propertyKey={key}
                                         />
                                       </div>
-                                      <span className="mt-0.5 block font-mono text-[10px] opacity-50">
+                                      <span
+                                        className="mt-0.5 block font-mono text-[10px] text-slate-400 dark:text-slate-500"
+                                        title={key}
+                                      >
                                         {key}
                                       </span>
                                     </TableCell>
@@ -267,13 +291,20 @@ export function ProfileTreeGrid({
                                       <TableCell
                                         key={col.index}
                                         className={cn(
-                                          "font-mono text-xs tabular-nums",
-                                          overridesParent[i] &&
-                                            "bg-emerald-100 dark:bg-emerald-950/40",
+                                          "border-b border-slate-100/50 px-6 py-3 align-middle dark:border-slate-800/40",
+                                          rowStripe,
                                         )}
                                         title={col.level.relativePath}
                                       >
-                                        {cellTexts[i]}
+                                        <span
+                                          className={cn(
+                                            "inline-flex min-h-[1.625rem] items-center font-mono text-sm tabular-nums text-slate-900 dark:text-slate-100",
+                                            overridesParent[i] &&
+                                              "rounded-full bg-emerald-100/85 px-3 py-1 text-slate-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-100",
+                                          )}
+                                        >
+                                          {cellTexts[i]}
+                                        </span>
                                       </TableCell>
                                     ))}
                                   </TableRow>
@@ -282,6 +313,15 @@ export function ProfileTreeGrid({
                           </React.Fragment>
                         );
                       })}
+                    {!isLastGroup ? (
+                      <TableRow className="h-5 border-0 bg-transparent hover:bg-transparent">
+                        <TableCell
+                          colSpan={colCount}
+                          className="h-5 border-0 p-0"
+                          aria-hidden
+                        />
+                      </TableRow>
+                    ) : null}
                   </React.Fragment>
                 );
               })}

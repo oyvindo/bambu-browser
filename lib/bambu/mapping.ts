@@ -37,7 +37,9 @@ export type BambuMappedGroup = {
 
 /**
  * Ordered TreeGrid: Quality → Strength → Speed → Support → Others.
- */ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
+ * Structure is strictly 3 levels: Group (tab) → Subgroup (section) → Property (JSON key).
+ */
+export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
   {
     id: "quality",
     label: "Quality",
@@ -263,7 +265,7 @@ export type BambuMappedGroup = {
     subgroups: [
       {
         id: "others-brim",
-        label: "Brim", // Nivået som manglet (Splittet ut fra Bed Adhesion)
+        label: "Brim",
         properties: [
           { key: "brim_type", label: "Brim type", unit: "enum" },
           { key: "brim_width", label: "Brim width", unit: "mm" },
@@ -277,7 +279,7 @@ export type BambuMappedGroup = {
       },
       {
         id: "others-skirt",
-        label: "Brim skirt", // Nivået som manglet (Splittet ut fra Bed Adhesion)
+        label: "Skirt",
         properties: [
           { key: "skirt_loops", label: "Skirt loops", unit: "count" },
           { key: "skirt_distance", label: "Skirt distance", unit: "mm" },
