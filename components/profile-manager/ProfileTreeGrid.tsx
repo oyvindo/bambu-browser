@@ -140,7 +140,7 @@ export function ProfileTreeGrid({
           <Table className="border-collapse">
             <TableHeader className="[&_tr]:border-0">
               <TableRow className="border-0 hover:bg-transparent">
-                <TableHead className="sticky left-0 z-20 min-w-[220px] border-b-2 border-slate-200/90 bg-background px-6 py-5 align-bottom dark:border-slate-600/60">
+                <TableHead className="min-w-[220px] border-b-2 border-slate-200/90 bg-background px-6 py-5 align-bottom dark:border-slate-600/60">
                   <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
                     {t("treeGrid.columnProperty")}
                   </span>
@@ -267,7 +267,7 @@ export function ProfileTreeGrid({
                                   >
                                     <TableCell
                                       className={cn(
-                                        "sticky left-0 z-10 whitespace-normal border-b border-slate-100/50 px-6 py-3 align-middle shadow-[1px_0_0_0_rgb(224,224,224,0.45)] dark:border-slate-800/40 dark:shadow-[1px_0_0_0_rgb(55,55,55,0.45)]",
+                                        "whitespace-normal border-b border-slate-100/50 py-3 pr-6 pl-28 align-middle dark:border-slate-800/40",
                                         rowStripe,
                                       )}
                                     >
