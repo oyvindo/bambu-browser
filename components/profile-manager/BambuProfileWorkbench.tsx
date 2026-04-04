@@ -17,6 +17,8 @@ import type { InheritanceChainLevel } from "@/lib/bambu/resolver";
 import { cn } from "@/lib/utils/index";
 import { Loader2, RefreshCw, Server } from "lucide-react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
+
 import { ProfileTreeGrid } from "./ProfileTreeGrid";
 
 export function BambuProfileWorkbench() {
@@ -183,19 +185,22 @@ export function BambuProfileWorkbench() {
               {layout ? ` · layout: ${layout}` : null}
             </p>
           </div>
-          <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">
-            Extruder index
-            <input
-              type="number"
-              min={0}
-              max={7}
-              value={activeExtruderIndex}
-              onChange={(e) =>
-                setActiveExtruderIndex(Number(e.target.value) || 0)
-              }
-              className="border-input bg-background h-8 w-14 rounded-md border px-2 text-sm"
-            />
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <ThemeToggle />
+            <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">
+              Extruder index
+              <input
+                type="number"
+                min={0}
+                max={7}
+                value={activeExtruderIndex}
+                onChange={(e) =>
+                  setActiveExtruderIndex(Number(e.target.value) || 0)
+                }
+                className="border-input bg-background h-8 w-14 rounded-md border px-2 text-sm"
+              />
+            </label>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

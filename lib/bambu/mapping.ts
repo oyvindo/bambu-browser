@@ -389,18 +389,6 @@ export function formatBambuMappedValue(
   return s;
 }
 
-export function mappedFormattedValuesEqual(
-  a: unknown,
-  b: unknown,
-  unit: BambuValueUnit,
-  extruderIndex: number,
-): boolean {
-  return (
-    formatBambuMappedValue(a, unit, extruderIndex) ===
-    formatBambuMappedValue(b, unit, extruderIndex)
-  );
-}
-
 export type BambuPropertyLookup = {
   group: BambuMappedGroup;
   subgroup: BambuMappedSubgroup;
