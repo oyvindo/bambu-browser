@@ -32,7 +32,11 @@ function readPath(obj: unknown, path: string): string | undefined {
   const parts = path.split(".");
   let cur: unknown = obj;
   for (const p of parts) {
-    if (cur !== null && typeof cur === "object" && p in cur) {
+    if (
+      cur !== null &&
+      typeof cur === "object" &&
+      Object.prototype.hasOwnProperty.call(cur, p)
+    ) {
       cur = (cur as Record<string, unknown>)[p];
     } else {
       return undefined;
