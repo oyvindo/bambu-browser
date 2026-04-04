@@ -3,6 +3,7 @@
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Info } from "lucide-react";
 
+import { useLocale, useTranslations } from "@/localization/context";
 import { propertyTooltipForKey } from "@/lib/bambu/property-tooltips";
 import { cn } from "@/lib/utils/index";
 
@@ -13,7 +14,9 @@ export function PropertyHelpTooltip({
   label: string;
   propertyKey: string;
 }) {
-  const tooltip = propertyTooltipForKey(propertyKey);
+  const { locale } = useLocale();
+  const t = useTranslations();
+  const tooltip = propertyTooltipForKey(propertyKey, locale);
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
@@ -22,7 +25,7 @@ export function PropertyHelpTooltip({
           "text-muted-foreground hover:text-foreground -mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-sm",
           "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         )}
-        aria-label={`About ${label}`}
+        aria-label={t("propertyTooltip.aboutAria", { label })}
       >
         <Info className="size-3.5 opacity-80" strokeWidth={2} aria-hidden />
       </Tooltip.Trigger>

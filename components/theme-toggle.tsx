@@ -3,8 +3,11 @@
 import * as React from "react";
 import { useTheme } from "next-themes";
 
+import { useTranslations } from "@/localization/context";
+
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const t = useTranslations();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -13,17 +16,17 @@ export function ThemeToggle() {
 
   return (
     <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">
-      Theme
+      {t("theme.label")}
       <select
         className="border-input bg-background h-8 min-w-30 rounded-md border px-2 text-sm"
         value={mounted ? theme : "system"}
         onChange={(e) => setTheme(e.target.value)}
         disabled={!mounted}
-        aria-label="Color theme"
+        aria-label={t("theme.aria")}
       >
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="system">System</option>
+        <option value="light">{t("theme.light")}</option>
+        <option value="dark">{t("theme.dark")}</option>
+        <option value="system">{t("theme.system")}</option>
       </select>
     </label>
   );
