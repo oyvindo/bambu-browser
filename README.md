@@ -71,3 +71,44 @@ Bambu Studio stores machine, process, and filament presets under an application-
 - The Next.js app and browser features involved (secure context, optional file-picker flows) are **designed around local development** on `http://localhost` / `http://127.0.0.1`. Running the stack elsewhere may hit browser or mixed-content restrictions.
 
 Treat this repository as a **personal, localhost-only utility**. If you need remote access, use an explicit, reviewed approach (VPN, SSH tunnel, or a proper authenticated backend), not an open local API.
+
+## Technical layout
+
+### Architecture
+
+The app is split into **two processes**:
+
+1. **Next.js client** (`npm run dev` / `build` + `start`) — React 19 with the App Router (`app/`). The home page (`app/page.tsx`) renders the `BambuProfileWorkbench`, which loads data from the local API URL (`NEXT_PUBLIC_BAMBU_API_URL`, default `http://127.0.0.1:3847`).
+
+2. **Local HTTP API** (`server.js`, started with `npm run api`) — plain Node with `http` and `fs/promises`. It reads the Bambu Studio directory on disk, validates paths under the configured root, and returns JSON. The browser cannot do this on its own without a file-picker API or similar, so this process is required for normal development.
+
+**`lib/bambu/`** holds client-side domain logic: API client (`bambu-api-client.ts`), profile and inheritance resolution (`resolver.ts`, `mapping.ts`), helpers for displaying inheritance chains (`chain-display.ts`), file-handling / validation helpers where needed, and related types. **`components/profile-manager/`** is the profile tree and toolbar UI (for example `ProfileTreeGrid`, `BambuProfileWorkbench`). **`components/ui/`** is reusable primitives (buttons, table, collapsible). **`localization/`** handles locales (context, strings, process-parameter tooltips). **`components/providers.tsx`** wires `next-themes` (light/dark) and the locale provider around the app. Fonts and global styles live in `app/layout.tsx` and `app/globals.css`.
+
+### Packages and tooling
+
+| Area                  | Package                                                              | Role                                                        |
+| --------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Framework             | `next`                                                               | App Router, routing, build/start                            |
+| UI                    | `react`, `react-dom`                                                 | Component library                                           |
+| Components / headless | `@base-ui/react`                                                     | Unstyled primitives for building UI                         |
+| Variants              | `class-variance-authority`                                           | Variant-based Tailwind classes on components                |
+| Classes               | `clsx`, `tailwind-merge`                                             | Merge and dedupe CSS class names                            |
+| Icons                 | `lucide-react`                                                       | Icons in the UI                                             |
+| Theme                 | `next-themes`                                                        | Light/dark/system via `class` on `<html>`                   |
+| CLI / scaffolding     | `shadcn`                                                             | shadcn/ui tooling for component setup (project conventions) |
+| Animation             | `tw-animate-css`                                                     | Tailwind-oriented animation utilities                       |
+| Styling               | `tailwindcss`, `@tailwindcss/postcss`                                | Tailwind CSS v4 with PostCSS                                |
+| Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom`        | Type-checking                                               |
+| Quality               | `eslint`, `eslint-config-next`, `eslint-config-prettier`, `prettier` | Lint and formatting                                         |
+
+Versions live in `package.json`; bump `next` and `eslint-config-next` together if you change the Next.js version.
+
+### Directory map (short)
+
+- `app/` — Next.js App Router: `layout.tsx`, `page.tsx`, `globals.css`
+- `components/` — React components (profile manager, UI, theme, language)
+- `lib/bambu/` — Bambu-specific logic and client-side API calls
+- `lib/utils/` — Shared helpers (for example `cn`)
+- `localization/` — Translations and `LocaleProvider`
+- `types/` — Shared types where needed
+- `server.js` — Local read-only HTTP API over the Bambu Studio data directory
