@@ -8,27 +8,49 @@ export type InheritanceColumnMeta = {
   roleLabel: string;
 };
 
+export type ColumnRoleLabels = {
+  profile: string;
+  root: string;
+  parent: string;
+  /** `levelIndex` is 1-based for display (second column → 2). */
+  level: (levelIndex: number) => string;
+};
+
+function defaultColumnRoleLabels(): ColumnRoleLabels {
+  return {
+    profile: "Profile",
+    root: "Root",
+    parent: "Parent",
+    level: (levelIndex: number) => `Level ${levelIndex}`,
+  };
+}
+
+function columnRoleLabel(
+  index: number,
+  n: number,
+  labels: ColumnRoleLabels,
+): string {
+  if (n === 1) return labels.profile;
+  if (index === 0) return labels.root;
+  if (index === n - 1) return labels.profile;
+  if (index === n - 2) return labels.parent;
+  return labels.level(index + 1);
+}
+
 /**
  * One column per resolver level: chain[0] = root template … chain[n-1] = selected profile.
  */
 export function getInheritanceColumns(
   chain: readonly InheritanceChainLevel[],
+  roleLabels: ColumnRoleLabels = defaultColumnRoleLabels(),
 ): InheritanceColumnMeta[] {
   const n = chain.length;
   if (n === 0) return [];
   return chain.map((level, index) => ({
     index,
     level,
-    roleLabel: columnRoleLabel(index, n),
+    roleLabel: columnRoleLabel(index, n, roleLabels),
   }));
-}
-
-function columnRoleLabel(index: number, n: number): string {
-  if (n === 1) return "Profile";
-  if (index === 0) return "Root";
-  if (index === n - 1) return "Profile";
-  if (index === n - 2) return "Parent";
-  return `Level ${index + 1}`;
 }
 
 export type ThreeColumnSlice = {

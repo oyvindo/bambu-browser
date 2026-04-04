@@ -15,7 +15,9 @@ import {
 import {
   getInheritanceColumns,
   mergedValueAt,
+  type ColumnRoleLabels,
 } from "@/lib/bambu/chain-display";
+import { useTranslations } from "@/localization/context";
 import {
   BAMBU_PROCESS_UI_TREE,
   formatBambuMappedValue,
@@ -61,7 +63,22 @@ export function ProfileTreeGrid({
   activeExtruderIndex = 0,
   className,
 }: ProfileTreeGridProps) {
-  const columns = React.useMemo(() => getInheritanceColumns(chain), [chain]);
+  const t = useTranslations();
+
+  const roleLabels = React.useMemo<ColumnRoleLabels>(
+    () => ({
+      profile: t("chainColumn.profile"),
+      root: t("chainColumn.root"),
+      parent: t("chainColumn.parent"),
+      level: (levelIndex: number) => t("chainColumn.level", { n: levelIndex }),
+    }),
+    [t],
+  );
+
+  const columns = React.useMemo(
+    () => getInheritanceColumns(chain, roleLabels),
+    [chain, roleLabels],
+  );
   const colCount = 1 + columns.length;
 
   const [showAdvanced, setShowAdvanced] = React.useState(true);
@@ -100,8 +117,7 @@ export function ProfileTreeGrid({
           className,
         )}
       >
-        Load a profile to show the inheritance tree (one column per template in
-        the chain).
+        {t("treeGrid.emptyHint")}
       </div>
     );
   }
@@ -115,7 +131,7 @@ export function ProfileTreeGrid({
             checked={showAdvanced}
             onChange={(e) => setShowAdvanced(e.target.checked)}
           />
-          Show advanced parameters
+          {t("treeGrid.showAdvanced")}
         </label>
 
         <div className="w-full overflow-x-auto">
@@ -123,7 +139,7 @@ export function ProfileTreeGrid({
             <TableHeader>
               <TableRow>
                 <TableHead className="sticky left-0 z-10 min-w-[200px] bg-background">
-                  Property
+                  {t("treeGrid.columnProperty")}
                 </TableHead>
                 {columns.map((col) => {
                   const name = fileLabel(col.level.relativePath);
