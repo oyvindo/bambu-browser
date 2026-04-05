@@ -23,6 +23,9 @@ const STUDIO_ROOT = path.resolve(process.env.BAMBUSTUDIO_ROOT || DEFAULT_ROOT);
 
 const SYSTEM_PROCESS_DIR = "system/BBL/process";
 const SYSTEM_FILAMENT_DIR = "system/BBL/filament";
+/** Same logical path as BambuStudio/system/BBL/filament/fdm_filament_common.json */
+const FDM_FILAMENT_COMMON_RELATIVE =
+  "system/BBL/filament/fdm_filament_common.json";
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -183,7 +186,22 @@ async function resolveInheritanceRecursive(
   const inherits = getInheritsField(data);
 
   if (!inherits) {
-    return [{ relativePath: p, data }];
+    const leaf = { relativePath: p, data };
+    if (
+      kind === "filament" &&
+      normalizeRelativePath(p) !==
+        normalizeRelativePath(FDM_FILAMENT_COMMON_RELATIVE)
+    ) {
+      let commonData = {};
+      if (await fileExists(rootAbs, FDM_FILAMENT_COMMON_RELATIVE)) {
+        commonData = await readJsonFile(rootAbs, FDM_FILAMENT_COMMON_RELATIVE);
+      }
+      return [
+        { relativePath: FDM_FILAMENT_COMMON_RELATIVE, data: commonData },
+        leaf,
+      ];
+    }
+    return [leaf];
   }
 
   const parentPath = await resolveParentRelativePath(
@@ -252,6 +270,14 @@ async function listJsonInDir(dirAbs) {
       names.push(e.name);
   }
   return names.sort();
+}
+
+/** Relative POSIX paths: system/BBL/filament/*.json (files only, not subfolders). */
+async function listSystemFilamentRelPaths(rootAbs) {
+  const dirAbs = path.join(rootAbs, "system", "BBL", "filament");
+  const files = await listJsonInDir(dirAbs);
+  const base = "system/BBL/filament";
+  return files.map((f) => joinRel(base, f));
 }
 
 async function listProfilesForAccount(rootAbs, layout, account) {
@@ -386,6 +412,18 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, { profiles, layout });
   }
 
+  if (route === "/api/system-filaments") {
+    try {
+      const paths = await listSystemFilamentRelPaths(STUDIO_ROOT);
+      return sendJson(res, 200, { paths });
+    } catch (e) {
+      return sendJson(res, 500, {
+        error:
+          e instanceof Error ? e.message : "Failed to list system filaments",
+      });
+    }
+  }
+
   if (route === "/api/resolve") {
     const rel = url.searchParams.get("path");
     if (!rel) {
@@ -394,23 +432,61 @@ async function handleRequest(req, res) {
           "Missing path query (POSIX path under BambuStudio, e.g. users/name/process/x.json)",
       });
     }
+    const compareRaw = url.searchParams.get("compareWith");
+    const compareNorm =
+      compareRaw && String(compareRaw).trim()
+        ? normalizeRelativePath(String(compareRaw).trim())
+        : null;
     let normalized;
     try {
       normalized = normalizeRelativePath(rel);
       safeFsPath(STUDIO_ROOT, normalized);
+      if (compareNorm) {
+        if (!compareNorm.startsWith("system/BBL/filament/")) {
+          return sendJson(res, 400, {
+            error: "compareWith must be under system/BBL/filament/",
+          });
+        }
+        safeFsPath(STUDIO_ROOT, compareNorm);
+        if (!compareNorm.toLowerCase().endsWith(".json")) {
+          return sendJson(res, 400, {
+            error: "compareWith must be a .json file",
+          });
+        }
+      }
     } catch (e) {
       return sendJson(res, 400, {
         error: e instanceof Error ? e.message : "Invalid path",
       });
     }
     const kind = inferProfileKind(normalized);
+    if (compareNorm && kind !== "filament") {
+      return sendJson(res, 400, {
+        error: "compareWith is only valid for filament profiles",
+      });
+    }
     try {
-      const chain = await resolveInheritanceRecursive(
-        STUDIO_ROOT,
-        normalized,
-        kind,
-        new Set(),
-      );
+      let chain;
+      if (compareNorm) {
+        const customData = await readJsonFile(STUDIO_ROOT, normalized);
+        const compareChain = await resolveInheritanceRecursive(
+          STUDIO_ROOT,
+          compareNorm,
+          "filament",
+          new Set(),
+        );
+        chain = [
+          ...compareChain,
+          { relativePath: normalized, data: customData },
+        ];
+      } else {
+        chain = await resolveInheritanceRecursive(
+          STUDIO_ROOT,
+          normalized,
+          kind,
+          new Set(),
+        );
+      }
       return sendJson(res, 200, { chain });
     } catch (e) {
       return sendJson(res, 500, {
@@ -426,6 +502,7 @@ async function handleRequest(req, res) {
       "/api/meta",
       "/api/accounts",
       "/api/profiles",
+      "/api/system-filaments",
       "/api/resolve?path=",
     ],
   });

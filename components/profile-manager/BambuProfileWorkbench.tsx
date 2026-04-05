@@ -10,6 +10,7 @@ import {
   fetchApiProfilesForAccount,
   fetchApiProfilesFull,
   fetchApiResolve,
+  fetchApiSystemFilaments,
   getBambuApiBaseUrl,
 } from "@/lib/bambu/bambu-api-client";
 import type { UserProfileEntry } from "@/lib/bambu/list-user-profiles";
@@ -22,6 +23,7 @@ import { NativeSelectField } from "@/components/native-select-field";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslations } from "@/localization/context";
 
+import { CompareFilamentToolbar } from "./CompareFilamentToolbar";
 import { ProfileTreeGrid } from "./ProfileTreeGrid";
 
 type SidebarSection = "filament_custom" | "filament_standard" | "process";
@@ -74,6 +76,23 @@ export function BambuProfileWorkbench() {
   const [resolving, setResolving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeExtruderIndex, setActiveExtruderIndex] = React.useState(0);
+  const [compareFilamentPath, setCompareFilamentPath] = React.useState<
+    string | null
+  >(null);
+  const [systemFilamentPaths, setSystemFilamentPaths] = React.useState<
+    string[]
+  >([]);
+  const [loadingSystemFilaments, setLoadingSystemFilaments] =
+    React.useState(false);
+
+  const selectedProfile = React.useMemo(
+    () => profiles.find((p) => p.relativePath === selectedPath) ?? null,
+    [profiles, selectedPath],
+  );
+  const isProcessProfile = selectedProfile?.kind === "process";
+  const isCustomFilamentProfile =
+    selectedProfile?.kind === "filament" &&
+    selectedProfile.filamentCategory === "custom";
 
   const loadAccounts = React.useCallback(async () => {
     setError(null);
@@ -160,6 +179,32 @@ export function BambuProfileWorkbench() {
   }, [apiOk, selectedUsername, showAllAccounts, t]);
 
   React.useEffect(() => {
+    setCompareFilamentPath(null);
+  }, [selectedPath]);
+
+  React.useEffect(() => {
+    if (apiOk !== true || !isCustomFilamentProfile) {
+      setSystemFilamentPaths([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingSystemFilaments(true);
+    fetchApiSystemFilaments()
+      .then(({ paths }) => {
+        if (!cancelled) setSystemFilamentPaths(paths);
+      })
+      .catch(() => {
+        if (!cancelled) setSystemFilamentPaths([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSystemFilaments(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiOk, isCustomFilamentProfile]);
+
+  React.useEffect(() => {
     if (!selectedPath || apiOk !== true) {
       setChain([]);
       return;
@@ -167,7 +212,11 @@ export function BambuProfileWorkbench() {
     let cancelled = false;
     setResolving(true);
     setError(null);
-    fetchApiResolve(selectedPath)
+    const compareArg =
+      isCustomFilamentProfile && compareFilamentPath
+        ? compareFilamentPath
+        : null;
+    fetchApiResolve(selectedPath, compareArg)
       .then(({ chain: c }) => {
         if (!cancelled) setChain(c);
       })
@@ -187,7 +236,7 @@ export function BambuProfileWorkbench() {
     return () => {
       cancelled = true;
     };
-  }, [selectedPath, apiOk, t]);
+  }, [selectedPath, apiOk, t, isCustomFilamentProfile, compareFilamentPath]);
 
   const grouped = React.useMemo(() => {
     const m = new Map<string, UserProfileEntry[]>();
@@ -460,18 +509,31 @@ export function BambuProfileWorkbench() {
           </div>
         </aside>
 
-        <main className="relative z-0 min-h-0 min-w-0 flex-1 overflow-auto bg-background py-4 shadow-[0_2px_16px_-4px_rgb(15_23_42_/0.1),0_8px_28px_-12px_rgb(15_23_42_/0.06)] dark:shadow-[0_2px_18px_-3px_rgb(0_0_0/0.35),0_10px_32px_-14px_rgb(0_0_0/0.2)]">
-          {resolving ? (
-            <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
-              <Loader2 className="size-4 animate-spin" />
-              {t("main.resolving")}
-            </div>
-          ) : (
-            <ProfileTreeGrid
-              chain={chain}
-              activeExtruderIndex={activeExtruderIndex}
+        <main className="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background shadow-[0_2px_16px_-4px_rgb(15_23_42_/0.1),0_8px_28px_-12px_rgb(15_23_42_/0.06)] dark:shadow-[0_2px_18px_-3px_rgb(0_0_0/0.35),0_10px_32px_-14px_rgb(0_0_0/0.2)]">
+          {isCustomFilamentProfile && selectedPath && apiOk === true ? (
+            <CompareFilamentToolbar
+              systemFilamentPaths={systemFilamentPaths}
+              value={compareFilamentPath}
+              onChange={setCompareFilamentPath}
+              onClear={() => setCompareFilamentPath(null)}
+              disabled={resolving}
+              loadingList={loadingSystemFilaments}
             />
-          )}
+          ) : null}
+          <div className="min-h-0 flex-1 overflow-auto py-4">
+            {resolving ? (
+              <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
+                <Loader2 className="size-4 animate-spin" />
+                {t("main.resolving")}
+              </div>
+            ) : (
+              <ProfileTreeGrid
+                chain={chain}
+                activeExtruderIndex={activeExtruderIndex}
+                showAdvancedCheckbox={isProcessProfile}
+              />
+            )}
+          </div>
         </main>
       </div>
     </div>

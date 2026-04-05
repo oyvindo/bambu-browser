@@ -74,9 +74,17 @@ export async function fetchApiProfilesFull(): Promise<{
   return apiGet("/api/profiles?full=1");
 }
 
+export async function fetchApiSystemFilaments(): Promise<{ paths: string[] }> {
+  return apiGet("/api/system-filaments");
+}
+
 export async function fetchApiResolve(
   path: string,
+  compareWith?: string | null,
 ): Promise<{ chain: InheritanceChainLevel[] }> {
   const q = new URLSearchParams({ path });
+  if (compareWith && compareWith.trim()) {
+    q.set("compareWith", compareWith.trim());
+  }
   return apiGet(`/api/resolve?${q.toString()}`);
 }

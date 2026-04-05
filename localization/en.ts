@@ -58,6 +58,15 @@ export const messagesEn = {
     showAdvanced: "Show advanced parameters",
     columnProperty: "Property",
   },
+  compareFilament: {
+    label: "Compare to this filament",
+    placeholderClosed: "Select a system filament…",
+    searchPlaceholder: "Search filaments…",
+    loadingList: "Loading list…",
+    noMatches: "No matching filaments",
+    removeAria: "Remove",
+    removeTooltip: "Remove",
+  },
   chainColumn: {
     profile: "Profile",
     root: "Root",

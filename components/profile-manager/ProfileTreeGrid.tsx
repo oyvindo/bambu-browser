@@ -57,12 +57,15 @@ export type ProfileTreeGridProps = {
   /** Used when a JSON value is an array (e.g. dual / quad tool). Default 0. */
   activeExtruderIndex?: number;
   className?: string;
+  /** When false, hide “Show advanced parameters” (non-process profiles). */
+  showAdvancedCheckbox?: boolean;
 };
 
 export function ProfileTreeGrid({
   chain,
   activeExtruderIndex = 0,
   className,
+  showAdvancedCheckbox = true,
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
@@ -139,14 +142,16 @@ export function ProfileTreeGrid({
   return (
     <Tooltip.Provider delay={400}>
       <div className={cn("w-full space-y-3", className)}>
-        <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pl-4 text-xs">
-          <input
-            type="checkbox"
-            checked={showAdvanced}
-            onChange={(e) => setShowAdvanced(e.target.checked)}
-          />
-          {t("treeGrid.showAdvanced")}
-        </label>
+        {showAdvancedCheckbox ? (
+          <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pl-4 text-xs">
+            <input
+              type="checkbox"
+              checked={showAdvanced}
+              onChange={(e) => setShowAdvanced(e.target.checked)}
+            />
+            {t("treeGrid.showAdvanced")}
+          </label>
+        ) : null}
 
         <div className="w-full overflow-x-auto">
           <Table className="border-collapse">

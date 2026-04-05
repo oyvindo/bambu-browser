@@ -60,6 +60,15 @@ export const messagesNb = {
     showAdvanced: "Vis avanserte parametere",
     columnProperty: "Parameter",
   },
+  compareFilament: {
+    label: "Sammenlign med dette filamentet",
+    placeholderClosed: "Velg et systemfilament…",
+    searchPlaceholder: "Søk i filament…",
+    loadingList: "Laster liste…",
+    noMatches: "Ingen treff",
+    removeAria: "Fjern",
+    removeTooltip: "Fjern",
+  },
   chainColumn: {
     profile: "Profil",
     root: "Rot",
