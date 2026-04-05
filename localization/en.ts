@@ -59,7 +59,12 @@ export const messagesEn = {
     columnProperty: "Property",
   },
   compareFilament: {
-    label: "Compare to this filament",
+    materialsHeading: "Material",
+    brandsHeading: "Brand / line",
+    foldersHeading: "Folders",
+    rootToggle: "Root",
+    rootFolder: "Root folder",
+    label: "Compare to a filament",
     placeholderClosed: "Select a system filament…",
     searchPlaceholder: "Search filaments…",
     loadingList: "Loading list…",

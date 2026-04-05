@@ -272,12 +272,64 @@ async function listJsonInDir(dirAbs) {
   return names.sort();
 }
 
-/** Relative POSIX paths: system/BBL/filament/*.json (files only, not subfolders). */
-async function listSystemFilamentRelPaths(rootAbs) {
-  const dirAbs = path.join(rootAbs, "system", "BBL", "filament");
-  const files = await listJsonInDir(dirAbs);
+/** Hide Bambu shared layer templates `fdm_filament_*` only. */
+function isFdmFilamentInternalPreset(name) {
+  const base = name.replace(/\.json$/i, "");
+  return /^fdm_filament(?:_|$)/i.test(base);
+}
+
+function isSupportPresetFileName(name) {
+  return name.toLowerCase().includes("support");
+}
+
+function isUnderscorePresetFileName(name) {
+  return name.includes("_");
+}
+
+/**
+ * system/BBL/filament: root-level JSON + one level of subfolders (e.g. Polymaker / P1P).
+ * Returns { relativePath, folder, fileName }.
+ */
+async function listSystemFilamentEntries(rootAbs) {
   const base = "system/BBL/filament";
-  return files.map((f) => joinRel(base, f));
+  const dirAbs = path.join(rootAbs, "system", "BBL", "filament");
+  const out = [];
+  let ents;
+  try {
+    ents = await fs.readdir(dirAbs, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const e of ents) {
+    if (
+      e.isFile() &&
+      e.name.toLowerCase().endsWith(".json") &&
+      !isFdmFilamentInternalPreset(e.name) &&
+      !isSupportPresetFileName(e.name) &&
+      !isUnderscorePresetFileName(e.name)
+    ) {
+      out.push({
+        relativePath: joinRel(base, e.name),
+        folder: "",
+        fileName: e.name,
+      });
+    } else if (e.isDirectory()) {
+      const subAbs = path.join(dirAbs, e.name);
+      const files = await listJsonInDir(subAbs);
+      for (const f of files) {
+        if (isFdmFilamentInternalPreset(f)) continue;
+        if (isSupportPresetFileName(f)) continue;
+        if (isUnderscorePresetFileName(f)) continue;
+        out.push({
+          relativePath: joinRel(joinRel(base, e.name), f),
+          folder: e.name,
+          fileName: f,
+        });
+      }
+    }
+  }
+  out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  return out;
 }
 
 async function listProfilesForAccount(rootAbs, layout, account) {
@@ -414,8 +466,8 @@ async function handleRequest(req, res) {
 
   if (route === "/api/system-filaments") {
     try {
-      const paths = await listSystemFilamentRelPaths(STUDIO_ROOT);
-      return sendJson(res, 200, { paths });
+      const entries = await listSystemFilamentEntries(STUDIO_ROOT);
+      return sendJson(res, 200, { entries });
     } catch (e) {
       return sendJson(res, 500, {
         error:

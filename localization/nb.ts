@@ -61,7 +61,12 @@ export const messagesNb = {
     columnProperty: "Parameter",
   },
   compareFilament: {
-    label: "Sammenlign med dette filamentet",
+    materialsHeading: "Materiale",
+    brandsHeading: "Merke / serie",
+    foldersHeading: "Mapper",
+    rootToggle: "Rot",
+    rootFolder: "Rotmappe",
+    label: "Sammenlign med et filament",
     placeholderClosed: "Velg et systemfilament…",
     searchPlaceholder: "Søk i filament…",
     loadingList: "Laster liste…",

@@ -1,5 +1,6 @@
 import type { InheritanceChainLevel } from "./resolver";
 import type { UserProfileEntry } from "./list-user-profiles";
+import type { SystemFilamentEntry } from "./system-filament-filters";
 
 export function getBambuApiBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_BAMBU_API_URL;
@@ -74,9 +75,13 @@ export async function fetchApiProfilesFull(): Promise<{
   return apiGet("/api/profiles?full=1");
 }
 
-export async function fetchApiSystemFilaments(): Promise<{ paths: string[] }> {
+export type ApiSystemFilaments = { entries: SystemFilamentEntry[] };
+
+export async function fetchApiSystemFilaments(): Promise<ApiSystemFilaments> {
   return apiGet("/api/system-filaments");
 }
+
+export type { SystemFilamentEntry } from "./system-filament-filters";
 
 export async function fetchApiResolve(
   path: string,
