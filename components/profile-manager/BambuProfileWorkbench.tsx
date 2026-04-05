@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils/index";
 import { Loader2, RefreshCw, Server } from "lucide-react";
 
 import { LanguageSelect } from "@/components/language-select";
+import { NativeSelectField } from "@/components/native-select-field";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslations } from "@/localization/context";
 
@@ -365,22 +366,26 @@ export function BambuProfileWorkbench() {
                 {t("controls.bambuAccount")}
               </span>
               {!showAllAccounts ? (
-                <select
-                  className="border-input bg-background h-9 w-full max-w-full rounded-md border px-2 text-sm"
-                  value={selectedUsername ?? ""}
-                  onChange={(e) => setSelectedUsername(e.target.value || null)}
-                  disabled={apiOk !== true || accountNames.length === 0}
-                >
-                  {accountNames.length === 0 ? (
-                    <option value="">{t("controls.noAccounts")}</option>
-                  ) : (
-                    accountNames.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))
-                  )}
-                </select>
+                <NativeSelectField className="w-full max-w-full">
+                  <select
+                    className="border-input bg-background h-9 w-full max-w-full appearance-none rounded-md border px-2 pr-8 text-sm"
+                    value={selectedUsername ?? ""}
+                    onChange={(e) =>
+                      setSelectedUsername(e.target.value || null)
+                    }
+                    disabled={apiOk !== true || accountNames.length === 0}
+                  >
+                    {accountNames.length === 0 ? (
+                      <option value="">{t("controls.noAccounts")}</option>
+                    ) : (
+                      accountNames.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </NativeSelectField>
               ) : (
                 <p className="text-muted-foreground text-xs leading-snug">
                   {t("controls.allAccountsHint")}
