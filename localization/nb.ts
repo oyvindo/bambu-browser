@@ -47,6 +47,9 @@ export const messagesNb = {
     loading: "Laster…",
     emptyProfiles:
       "Ingen JSON-profiler funnet. Sjekk BambuStudio-sti på serveren og kontomapper.",
+    groupCustomFilaments: "Egendefinerte filament",
+    groupFilament: "Filament",
+    groupProcess: "Prosess",
   },
   main: {
     resolving: "Løser arv…",

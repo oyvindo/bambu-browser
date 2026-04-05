@@ -45,6 +45,9 @@ export const messagesEn = {
     loading: "Loading…",
     emptyProfiles:
       "No JSON profiles found. Check BambuStudio path on the server and account folders.",
+    groupCustomFilaments: "Custom filaments",
+    groupFilament: "Filament",
+    groupProcess: "Process",
   },
   main: {
     resolving: "Resolving inheritance…",

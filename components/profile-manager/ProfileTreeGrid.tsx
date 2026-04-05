@@ -19,6 +19,7 @@ import {
 } from "@/lib/bambu/chain-display";
 import { useTranslations } from "@/localization/context";
 import {
+  BAMBU_FILAMENT_UI_TREE,
   BAMBU_PROCESS_UI_TREE,
   formatBambuMappedValue,
   propertyRowTitle,
@@ -81,25 +82,36 @@ export function ProfileTreeGrid({
   );
   const colCount = 1 + columns.length;
 
+  const isFilamentProfile = React.useMemo(() => {
+    const last = chain[chain.length - 1];
+    if (!last) return false;
+    return last.relativePath.includes("/filament/");
+  }, [chain]);
+
+  const uiTree = isFilamentProfile
+    ? BAMBU_FILAMENT_UI_TREE
+    : BAMBU_PROCESS_UI_TREE;
+
   const [showAdvanced, setShowAdvanced] = React.useState(true);
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
-    () => {
-      const init: Record<string, boolean> = {};
-      for (const g of BAMBU_PROCESS_UI_TREE) init[g.id] = true;
-      return init;
-    },
+    {},
   );
 
   const [openSubgroups, setOpenSubgroups] = React.useState<
     Record<string, boolean>
-  >(() => {
-    const init: Record<string, boolean> = {};
-    for (const g of BAMBU_PROCESS_UI_TREE) {
-      for (const sg of g.subgroups) init[sg.id] = true;
+  >({});
+
+  React.useEffect(() => {
+    const initG: Record<string, boolean> = {};
+    const initSg: Record<string, boolean> = {};
+    for (const g of uiTree) {
+      initG[g.id] = true;
+      for (const sg of g.subgroups) initSg[sg.id] = true;
     }
-    return init;
-  });
+    setOpenGroups(initG);
+    setOpenSubgroups(initSg);
+  }, [isFilamentProfile, uiTree]);
 
   const toggleGroup = React.useCallback((id: string) => {
     setOpenGroups((s) => ({ ...s, [id]: !s[id] }));
@@ -165,10 +177,9 @@ export function ProfileTreeGrid({
               </TableRow>
             </TableHeader>
             <TableBody className="[&_tr]:border-0">
-              {BAMBU_PROCESS_UI_TREE.map((group, groupIndex) => {
+              {uiTree.map((group, groupIndex) => {
                 const groupOpen = openGroups[group.id] !== false;
-                const isLastGroup =
-                  groupIndex === BAMBU_PROCESS_UI_TREE.length - 1;
+                const isLastGroup = groupIndex === uiTree.length - 1;
                 return (
                   <React.Fragment key={group.id}>
                     <TableRow className="border-0 bg-slate-100/90 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/65">

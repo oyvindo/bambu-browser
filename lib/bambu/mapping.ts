@@ -7,12 +7,21 @@ export type BambuValueUnit =
   | "mm"
   | "mm/s"
   | "mm/s²"
+  | "g/s²"
   | "%"
   | "°"
+  | "°C"
   | "count"
   | "string"
   | "enum"
-  | "boolean";
+  | "boolean"
+  | "g/cm³"
+  | "money/kg"
+  | "mm³"
+  | "mm³/s"
+  | "s"
+  | "layers"
+  | "mm/%";
 
 export type BambuPropertyRowDef = {
   key: string;
@@ -314,13 +323,24 @@ export const BAMBU_PROCESS_UI_MAP = BAMBU_PROCESS_UI_TREE;
 /** Alias for docs / external references */
 export const BAMBU_MAPPING = BAMBU_PROCESS_UI_TREE;
 
+export { BAMBU_FILAMENT_UI_TREE } from "./mapping-filament";
+
 const UNITS_IN_TITLE: ReadonlySet<string> = new Set([
   "mm",
   "mm/s",
   "mm/s²",
+  "g/s²",
   "%",
   "°",
+  "°C",
   "count",
+  "g/cm³",
+  "money/kg",
+  "mm³",
+  "mm³/s",
+  "s",
+  "layers",
+  "mm/%",
 ]);
 
 /** Row title: ui label plus unit in parentheses when it is a physical/count unit. */
@@ -373,15 +393,34 @@ export function formatBambuMappedValue(
     return s;
   }
 
-  if (unit === "%") {
+  if (unit === "%" || unit === "mm/%") {
     if (s.endsWith("%")) return s;
     return `${s}%`;
   }
 
-  if (unit === "mm" || unit === "mm/s" || unit === "mm/s²" || unit === "°") {
+  if (
+    unit === "mm" ||
+    unit === "mm/s" ||
+    unit === "mm/s²" ||
+    unit === "°" ||
+    unit === "°C"
+  ) {
     const suffix = unit === "mm/s²" ? "mm/s²" : unit;
     if (s.toLowerCase().endsWith(suffix.toLowerCase())) return s;
     return `${s} ${suffix}`;
+  }
+
+  if (
+    unit === "g/cm³" ||
+    unit === "money/kg" ||
+    unit === "mm³" ||
+    unit === "mm³/s" ||
+    unit === "s" ||
+    unit === "layers" ||
+    unit === "g/s²"
+  ) {
+    if (s.toLowerCase().endsWith(unit.toLowerCase())) return s;
+    return `${s} ${unit}`;
   }
 
   if (unit === "count") {

@@ -43,6 +43,21 @@ function normalizeRelativePath(p) {
     .replace(/^\/+/, "");
 }
 
+function normalizeInheritsReference(raw) {
+  let t = String(raw).trim().replace(/\\/g, "/");
+  const lower = t.toLowerCase();
+  const needle = "bambustudio/";
+  const idx = lower.lastIndexOf(needle);
+  if (idx !== -1) {
+    t = t.slice(idx + needle.length);
+  }
+  return normalizeRelativePath(t);
+}
+
+function isUnderFilamentBase(relPath) {
+  return normalizeRelativePath(relPath).includes("/filament/base/");
+}
+
 function dirnameRel(relPath) {
   const parts = normalizeRelativePath(relPath).split("/").filter(Boolean);
   parts.pop();
@@ -124,22 +139,27 @@ async function resolveParentRelativePath(
   kind,
 ) {
   const trimmed = inheritsRaw.trim();
-  const currentDir = dirnameRel(currentPath);
+  const normalizedPath = normalizeRelativePath(currentPath);
+  const currentDir = dirnameRel(normalizedPath);
   const systemDir = systemDirForKind(kind);
+  const ref = normalizeInheritsReference(trimmed);
 
-  if (trimmed.includes("/")) {
-    const fromCurrent = normalizeRelativePath(joinRel(currentDir, trimmed));
+  if (ref.includes("/")) {
+    const fromCurrent = normalizeRelativePath(joinRel(currentDir, ref));
     if (await fileExists(rootAbs, fromCurrent)) return fromCurrent;
-    const fromRoot = normalizeRelativePath(trimmed);
+    const fromRoot = ref;
     if (await fileExists(rootAbs, fromRoot)) return fromRoot;
   }
 
-  const fileName = normalizeInheritsFileName(trimmed);
+  const fileName = normalizeInheritsFileName(ref);
   const searchDirs = [];
   const add = (d) => {
     if (d && !searchDirs.includes(d)) searchDirs.push(d);
   };
   add(currentDir);
+  if (kind === "filament" && !isUnderFilamentBase(currentPath)) {
+    add(joinRel(currentDir, "base"));
+  }
   add(systemDir);
 
   for (const dir of searchDirs) {
@@ -252,7 +272,25 @@ async function listProfilesForAccount(rootAbs, layout, account) {
         kind,
         relativePath: `${prefix}/${fileName}`,
         fileName,
+        ...(kind === "filament" ? { filamentCategory: "standard" } : {}),
       });
+    }
+    if (sub === "filament") {
+      const baseAbs = path.join(dirAbs, "base");
+      const baseFiles = await listJsonInDir(baseAbs);
+      const basePrefix =
+        layout === "users"
+          ? `users/${account}/filament/base`
+          : `user/${account}/filament/base`;
+      for (const fileName of baseFiles) {
+        out.push({
+          userId: account,
+          kind: "filament",
+          relativePath: `${basePrefix}/${fileName}`,
+          fileName,
+          filamentCategory: "custom",
+        });
+      }
     }
   }
   return out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));

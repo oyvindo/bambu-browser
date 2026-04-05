@@ -2,12 +2,17 @@ import { directoryEntries } from "./fs-dir-entries";
 import { listUserAccountFolderNames } from "./profile-fs-access";
 import type { ProfileKind } from "./resolver";
 
+/** User filament presets in `filament/` vs full copies in `filament/base/`. Null for process profiles. */
+export type FilamentCategory = "standard" | "custom";
+
 export type UserProfileEntry = {
   userId: string;
   kind: ProfileKind;
   /** Logical path for the resolver, e.g. users/name/process/foo.json or user/123/process/foo.json */
   relativePath: string;
   fileName: string;
+  /** Set when `kind === "filament"`: standard presets vs custom base copies. */
+  filamentCategory?: FilamentCategory | null;
 };
 
 /**
@@ -37,7 +42,28 @@ export async function listProfileEntriesForUser(
           kind,
           relativePath: `users/${username}/${sub}/${fileName}`,
           fileName,
+          ...(kind === "filament"
+            ? { filamentCategory: "standard" as const }
+            : {}),
         });
+      }
+      if (sub === "filament") {
+        try {
+          const baseDir = await subDir.getDirectoryHandle("base");
+          for await (const [fileName, fh] of directoryEntries(baseDir)) {
+            if (fh.kind !== "file") continue;
+            if (!fileName.toLowerCase().endsWith(".json")) continue;
+            out.push({
+              userId: username,
+              kind: "filament",
+              relativePath: `users/${username}/filament/base/${fileName}`,
+              fileName,
+              filamentCategory: "custom",
+            });
+          }
+        } catch {
+          // no filament/base
+        }
       }
     } catch {
       // folder missing
@@ -96,7 +122,28 @@ async function listLegacyUserFolderProfiles(
             kind,
             relativePath: `user/${userId}/${sub}/${fileName}`,
             fileName,
+            ...(kind === "filament"
+              ? { filamentCategory: "standard" as const }
+              : {}),
           });
+        }
+        if (sub === "filament") {
+          try {
+            const baseDir = await subDir.getDirectoryHandle("base");
+            for await (const [fileName, fh] of directoryEntries(baseDir)) {
+              if (fh.kind !== "file") continue;
+              if (!fileName.toLowerCase().endsWith(".json")) continue;
+              out.push({
+                userId,
+                kind: "filament",
+                relativePath: `user/${userId}/filament/base/${fileName}`,
+                fileName,
+                filamentCategory: "custom",
+              });
+            }
+          } catch {
+            // no filament/base
+          }
         }
       } catch {
         // folder missing

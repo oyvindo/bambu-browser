@@ -30,8 +30,7 @@ async function apiGet<T>(path: string): Promise<T> {
     throw new Error(`API returned non-JSON (${res.status})`);
   }
   if (!res.ok) {
-    const err =
-      data && typeof data === "object" && data !== null && "error" in data;
+    const err = data && typeof data === "object" && true && "error" in data;
     const msg = err
       ? String((data as { error: string }).error)
       : `HTTP ${res.status}`;

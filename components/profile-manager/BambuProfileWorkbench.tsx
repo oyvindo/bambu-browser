@@ -23,12 +23,35 @@ import { useTranslations } from "@/localization/context";
 
 import { ProfileTreeGrid } from "./ProfileTreeGrid";
 
-/** Sidebar group label is `kind` or `userId · kind`. */
-function profileGroupKind(label: string): "filament" | "process" {
-  const tail = label.includes(" · ")
-    ? label.slice(label.lastIndexOf(" · ") + 3)
-    : label;
-  return tail === "filament" ? "filament" : "process";
+type SidebarSection = "filament_custom" | "filament_standard" | "process";
+
+const SECTION_ORDER: Record<SidebarSection, number> = {
+  filament_custom: 0,
+  filament_standard: 1,
+  process: 2,
+};
+
+function sidebarSectionForProfile(p: UserProfileEntry): SidebarSection {
+  if (p.kind === "process") return "process";
+  if (p.filamentCategory === "custom") return "filament_custom";
+  return "filament_standard";
+}
+
+const GROUP_KEY_SEP = "\u0000";
+
+function parseGroupKey(
+  key: string,
+  showAllAccounts: boolean,
+): { userId: string | null; section: SidebarSection } {
+  if (!showAllAccounts) {
+    return { userId: null, section: key as SidebarSection };
+  }
+  const i = key.indexOf(GROUP_KEY_SEP);
+  if (i === -1) return { userId: null, section: key as SidebarSection };
+  return {
+    userId: key.slice(0, i),
+    section: key.slice(i + 1) as SidebarSection,
+  };
 }
 
 export function BambuProfileWorkbench() {
@@ -168,22 +191,47 @@ export function BambuProfileWorkbench() {
   const grouped = React.useMemo(() => {
     const m = new Map<string, UserProfileEntry[]>();
     for (const p of profiles) {
-      const key = showAllAccounts ? `${p.userId} · ${p.kind}` : `${p.kind}`;
+      const section = sidebarSectionForProfile(p);
+      const key = showAllAccounts
+        ? `${p.userId}${GROUP_KEY_SEP}${section}`
+        : section;
       const arr = m.get(key) ?? [];
       arr.push(p);
       m.set(key, arr);
     }
     return Array.from(m.entries()).sort(([a], [b]) => {
-      const ka = profileGroupKind(a);
-      const kb = profileGroupKind(b);
-      if (ka !== kb) return ka === "filament" ? -1 : 1;
-      return a.localeCompare(b);
+      const pa = parseGroupKey(a, showAllAccounts);
+      const pb = parseGroupKey(b, showAllAccounts);
+      if (showAllAccounts) {
+        if (pa.userId !== pb.userId) {
+          return (pa.userId ?? "").localeCompare(pb.userId ?? "");
+        }
+      }
+      return SECTION_ORDER[pa.section] - SECTION_ORDER[pb.section];
     });
   }, [profiles, showAllAccounts]);
 
   const firstProcessGroupIndex = React.useMemo(
-    () => grouped.findIndex(([label]) => profileGroupKind(label) === "process"),
-    [grouped],
+    () =>
+      grouped.findIndex(([key]) => {
+        const { section } = parseGroupKey(key, showAllAccounts);
+        return section === "process";
+      }),
+    [grouped, showAllAccounts],
+  );
+
+  const sidebarGroupHeading = React.useCallback(
+    (mapKey: string) => {
+      const { userId, section } = parseGroupKey(mapKey, showAllAccounts);
+      const label =
+        section === "filament_custom"
+          ? t("sidebar.groupCustomFilaments")
+          : section === "filament_standard"
+            ? t("sidebar.groupFilament")
+            : t("sidebar.groupProcess");
+      return showAllAccounts && userId ? `${userId} · ${label}` : label;
+    },
+    [showAllAccounts, t],
   );
 
   return (
@@ -371,8 +419,8 @@ export function BambuProfileWorkbench() {
               </p>
             ) : (
               <ul className="flex flex-col gap-3">
-                {grouped.map(([label, items], index) => (
-                  <li key={label}>
+                {grouped.map(([mapKey, items], index) => (
+                  <li key={mapKey}>
                     {index === firstProcessGroupIndex &&
                     firstProcessGroupIndex > 0 ? (
                       <div
@@ -381,7 +429,7 @@ export function BambuProfileWorkbench() {
                       />
                     ) : null}
                     <div className="text-muted-foreground mb-1 px-1 text-[11px] font-semibold tracking-wide uppercase">
-                      {label}
+                      {sidebarGroupHeading(mapKey)}
                     </div>
                     <ul className="flex flex-col gap-0.5">
                       {items.map((p) => (

@@ -31,7 +31,7 @@ export type SplitUsersAccessParams = {
 
 /**
  * User picked `.../BambuStudio/users` and `.../system/BBL/process` separately.
- * Logical paths: `users/<username>/process|filament/<file>`, `system/BBL/process|filament/<file>`.
+ * Logical paths: `users/<username>/process|filament/<file>`, `users/.../filament/base/<file>`, `system/BBL/process|filament/<file>`.
  */
 export function createSplitUsersAccess(
   params: SplitUsersAccessParams,
@@ -55,6 +55,28 @@ export function createSplitUsersAccess(
     }
   }
 
+  async function getUserFilamentPath(
+    relativeToFilament: string,
+  ): Promise<FileSystemFileHandle | null> {
+    if (!relativeToFilament || relativeToFilament.includes("..")) {
+      return null;
+    }
+    if (!relativeToFilament.includes("/")) {
+      return getUserSubFile("filament", relativeToFilament);
+    }
+    const m = /^base\/([^/]+)$/.exec(relativeToFilament);
+    if (!m) return null;
+    const baseName = m[1]!;
+    try {
+      const account = await usersDir.getDirectoryHandle(username);
+      const filament = await account.getDirectoryHandle("filament");
+      const baseDir = await filament.getDirectoryHandle("base");
+      return await baseDir.getFileHandle(baseName);
+    } catch {
+      return null;
+    }
+  }
+
   async function existsImpl(p: string): Promise<boolean> {
     const path = normalizeRelativePath(p);
     if (path.startsWith(userProcessPrefix)) {
@@ -63,9 +85,9 @@ export function createSplitUsersAccess(
       return (await getUserSubFile("process", name)) !== null;
     }
     if (path.startsWith(userFilamentPrefix)) {
-      const name = path.slice(userFilamentPrefix.length);
-      if (!name || name.includes("/")) return false;
-      return (await getUserSubFile("filament", name)) !== null;
+      const rel = path.slice(userFilamentPrefix.length);
+      if (!rel) return false;
+      return (await getUserFilamentPath(rel)) !== null;
     }
     if (path.startsWith(sysProcessPrefix)) {
       const name = path.slice(sysProcessPrefix.length);
@@ -104,8 +126,8 @@ export function createSplitUsersAccess(
         return readJsonFromFileHandle(h, normalized);
       }
       if (normalized.startsWith(userFilamentPrefix)) {
-        const name = normalized.slice(userFilamentPrefix.length);
-        const h = await getUserSubFile("filament", name);
+        const rel = normalized.slice(userFilamentPrefix.length);
+        const h = await getUserFilamentPath(rel);
         if (!h) throw new Error(`Profile not found: ${normalized}`);
         return readJsonFromFileHandle(h, normalized);
       }

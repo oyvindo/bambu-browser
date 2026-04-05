@@ -3,7 +3,12 @@
  * File System Access API. Import from client components only.
  */
 
-import { dirname, joinPath, normalizeRelativePath } from "./fs-path-utils";
+import {
+  dirname,
+  joinPath,
+  normalizeInheritsReference,
+  normalizeRelativePath,
+} from "./fs-path-utils";
 import type { ProfileFsAccess } from "./profile-fs-access";
 import {
   createSplitUsersAccess,
@@ -52,6 +57,10 @@ function getInheritsField(data: Record<string, unknown>): string | null {
   return t.length > 0 ? t : null;
 }
 
+function isUnderFilamentBase(relPath: string): boolean {
+  return normalizeRelativePath(relPath).includes("/filament/base/");
+}
+
 async function resolveParentRelativePath(
   access: ProfileFsAccess,
   currentPath: string,
@@ -59,22 +68,27 @@ async function resolveParentRelativePath(
   kind: ProfileKind,
 ): Promise<string | null> {
   const trimmed = inheritsRaw.trim();
-  const currentDir = dirname(normalizeRelativePath(currentPath));
+  const normalizedPath = normalizeRelativePath(currentPath);
+  const currentDir = dirname(normalizedPath);
   const systemDir = systemDirForKind(kind);
+  const ref = normalizeInheritsReference(trimmed);
 
-  if (trimmed.includes("/")) {
-    const fromCurrent = normalizeRelativePath(joinPath(currentDir, trimmed));
+  if (ref.includes("/")) {
+    const fromCurrent = normalizeRelativePath(joinPath(currentDir, ref));
     if (await access.exists(fromCurrent)) return fromCurrent;
-    const fromRoot = normalizeRelativePath(trimmed);
+    const fromRoot = ref;
     if (await access.exists(fromRoot)) return fromRoot;
   }
 
-  const fileName = normalizeInheritsFileName(trimmed);
+  const fileName = normalizeInheritsFileName(ref);
   const searchDirs: string[] = [];
   const add = (d: string) => {
     if (d && !searchDirs.includes(d)) searchDirs.push(d);
   };
   add(currentDir);
+  if (kind === "filament" && !isUnderFilamentBase(currentPath)) {
+    add(joinPath(currentDir, "base"));
+  }
   add(systemDir);
 
   for (const dir of searchDirs) {

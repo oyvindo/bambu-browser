@@ -6,6 +6,21 @@ export function normalizeRelativePath(path: string): string {
     .replace(/^\/+/, "");
 }
 
+/**
+ * Turn absolute or mixed `inherits` strings into paths under the BambuStudio root
+ * (e.g. macOS `.../BambuStudio/system/BBL/filament/x.json` → `system/BBL/filament/x.json`).
+ */
+export function normalizeInheritsReference(raw: string): string {
+  let t = raw.trim().replace(/\\/g, "/");
+  const lower = t.toLowerCase();
+  const needle = "bambustudio/";
+  const idx = lower.lastIndexOf(needle);
+  if (idx !== -1) {
+    t = t.slice(idx + needle.length);
+  }
+  return normalizeRelativePath(t);
+}
+
 export function splitPath(path: string): string[] {
   return normalizeRelativePath(path).split("/").filter(Boolean);
 }
