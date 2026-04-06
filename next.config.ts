@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Øyvind Øyen
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

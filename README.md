@@ -112,3 +112,7 @@ Versions live in `package.json`; bump `next` and `eslint-config-next` together i
 - `localization/` — Translations and `LocaleProvider`
 - `types/` — Shared types where needed
 - `server.js` — Local read-only HTTP API over the Bambu Studio data directory
+
+## License
+
+This project is open source under the [MIT License](LICENSE). You may use, modify, and distribute it under those terms; see the license file for the full text and copyright notice.

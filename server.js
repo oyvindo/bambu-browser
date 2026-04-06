@@ -1,4 +1,7 @@
 /**
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Øyvind Øyen
+ *
  * Local BambuStudio JSON API (Node fs — bypasses browser sandbox on ~/Library).
  *
  * Usage:
