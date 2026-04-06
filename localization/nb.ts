@@ -25,13 +25,15 @@ export const messagesNb = {
     modalTitle: "Slik laster du Bambu Studio-filene",
     modalIntro:
       "Appen leser bare filer på din maskin. Velg én av metodene under – du kan bytte senere fra topplinjen.",
-    browserSectionTitle: "Mappe i nettleseren (prøv denne først)",
+    browserSectionTitle: "Mappe i nettleseren (uten Node hvis dette virker)",
     browserSectionBody:
-      "Gi lesetilgang til datamappen til Bambu Studio. Ingenting lastes opp; filene blir på enheten. Du må kanskje bruke «Gå til mappe» for å nå stien under.",
+      "Gi lesetilgang til datamappen til Bambu Studio. Ingenting lastes opp; filene blir på enheten. Siden må kjøre over HTTPS (f.eks. Vercel) eller localhost for at nettleseren tillater mappevelger — vanlig http://192.168… fungerer ikke.",
+    browserMacLibraryWarning:
+      "På macOS blokkerer Chrome ofte Library-stien («kan ikke åpne denne mappen … inneholder systemfiler»). Bruk Lokalt API under for å lese den ekte mappa med Node, eller kopier BambuStudio-mappa til Skrivebord eller Dokumenter og velg kopien her.",
     chooseFolder: "Velg Bambu Studio-mappe…",
     pickingFolder: "Åpner filvelger…",
     fsNotSupported:
-      "Nettleseren støtter ikke å velge mappe på denne måten. Bruk lokalt API (Chrome eller Edge på PC fungerer vanligvis).",
+      "Nettleseren støtter ikke å velge mappe på denne måten (ofte fordi siden ikke er på HTTPS eller localhost). Bruk lokalt API, eller åpne appen på https://… eller http://localhost.",
     apiSectionTitle: "Lokalt API (Node)",
     apiSectionBody:
       "Denne modusen bruker en liten HTTP-server fra det åpne prosjektet bambu-browser. Kjør den på samme maskin som Bambu Studio-dataene dine ligger på.",

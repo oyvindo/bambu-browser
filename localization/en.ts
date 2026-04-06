@@ -23,13 +23,15 @@ export const messagesEn = {
     modalTitle: "How to load your Bambu Studio files",
     modalIntro:
       "This app only reads files on your computer. Pick one of the two ways below — you can switch later from the header.",
-    browserSectionTitle: "Browser folder (recommended on first try)",
+    browserSectionTitle: "Browser folder (no Node if this works)",
     browserSectionBody:
-      "Grant read access to your Bambu Studio data folder. Nothing is uploaded; files stay on your device. You may need to use “Go to folder” to reach the path shown below.",
+      "Grant read access to your Bambu Studio data folder. Nothing is uploaded; files stay on your device. The page must be served over HTTPS (e.g. Vercel) or localhost so the browser allows the folder picker — plain http://192.168… will not.",
+    browserMacLibraryWarning:
+      "On macOS, Chrome often blocks that Library path (“can’t open this folder … contains system files”). Use Local API below to read the real folder with Node, or copy your BambuStudio folder to Desktop or Documents and choose the copy here.",
     chooseFolder: "Choose Bambu Studio folder…",
     pickingFolder: "Opening picker…",
     fsNotSupported:
-      "Your browser does not support choosing a folder this way. Use the local API section instead (Chrome or Edge on desktop usually work).",
+      "Your browser does not support choosing a folder this way (often because the site is not on HTTPS or localhost). Use the local API section instead, or open the app at https://… or http://localhost.",
     apiSectionTitle: "Local API (Node)",
     apiSectionBody:
       "This mode uses a small HTTP server from the open-source bambu-browser project. Run it on the same computer that has your Bambu Studio files.",

@@ -88,6 +88,11 @@ export function DataSourceModal({
               </p>
               <p className="text-muted-foreground mt-1">{hints.tip}</p>
             </div>
+            {hints.platformLabel === "macOS" ? (
+              <p className="border-amber-500/40 bg-amber-500/10 text-foreground rounded-md border px-3 py-2 text-xs leading-relaxed">
+                {t("dataSource.browserMacLibraryWarning")}
+              </p>
+            ) : null}
             {!fsSupported ? (
               <p className="text-destructive text-xs">
                 {t("dataSource.fsNotSupported")}

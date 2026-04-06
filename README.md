@@ -1,6 +1,6 @@
 # Bambu browser
 
-A small **local** web app for exploring **Bambu Studio** user profiles: browse accounts, open profile trees, and inspect inheritance chains from the JSON and preset files Studio keeps on disk. The UI is a Next.js application; a companion **Node HTTP server** reads your Bambu Studio data directory with normal filesystem APIs, which browsers cannot do on their own.
+A small **local** web app for exploring **Bambu Studio** user profiles: browse accounts, open profile trees, and inspect inheritance chains from the JSON and preset files Studio keeps on disk. The UI is a Next.js application. You can load data either with a companion **Node HTTP server** (`server.js`, normal filesystem access) or, where the browser allows it, by **choosing the Bambu Studio folder** in the page (see limitations below).
 
 ## What it does
 
@@ -70,6 +70,14 @@ Bambu Studio stores machine, process, and filament presets under an application-
 - The API enables **broad CORS** so the browser can call it from your dev origin. Combined with filesystem access under the configured root, exposing this server on a **LAN IP or hostname** would let **any site or client that can reach the port** request that data. **Do not** bind it to `0.0.0.0` or deploy it where untrusted networks can reach it unless you fully understand and accept that risk.
 - The Next.js app and browser features involved (secure context, optional file-picker flows) are **designed around local development** on `http://localhost` / `http://127.0.0.1`. Running the stack elsewhere may hit browser or mixed-content restrictions.
 
+### Browser folder (File System Access)
+
+The UI can read profiles **without** `npm run api` if you use **Choose Bambu Studio folder** in a supported browser. Be aware of the following:
+
+- **Secure context:** The folder picker only works on **`https://` origins** (e.g. a Vercel deploy) or **`http://localhost` / `127.0.0.1`**. Opening the app as **`http://192.168.x.x:3000`** is _not_ a secure context, so the picker is unavailable there.
+- **macOS + `~/Library/...`:** Browsers such as Chrome often **refuse** the real Bambu Studio path under **Library/Application Support** (“contains system files”). Use **Local API** (`server.js`) to read that location, or **copy** the `BambuStudio` folder to somewhere like Desktop or Documents and select the copy in the picker.
+- **Hosted UI + local API:** If you use a **public HTTPS** site (e.g. Vercel) together with **`http://127.0.0.1:3847`**, Chrome may prompt for permission to **access local network / device**; you typically need **Allow** for the API calls to succeed.
+
 Treat this repository as a **personal, localhost-only utility**. If you need remote access, use an explicit, reviewed approach (VPN, SSH tunnel, or a proper authenticated backend), not an open local API.
 
 ## Technical layout
@@ -80,7 +88,7 @@ The app is split into **two processes**:
 
 1. **Next.js client** (`npm run dev` / `build` + `start`) — React 19 with the App Router (`app/`). The home page (`app/page.tsx`) renders the `BambuProfileWorkbench`, which loads data from the local API URL (`NEXT_PUBLIC_BAMBU_API_URL`, default `http://127.0.0.1:3847`).
 
-2. **Local HTTP API** (`server.js`, started with `npm run api`) — plain Node with `http` and `fs/promises`. It reads the Bambu Studio directory on disk, validates paths under the configured root, and returns JSON. The browser cannot do this on its own without a file-picker API or similar, so this process is required for normal development.
+2. **Local HTTP API** (`server.js`, started with `npm run api`) — plain Node with `http` and `fs/promises`. It reads the Bambu Studio directory on disk, validates paths under the configured root, and returns JSON. Alternatively, the same data can be read in the browser via the **File System Access** folder picker when the page runs in a **secure context** (see limitations above); the local API remains the reliable option for paths such as **macOS Library** that the picker may block.
 
 **`lib/bambu/`** holds client-side domain logic: API client (`bambu-api-client.ts`), profile and inheritance resolution (`resolver.ts`, `mapping.ts`), helpers for displaying inheritance chains (`chain-display.ts`), file-handling / validation helpers where needed, and related types. **`components/profile-manager/`** is the profile tree and toolbar UI (for example `ProfileTreeGrid`, `BambuProfileWorkbench`). **`components/ui/`** is reusable primitives (buttons, table, collapsible). **`localization/`** handles locales (context, strings, process-parameter tooltips). **`components/providers.tsx`** wires `next-themes` (light/dark) and the locale provider around the app. Fonts and global styles live in `app/layout.tsx` and `app/globals.css`.
 
