@@ -75,7 +75,8 @@ export const messagesEn = {
     showOnlyChanged: "Show only changed filament values",
   },
   chainColumn: {
-    profile: "Profile",
+    profileFilament: "Filament profile",
+    profileProcess: "Process profile",
     root: "Root",
     parent: "Parent",
     level: "Level {n}",

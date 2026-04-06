@@ -82,7 +82,7 @@ export function BambuProfileWorkbench() {
   const [compareFilamentPath, setCompareFilamentPath] = useState<string | null>(
     null,
   );
-  const [showOnlyChangedProcess, setShowOnlyChangedProcess] = useState(false);
+  const [showOnlyChangedProcess, setShowOnlyChangedProcess] = useState(true);
   const [showOnlyChangedFilament, setShowOnlyChangedFilament] = useState(true);
   const [systemFilamentEntries, setSystemFilamentEntries] = useState<
     SystemFilamentEntry[]
@@ -184,7 +184,7 @@ export function BambuProfileWorkbench() {
 
   useEffect(() => {
     setCompareFilamentPath(null);
-    setShowOnlyChangedProcess(false);
+    setShowOnlyChangedProcess(true);
     setShowOnlyChangedFilament(true);
   }, [selectedPath]);
 
@@ -363,12 +363,12 @@ export function BambuProfileWorkbench() {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <aside
           className={cn(
-            "border-border bg-background flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-b px-2 md:w-72 md:border-r md:border-b-0",
+            "border-border bg-background flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-b md:w-72 md:border-r md:border-b-0",
             "max-h-[40vh] md:h-full md:max-h-none",
             "md:shadow-[2px_0_18px_-4px_rgb(15_23_42_/0.09)] dark:md:shadow-[2px_0_20px_-4px_rgb(0_0_0/0.32)]",
           )}
         >
-          <div className="space-y-3 py-3">
+          <div className="space-y-3 px-2 py-3">
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -458,23 +458,23 @@ export function BambuProfileWorkbench() {
             </div>
           </div>
 
-          <div className="border-border border-t">
-            <div className="text-muted-foreground border-border border-b py-2 text-xs font-medium">
+          <div className="border-border w-full border-t">
+            <div className="text-muted-foreground border-border w-full border-b px-2 py-2 text-xs font-medium">
               {t("sidebar.profilesHeading")}
             </div>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto py-2">
             {apiOk !== true ? (
-              <p className="text-muted-foreground py-4 text-sm">
+              <p className="text-muted-foreground px-2 py-4 text-sm">
                 {t("sidebar.connectFirst")}
               </p>
             ) : scanning ? (
-              <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
+              <div className="text-muted-foreground flex items-center gap-2 px-2 py-4 text-sm">
                 <Loader2 className="size-4 animate-spin" />
                 {t("sidebar.loading")}
               </div>
             ) : profiles.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-sm">
+              <p className="text-muted-foreground px-2 py-4 text-sm">
                 {t("sidebar.emptyProfiles")}
               </p>
             ) : (
@@ -488,10 +488,10 @@ export function BambuProfileWorkbench() {
                         aria-hidden
                       />
                     ) : null}
-                    <div className="text-muted-foreground mb-1 px-1 text-[11px] font-semibold tracking-wide uppercase">
+                    <div className="text-muted-foreground bg-muted/70 dark:bg-muted/50 mb-1.5 w-full px-2 py-1.5 text-[11px] font-semibold tracking-wide uppercase">
                       {sidebarGroupHeading(mapKey)}
                     </div>
-                    <ul className="flex flex-col gap-0.5">
+                    <ul className="flex flex-col gap-0.5 px-2">
                       {items.map((p) => (
                         <li key={p.relativePath}>
                           <button

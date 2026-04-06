@@ -76,14 +76,22 @@ export function ProfileTreeGrid({
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
+  const isFilamentProfile = React.useMemo(() => {
+    const last = chain[chain.length - 1];
+    if (!last) return false;
+    return last.relativePath.includes("/filament/");
+  }, [chain]);
+
   const roleLabels = React.useMemo<ColumnRoleLabels>(
     () => ({
-      profile: t("chainColumn.profile"),
+      profile: isFilamentProfile
+        ? t("chainColumn.profileFilament")
+        : t("chainColumn.profileProcess"),
       root: t("chainColumn.root"),
       parent: t("chainColumn.parent"),
       level: (levelIndex: number) => t("chainColumn.level", { n: levelIndex }),
     }),
-    [t],
+    [t, isFilamentProfile],
   );
 
   const columns = React.useMemo(
@@ -91,12 +99,6 @@ export function ProfileTreeGrid({
     [chain, roleLabels],
   );
   const colCount = 1 + columns.length;
-
-  const isFilamentProfile = React.useMemo(() => {
-    const last = chain[chain.length - 1];
-    if (!last) return false;
-    return last.relativePath.includes("/filament/");
-  }, [chain]);
 
   const uiTree = isFilamentProfile
     ? BAMBU_FILAMENT_UI_TREE

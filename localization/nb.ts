@@ -77,7 +77,8 @@ export const messagesNb = {
     showOnlyChanged: "Vis bare endrede filamentverdier",
   },
   chainColumn: {
-    profile: "Profil",
+    profileFilament: "Filamentprofil",
+    profileProcess: "Prosessprofil",
     root: "Rot",
     parent: "Forelder",
     level: "Nivå {n}",
