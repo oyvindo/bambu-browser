@@ -17,10 +17,31 @@ import {
   getBambuApiBaseUrl,
   type SystemFilamentEntry,
 } from "@/lib/bambu/bambu-api-client";
+import {
+  detectStudioLayoutFromRoot,
+  listSystemFilamentEntriesFromStudioRoot,
+  resolveChainFromStudioRoot,
+} from "@/lib/bambu/fs-studio-data";
 import type { UserProfileEntry } from "@/lib/bambu/list-user-profiles";
-import type { InheritanceChainLevel } from "@/lib/bambu/resolver";
+import { listUserProfileEntriesFromStudioRoot } from "@/lib/bambu/list-user-profiles";
+import {
+  ensureReadAccess,
+  loadBambuStudioRootHandle,
+  saveBambuStudioRootHandle,
+} from "@/lib/bambu/persisted-root-handle";
+import {
+  isFileSystemAccessSupported,
+  pickBambuStudioFolder,
+  type InheritanceChainLevel,
+} from "@/lib/bambu/resolver";
 import { cn } from "@/lib/utils/index";
-import { ChevronDown, Loader2, RefreshCw, Server } from "lucide-react";
+import {
+  ChevronDown,
+  HelpCircle,
+  Loader2,
+  RefreshCw,
+  Server,
+} from "lucide-react";
 
 import { LanguageSelect } from "@/components/language-select";
 import { NativeSelectField } from "@/components/native-select-field";
@@ -28,8 +49,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslations } from "@/localization/context";
 
 import { CompareFilamentToolbar } from "./CompareFilamentToolbar";
+import { DataSourceModal } from "./DataSourceModal";
 import { ProfileTreeGrid } from "./ProfileTreeGrid";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+const DATA_MODE_STORAGE_KEY = "bambu-browser-data-mode";
+
+type DataMode = "api" | "browser";
 
 type SidebarSection = "filament_custom" | "filament_standard" | "process";
 
@@ -65,6 +91,12 @@ function parseGroupKey(
 export function BambuProfileWorkbench() {
   const t = useTranslations();
   const [apiBase] = useState(() => getBambuApiBaseUrl());
+  const [dataMode, setDataMode] = useState<DataMode>("api");
+  const [studioRootHandle, setStudioRootHandle] =
+    useState<FileSystemDirectoryHandle | null>(null);
+  const [dataSourceModalOpen, setDataSourceModalOpen] = useState(false);
+  const [pickingFolder, setPickingFolder] = useState(false);
+
   const [apiOk, setApiOk] = useState<boolean | null>(null);
   const [studioRootLabel, setStudioRootLabel] = useState<string>("");
   const [layout, setLayout] = useState<"users" | "user" | null>(null);
@@ -89,6 +121,11 @@ export function BambuProfileWorkbench() {
   >([]);
   const [loadingSystemFilaments, setLoadingSystemFilaments] = useState(false);
 
+  const [fsSupported, setFsSupported] = useState(false);
+  useEffect(() => {
+    setFsSupported(isFileSystemAccessSupported());
+  }, []);
+
   const selectedProfile = useMemo(
     () => profiles.find((p) => p.relativePath === selectedPath) ?? null,
     [profiles, selectedPath],
@@ -98,7 +135,7 @@ export function BambuProfileWorkbench() {
   const isCustomFilamentProfile =
     isFilamentProfile && selectedProfile.filamentCategory === "custom";
 
-  const loadAccounts = useCallback(async () => {
+  const loadApiConnection = useCallback(async () => {
     setError(null);
     try {
       const health = await fetchApiHealth();
@@ -131,9 +168,68 @@ export function BambuProfileWorkbench() {
     }
   }, [t]);
 
+  const loadBrowserConnection = useCallback(
+    async (root: FileSystemDirectoryHandle) => {
+      setError(null);
+      try {
+        const { layout: detected, accounts } =
+          await detectStudioLayoutFromRoot(root);
+        if (!detected || accounts.length === 0) {
+          setApiOk(false);
+          setStudioRootLabel(root.name);
+          setLayout(null);
+          setAccountNames([]);
+          setError(t("errors.browserNoLayout"));
+          return;
+        }
+        setApiOk(true);
+        setStudioRootLabel(root.name);
+        setLayout(detected);
+        setAccountNames(accounts);
+        setSelectedUsername((prev) =>
+          prev && accounts.includes(prev) ? prev : (accounts[0] ?? null),
+        );
+      } catch (e) {
+        setApiOk(false);
+        setAccountNames([]);
+        setStudioRootLabel(root.name);
+        setLayout(null);
+        setError(
+          e instanceof Error ? e.message : t("errors.loadProfilesFailed"),
+        );
+      }
+    },
+    [t],
+  );
+
   useEffect(() => {
-    void loadAccounts();
-  }, [loadAccounts]);
+    let cancelled = false;
+    (async () => {
+      const browserPreferred =
+        typeof window !== "undefined" &&
+        localStorage.getItem(DATA_MODE_STORAGE_KEY) === "browser";
+      if (browserPreferred) {
+        setDataMode("browser");
+        const h = await loadBambuStudioRootHandle();
+        if (cancelled) return;
+        if (h && (await ensureReadAccess(h))) {
+          setStudioRootHandle(h);
+          await loadBrowserConnection(h);
+        } else if (!cancelled) {
+          setApiOk(false);
+          setDataSourceModalOpen(true);
+        }
+      } else {
+        setDataMode("api");
+        if (!cancelled) await loadApiConnection();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally once on mount; locale changes do not re-run bootstrap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (apiOk !== true) return;
@@ -142,6 +238,32 @@ export function BambuProfileWorkbench() {
     setError(null);
     (async () => {
       try {
+        if (dataMode === "browser") {
+          if (!studioRootHandle) {
+            if (!cancelled) {
+              setProfiles([]);
+              setSelectedPath(null);
+              setChain([]);
+            }
+            return;
+          }
+          const all =
+            await listUserProfileEntriesFromStudioRoot(studioRootHandle);
+          let list = all;
+          if (!showAllAccounts) {
+            if (!selectedUsername) {
+              list = [];
+            } else {
+              list = all.filter((p) => p.userId === selectedUsername);
+            }
+          }
+          if (!cancelled) {
+            setProfiles(list);
+            setSelectedPath(null);
+            setChain([]);
+          }
+          return;
+        }
         if (showAllAccounts) {
           const { profiles: list } = await fetchApiProfilesFull();
           if (!cancelled) {
@@ -180,7 +302,7 @@ export function BambuProfileWorkbench() {
     return () => {
       cancelled = true;
     };
-  }, [apiOk, selectedUsername, showAllAccounts, t]);
+  }, [apiOk, dataMode, studioRootHandle, selectedUsername, showAllAccounts, t]);
 
   useEffect(() => {
     setCompareFilamentPath(null);
@@ -195,20 +317,29 @@ export function BambuProfileWorkbench() {
     }
     let cancelled = false;
     setLoadingSystemFilaments(true);
-    fetchApiSystemFilaments()
-      .then(({ entries }) => {
-        if (!cancelled) setSystemFilamentEntries(entries);
-      })
-      .catch(() => {
+    const load = async () => {
+      try {
+        if (dataMode === "browser" && studioRootHandle) {
+          const entries =
+            await listSystemFilamentEntriesFromStudioRoot(studioRootHandle);
+          if (!cancelled) setSystemFilamentEntries(entries);
+        } else if (dataMode === "api") {
+          const { entries } = await fetchApiSystemFilaments();
+          if (!cancelled) setSystemFilamentEntries(entries);
+        } else if (!cancelled) {
+          setSystemFilamentEntries([]);
+        }
+      } catch {
         if (!cancelled) setSystemFilamentEntries([]);
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoadingSystemFilaments(false);
-      });
+      }
+    };
+    void load();
     return () => {
       cancelled = true;
     };
-  }, [apiOk, isCustomFilamentProfile]);
+  }, [apiOk, isCustomFilamentProfile, dataMode, studioRootHandle]);
 
   useEffect(() => {
     if (!selectedPath || apiOk !== true) {
@@ -222,11 +353,22 @@ export function BambuProfileWorkbench() {
       isCustomFilamentProfile && compareFilamentPath
         ? compareFilamentPath
         : null;
-    fetchApiResolve(selectedPath, compareArg)
-      .then(({ chain: c }) => {
-        if (!cancelled) setChain(c);
-      })
-      .catch((e) => {
+    const run = async () => {
+      try {
+        if (dataMode === "browser" && studioRootHandle) {
+          const c = await resolveChainFromStudioRoot(
+            studioRootHandle,
+            selectedPath,
+            compareArg,
+          );
+          if (!cancelled) setChain(c);
+        } else if (dataMode === "api") {
+          const { chain: c } = await fetchApiResolve(selectedPath, compareArg);
+          if (!cancelled) setChain(c);
+        } else if (!cancelled) {
+          setChain([]);
+        }
+      } catch (e) {
         if (!cancelled) {
           setChain([]);
           setError(
@@ -235,14 +377,23 @@ export function BambuProfileWorkbench() {
               : t("errors.resolveInheritanceFailed"),
           );
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setResolving(false);
-      });
+      }
+    };
+    void run();
     return () => {
       cancelled = true;
     };
-  }, [selectedPath, apiOk, t, isCustomFilamentProfile, compareFilamentPath]);
+  }, [
+    selectedPath,
+    apiOk,
+    t,
+    isCustomFilamentProfile,
+    compareFilamentPath,
+    dataMode,
+    studioRootHandle,
+  ]);
 
   const grouped = useMemo(() => {
     const m = new Map<string, UserProfileEntry[]>();
@@ -290,8 +441,111 @@ export function BambuProfileWorkbench() {
     [showAllAccounts, t],
   );
 
+  const handlePingOrRefresh = useCallback(() => {
+    if (dataMode === "browser") {
+      if (studioRootHandle) void loadBrowserConnection(studioRootHandle);
+      else setDataSourceModalOpen(true);
+      return;
+    }
+    void loadApiConnection();
+  }, [dataMode, studioRootHandle, loadApiConnection, loadBrowserConnection]);
+
+  const handleRefreshProfileList = useCallback(() => {
+    setScanning(true);
+    setError(null);
+    const run = async () => {
+      try {
+        if (dataMode === "browser") {
+          if (!studioRootHandle) {
+            setProfiles([]);
+            return;
+          }
+          const all =
+            await listUserProfileEntriesFromStudioRoot(studioRootHandle);
+          let list = all;
+          if (!showAllAccounts) {
+            if (!selectedUsername) list = [];
+            else list = all.filter((p) => p.userId === selectedUsername);
+          }
+          setProfiles(list);
+          return;
+        }
+        if (showAllAccounts) {
+          const { profiles: list } = await fetchApiProfilesFull();
+          setProfiles(list);
+          return;
+        }
+        if (!selectedUsername) {
+          setProfiles([]);
+          return;
+        }
+        const { profiles: list } =
+          await fetchApiProfilesForAccount(selectedUsername);
+        setProfiles(list);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("errors.refreshFailed"));
+      } finally {
+        setScanning(false);
+      }
+    };
+    void run();
+  }, [dataMode, studioRootHandle, showAllAccounts, selectedUsername, t]);
+
+  const handleSwitchToApi = useCallback(() => {
+    localStorage.setItem(DATA_MODE_STORAGE_KEY, "api");
+    setDataMode("api");
+    setStudioRootHandle(null);
+    setDataSourceModalOpen(false);
+    void loadApiConnection();
+  }, [loadApiConnection]);
+
+  const handleChooseBrowserFolder = useCallback(async () => {
+    setError(null);
+    setPickingFolder(true);
+    try {
+      const previous = await loadBambuStudioRootHandle();
+      const startIn =
+        previous && (await ensureReadAccess(previous)) ? previous : undefined;
+      const dir = await pickBambuStudioFolder(
+        startIn ? { startIn } : undefined,
+      );
+      if (!dir) {
+        setError(t("errors.folderPickCancelled"));
+        return;
+      }
+      await saveBambuStudioRootHandle(dir);
+      localStorage.setItem(DATA_MODE_STORAGE_KEY, "browser");
+      setDataMode("browser");
+      setStudioRootHandle(dir);
+      await loadBrowserConnection(dir);
+      setDataSourceModalOpen(false);
+    } catch (e) {
+      const name = e instanceof Error ? e.name : "";
+      if (name === "AbortError") {
+        setError(t("errors.folderPickCancelled"));
+      } else if (name === "NotAllowedError") {
+        setError(t("errors.folderPermissionDenied"));
+      } else {
+        setError(
+          e instanceof Error ? e.message : t("errors.loadProfilesFailed"),
+        );
+      }
+    } finally {
+      setPickingFolder(false);
+    }
+  }, [loadBrowserConnection, t]);
+
   return (
     <div className="bg-background flex min-h-0 flex-1 flex-col">
+      <DataSourceModal
+        open={dataSourceModalOpen}
+        onOpenChange={setDataSourceModalOpen}
+        fsSupported={fsSupported}
+        pickingFolder={pickingFolder}
+        onChooseBrowserFolder={() => void handleChooseBrowserFolder()}
+        onSwitchToApi={handleSwitchToApi}
+      />
+
       <header className="border-border bg-background sticky top-0 z-50 shrink-0 space-y-2 border-b px-4 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -299,19 +553,40 @@ export function BambuProfileWorkbench() {
               {t("header.title")}
             </h1>
             <p className="text-muted-foreground max-w-2xl text-xs">
-              {t("header.subtitlePrefix")}
-              <code className="text-[11px]">server.js</code>
-              {t("header.subtitleMiddle")}
-              <code className="text-[11px]">fs</code>
-              {t("header.subtitleSuffix")}
+              {dataMode === "browser" ? (
+                t("header.subtitleBrowser")
+              ) : (
+                <>
+                  {t("header.subtitlePrefix")}
+                  <code className="text-[11px]">server.js</code>
+                  {t("header.subtitleMiddle")}
+                  <code className="text-[11px]">fs</code>
+                  {t("header.subtitleSuffix")}
+                </>
+              )}
             </p>
             <p className="text-muted-foreground mt-1 font-mono text-[10px] break-all">
-              {t("header.apiPrefix")} {apiBase}
-              {studioRootLabel ? ` · ${studioRootLabel}` : null}
+              {t("header.sourceLabel")}{" "}
+              {dataMode === "browser"
+                ? `${studioRootLabel || t("dataSource.chooseFolder")} (browser)`
+                : `${t("header.apiPrefix")} ${apiBase}`}
+              {dataMode === "api" && studioRootLabel
+                ? ` · ${studioRootLabel}`
+                : null}
               {layout ? ` · ${t("header.layoutLabel")} ${layout}` : null}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => setDataSourceModalOpen(true)}
+            >
+              <HelpCircle className="size-4" />
+              {t("header.connectionHelp")}
+            </Button>
             <LanguageSelect />
             <ThemeToggle />
             <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">
@@ -340,15 +615,25 @@ export function BambuProfileWorkbench() {
       {apiOk === false ? (
         <div className="text-muted-foreground mx-4 mt-3 shrink-0 rounded-md border border-dashed px-3 py-3 text-sm">
           <p className="font-medium text-foreground">{t("offline.title")}</p>
+          <p className="mt-2 text-xs">
+            {t("dataSource.modalIntro")}{" "}
+            <button
+              type="button"
+              className="text-foreground underline decoration-dotted underline-offset-2"
+              onClick={() => setDataSourceModalOpen(true)}
+            >
+              {t("header.connectionHelp")}
+            </button>
+          </p>
           <pre className="bg-muted mt-2 overflow-x-auto rounded p-2 font-mono text-xs">
             cd /path/to/bambu_browser{"\n"}
-            node server.js
+            npm run api
           </pre>
           <p className="mt-2 text-xs">
             {t("offline.optionalEnv")}{" "}
             <code className="text-foreground">
-              BAMBUSTUDIO_ROOT=&quot;/path/to/BambuStudio&quot; PORT=3847 node
-              server.js
+              BAMBUSTUDIO_ROOT=&quot;/path/to/BambuStudio&quot; PORT=3847 npm
+              run api
             </code>
           </p>
           <p className="mt-1 text-xs">
@@ -375,36 +660,24 @@ export function BambuProfileWorkbench() {
                 variant="outline"
                 size="sm"
                 className="min-w-26 flex-1"
-                onClick={() => void loadAccounts()}
+                onClick={() => void handlePingOrRefresh()}
                 disabled={scanning}
               >
                 <Server className="size-4" />
-                {apiOk === false
-                  ? t("controls.retryApi")
-                  : t("controls.pingApi")}
+                {dataMode === "browser"
+                  ? studioRootHandle
+                    ? t("controls.refreshConnection")
+                    : t("dataSource.chooseFolder")
+                  : apiOk === false
+                    ? t("controls.retryApi")
+                    : t("controls.pingApi")}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="min-w-26 flex-1"
-                onClick={() => {
-                  setScanning(true);
-                  const p = showAllAccounts
-                    ? fetchApiProfilesFull()
-                    : selectedUsername
-                      ? fetchApiProfilesForAccount(selectedUsername)
-                      : Promise.resolve({ profiles: [] });
-                  p.then((r) => setProfiles(r.profiles))
-                    .catch((e) =>
-                      setError(
-                        e instanceof Error
-                          ? e.message
-                          : t("errors.refreshFailed"),
-                      ),
-                    )
-                    .finally(() => setScanning(false));
-                }}
+                onClick={() => void handleRefreshProfileList()}
                 disabled={scanning || apiOk !== true}
               >
                 {scanning ? (

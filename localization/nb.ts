@@ -14,12 +14,40 @@ export const messagesNb = {
     subtitlePrefix: "Data hentes fra det lokale Node-API-et (",
     subtitleMiddle: "), slik at macOS Library-mapper leses med ",
     subtitleSuffix: " – ikke nettleserens filvelger.",
+    subtitleBrowser:
+      "Data hentes fra en Bambu Studio-mappe du valgte i nettleseren (File System Access). Du trenger ikke lokal server i denne modusen.",
     apiPrefix: "API:",
+    sourceLabel: "Kilde:",
     layoutLabel: "layout:",
+    connectionHelp: "Slik kobler du til",
+  },
+  dataSource: {
+    modalTitle: "Slik laster du Bambu Studio-filene",
+    modalIntro:
+      "Appen leser bare filer på din maskin. Velg én av metodene under – du kan bytte senere fra topplinjen.",
+    browserSectionTitle: "Mappe i nettleseren (prøv denne først)",
+    browserSectionBody:
+      "Gi lesetilgang til datamappen til Bambu Studio. Ingenting lastes opp; filene blir på enheten. Du må kanskje bruke «Gå til mappe» for å nå stien under.",
+    chooseFolder: "Velg Bambu Studio-mappe…",
+    pickingFolder: "Åpner filvelger…",
+    fsNotSupported:
+      "Nettleseren støtter ikke å velge mappe på denne måten. Bruk lokalt API (Chrome eller Edge på PC fungerer vanligvis).",
+    apiSectionTitle: "Lokalt API (Node)",
+    apiSectionBody:
+      "Denne modusen bruker en liten HTTP-server fra det åpne prosjektet bambu-browser. Kjør den på samme maskin som Bambu Studio-dataene dine ligger på.",
+    apiRepoCloneHint:
+      "Klon repoet eller last ned ZIP fra lenken under, og bruk terminal i prosjektmappa (der package.json og server.js ligger).",
+    apiReadmeHint:
+      "README i repoet beskriver forutsetninger (inkl. Node.js), npm install, BAMBUSTUDIO_ROOT, porter og sikkerhet — les den når du setter opp.",
+    apiOptionalEnv: "Valgfritt: annen mappe eller port:",
+    apiUrlLabel: "Siden forventer API på",
+    useLocalApi: "Bruk lokalt API (ping server)",
+    close: "Lukk",
   },
   controls: {
     extruderIndex: "Ekstruderindeks",
     pingApi: "Ping API",
+    refreshConnection: "Oppdater tilkobling",
     retryApi: "Prøv API på nytt",
     refreshList: "Oppdater liste",
     allAccounts: "Alle kontoer",
@@ -32,6 +60,11 @@ export const messagesNb = {
       "Serveren kan ikke lese BambuStudio-roten: {root}. Sett BAMBUSTUDIO_ROOT når du starter server.js.",
     cannotReachApi:
       "Får ikke kontakt med det lokale API-et. Kjør: node server.js (se terminal).",
+    browserNoLayout:
+      "Den valgte mappen ser ikke ut som en Bambu Studio-rot (mangler users/ eller user/). Velg mappen som inneholder disse katalogene.",
+    folderPickCancelled: "Mappevalg ble avbrutt.",
+    folderPermissionDenied:
+      "Lesetilgang til mappen ble nektet. Prøv igjen, eller bruk lokalt API.",
     loadProfilesFailed: "Kunne ikke laste profiler",
     refreshFailed: "Oppdatering mislyktes",
     resolveInheritanceFailed: "Kunne ikke løse arv",
@@ -43,7 +76,8 @@ export const messagesNb = {
   },
   sidebar: {
     profilesHeading: "Profiler",
-    connectFirst: "Koble til API-et først (Ping API).",
+    connectFirst:
+      "Koble til først: åpne «Slik kobler du til» i topplinjen, eller bruk Ping API / velg mappe.",
     loading: "Laster…",
     emptyProfiles:
       "Ingen JSON-profiler funnet. Sjekk BambuStudio-sti på serveren og kontomapper.",
