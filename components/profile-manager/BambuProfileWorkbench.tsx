@@ -478,38 +478,71 @@ export function BambuProfileWorkbench() {
                 {t("sidebar.emptyProfiles")}
               </p>
             ) : (
-              <ul className="flex flex-col gap-3">
-                {grouped.map(([mapKey, items], index) => (
-                  <li key={mapKey}>
-                    {index === firstProcessGroupIndex &&
-                    firstProcessGroupIndex > 0 ? (
-                      <div
-                        className="border-border mt-1 w-full border-t pt-3 shadow-[0_2px_5px_-2px_rgb(15_23_42_/_0.12)] dark:shadow-[0_2px_6px_-1px_rgb(0_0_0_/_0.35)]"
-                        aria-hidden
-                      />
-                    ) : null}
-                    <div className="text-muted-foreground bg-muted/70 dark:bg-muted/50 mb-1.5 w-full px-2 py-1.5 text-[11px] font-semibold tracking-wide uppercase">
-                      {sidebarGroupHeading(mapKey)}
-                    </div>
-                    <ul className="flex flex-col gap-0.5 px-2">
-                      {items.map((p) => (
-                        <li key={p.relativePath}>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedPath(p.relativePath)}
-                            className={cn(
-                              "hover:bg-muted w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
-                              selectedPath === p.relativePath &&
-                                "bg-muted font-medium",
-                            )}
-                          >
-                            {p.fileName}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
+              <ul className="flex flex-col">
+                {grouped.map(([mapKey, items], index) => {
+                  const { section: sidebarSection } = parseGroupKey(
+                    mapKey,
+                    showAllAccounts,
+                  );
+                  const filamentGroupDefaultOpen =
+                    sidebarSection === "filament_standard";
+                  return (
+                    <li
+                      key={mapKey}
+                      className="border-border border-b last:border-b-0"
+                    >
+                      {index === firstProcessGroupIndex &&
+                      firstProcessGroupIndex > 0 ? (
+                        <div
+                          className="border-border w-full border-t shadow-[0_2px_5px_-2px_rgb(15_23_42_/_0.12)] dark:shadow-[0_2px_6px_-1px_rgb(0_0_0_/_0.35)]"
+                          aria-hidden
+                        />
+                      ) : null}
+                      <Collapsible
+                        defaultOpen={filamentGroupDefaultOpen}
+                        className="w-full"
+                      >
+                        <CollapsibleTrigger
+                          type="button"
+                          className={cn(
+                            "text-muted-foreground bg-muted/70 dark:bg-muted/50 hover:bg-muted/90 dark:hover:bg-muted/60 flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11px] font-semibold tracking-wide uppercase",
+                            "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                            "[&[data-panel-open]>svg]:rotate-180",
+                          )}
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {sidebarGroupHeading(mapKey)}
+                          </span>
+                          <ChevronDown
+                            className="text-muted-foreground size-3.5 shrink-0 opacity-80 transition-transform duration-200"
+                            aria-hidden
+                          />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <ul className="flex flex-col gap-0.5 px-2 pb-2 pt-0.5">
+                            {items.map((p) => (
+                              <li key={p.relativePath}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedPath(p.relativePath)
+                                  }
+                                  className={cn(
+                                    "hover:bg-muted w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
+                                    selectedPath === p.relativePath &&
+                                      "bg-muted font-medium",
+                                  )}
+                                >
+                                  {p.fileName}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
