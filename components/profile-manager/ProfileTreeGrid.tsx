@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import {
   getInheritanceColumns,
+  isLeafInheritanceOverride,
   mergedValueAt,
   type ColumnRoleLabels,
 } from "@/lib/bambu/chain-display";
@@ -59,6 +60,10 @@ export type ProfileTreeGridProps = {
   className?: string;
   /** When false, hide “Show advanced parameters” (non-process profiles). */
   showAdvancedCheckbox?: boolean;
+  /** When true, hide rows where the leaf profile cell is not an override vs. parent. */
+  showOnlyChangedLeaf?: boolean;
+  /** Used with {@link showAdvancedCheckbox} for the process “changed only” toggle. */
+  onShowOnlyChangedLeafChange?: (value: boolean) => void;
 };
 
 export function ProfileTreeGrid({
@@ -66,6 +71,8 @@ export function ProfileTreeGrid({
   activeExtruderIndex = 0,
   className,
   showAdvancedCheckbox = true,
+  showOnlyChangedLeaf = false,
+  onShowOnlyChangedLeafChange,
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
@@ -143,14 +150,26 @@ export function ProfileTreeGrid({
     <Tooltip.Provider delay={400}>
       <div className={cn("w-full space-y-3", className)}>
         {showAdvancedCheckbox ? (
-          <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pl-4 text-xs">
-            <input
-              type="checkbox"
-              checked={showAdvanced}
-              onChange={(e) => setShowAdvanced(e.target.checked)}
-            />
-            {t("treeGrid.showAdvanced")}
-          </label>
+          <div className="space-y-2 pl-4">
+            <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={showAdvanced}
+                onChange={(e) => setShowAdvanced(e.target.checked)}
+              />
+              {t("treeGrid.showAdvanced")}
+            </label>
+            <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={showOnlyChangedLeaf}
+                onChange={(e) =>
+                  onShowOnlyChangedLeafChange?.(e.target.checked)
+                }
+              />
+              {t("treeGrid.showOnlyChangedProcess")}
+            </label>
+          </div>
         ) : null}
 
         <div className="w-full overflow-x-auto">
@@ -185,6 +204,22 @@ export function ProfileTreeGrid({
               {uiTree.map((group, groupIndex) => {
                 const groupOpen = openGroups[group.id] !== false;
                 const isLastGroup = groupIndex === uiTree.length - 1;
+                const visibleSubgroups = group.subgroups
+                  .map((subgroup) => {
+                    const visibleProps = subgroup.properties.filter((p) => {
+                      if (!(showAdvanced || !p.advanced)) return false;
+                      if (!showOnlyChangedLeaf) return true;
+                      return isLeafInheritanceOverride(
+                        chain,
+                        p.key,
+                        p.unit,
+                        activeExtruderIndex,
+                      );
+                    });
+                    return { subgroup, visibleProps };
+                  })
+                  .filter((x) => x.visibleProps.length > 0);
+                if (visibleSubgroups.length === 0) return null;
                 return (
                   <React.Fragment key={group.id}>
                     <TableRow className="border-0 bg-slate-100/90 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/65">
@@ -210,12 +245,8 @@ export function ProfileTreeGrid({
                       </TableCell>
                     </TableRow>
                     {groupOpen &&
-                      group.subgroups.map((subgroup) => {
+                      visibleSubgroups.map(({ subgroup, visibleProps }) => {
                         const subOpen = openSubgroups[subgroup.id] !== false;
-                        const visibleProps = subgroup.properties.filter(
-                          (p) => showAdvanced || !p.advanced,
-                        );
-                        if (visibleProps.length === 0) return null;
                         return (
                           <React.Fragment key={subgroup.id}>
                             <TableRow className="border-0 bg-slate-50/90 hover:bg-slate-100/70 dark:bg-slate-900/35 dark:hover:bg-slate-900/50">

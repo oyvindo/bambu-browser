@@ -48,7 +48,7 @@ export const messagesNb = {
     emptyProfiles:
       "Ingen JSON-profiler funnet. Sjekk BambuStudio-sti på serveren og kontomapper.",
     groupCustomFilaments: "Egendefinerte filament",
-    groupFilament: "Filament",
+    groupFilament: "Filamenter",
     groupProcess: "Prosess",
   },
   main: {
@@ -58,6 +58,7 @@ export const messagesNb = {
     emptyHint:
       "Last en profil for å vise arvetreet (én kolonne per mal i kjeden).",
     showAdvanced: "Vis avanserte parametere",
+    showOnlyChangedProcess: "Vis bare endrede prosessverdier",
     columnProperty: "Parameter",
   },
   compareFilament: {
@@ -73,6 +74,7 @@ export const messagesNb = {
     noMatches: "Ingen treff",
     removeAria: "Fjern",
     removeTooltip: "Fjern",
+    showOnlyChanged: "Vis bare endrede filamentverdier",
   },
   chainColumn: {
     profile: "Profil",

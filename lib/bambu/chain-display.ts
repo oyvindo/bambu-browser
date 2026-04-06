@@ -1,3 +1,4 @@
+import { formatBambuMappedValue, type BambuValueUnit } from "./mapping";
 import type { InheritanceChainLevel } from "./resolver";
 
 /** One column in the TreeGrid: merged state up this inheritance step (root → … → profile). */
@@ -163,4 +164,29 @@ export function displayValuesDiffer(
     formatProfileCellValue(a, activeExtruderIndex) !==
     formatProfileCellValue(b, activeExtruderIndex)
   );
+}
+
+/**
+ * True when the leaf column’s displayed value differs from the previous inheritance
+ * step (same condition as emerald “override” styling in the profile tree grid).
+ */
+export function isLeafInheritanceOverride(
+  chain: readonly InheritanceChainLevel[],
+  key: string,
+  unit: BambuValueUnit,
+  activeExtruderIndex: number,
+): boolean {
+  const n = chain.length;
+  if (n < 2) return false;
+  const parentText = formatBambuMappedValue(
+    mergedValueAt(chain, n - 2, key),
+    unit,
+    activeExtruderIndex,
+  );
+  const leafText = formatBambuMappedValue(
+    mergedValueAt(chain, n - 1, key),
+    unit,
+    activeExtruderIndex,
+  );
+  return parentText !== leafText;
 }

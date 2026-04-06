@@ -82,6 +82,8 @@ export function BambuProfileWorkbench() {
   const [compareFilamentPath, setCompareFilamentPath] = useState<string | null>(
     null,
   );
+  const [showOnlyChangedProcess, setShowOnlyChangedProcess] = useState(false);
+  const [showOnlyChangedFilament, setShowOnlyChangedFilament] = useState(true);
   const [systemFilamentEntries, setSystemFilamentEntries] = useState<
     SystemFilamentEntry[]
   >([]);
@@ -92,9 +94,9 @@ export function BambuProfileWorkbench() {
     [profiles, selectedPath],
   );
   const isProcessProfile = selectedProfile?.kind === "process";
+  const isFilamentProfile = selectedProfile?.kind === "filament";
   const isCustomFilamentProfile =
-    selectedProfile?.kind === "filament" &&
-    selectedProfile.filamentCategory === "custom";
+    isFilamentProfile && selectedProfile.filamentCategory === "custom";
 
   const loadAccounts = useCallback(async () => {
     setError(null);
@@ -182,6 +184,8 @@ export function BambuProfileWorkbench() {
 
   useEffect(() => {
     setCompareFilamentPath(null);
+    setShowOnlyChangedProcess(false);
+    setShowOnlyChangedFilament(true);
   }, [selectedPath]);
 
   useEffect(() => {
@@ -540,6 +544,18 @@ export function BambuProfileWorkbench() {
               </CollapsibleContent>
             </Collapsible>
           ) : null}
+          {isFilamentProfile && selectedPath && apiOk === true ? (
+            <div className="border-border border-b px-4 py-2">
+              <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={showOnlyChangedFilament}
+                  onChange={(e) => setShowOnlyChangedFilament(e.target.checked)}
+                />
+                {t("compareFilament.showOnlyChanged")}
+              </label>
+            </div>
+          ) : null}
           <div className="min-h-0 flex-1 overflow-auto py-4">
             {resolving ? (
               <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
@@ -551,6 +567,14 @@ export function BambuProfileWorkbench() {
                 chain={chain}
                 activeExtruderIndex={activeExtruderIndex}
                 showAdvancedCheckbox={isProcessProfile}
+                showOnlyChangedLeaf={
+                  isProcessProfile
+                    ? showOnlyChangedProcess
+                    : isFilamentProfile
+                      ? showOnlyChangedFilament
+                      : false
+                }
+                onShowOnlyChangedLeafChange={setShowOnlyChangedProcess}
               />
             )}
           </div>

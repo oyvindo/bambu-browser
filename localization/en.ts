@@ -46,7 +46,7 @@ export const messagesEn = {
     emptyProfiles:
       "No JSON profiles found. Check BambuStudio path on the server and account folders.",
     groupCustomFilaments: "Custom filaments",
-    groupFilament: "Filament",
+    groupFilament: "Filaments",
     groupProcess: "Process",
   },
   main: {
@@ -56,6 +56,7 @@ export const messagesEn = {
     emptyHint:
       "Load a profile to show the inheritance tree (one column per template in the chain).",
     showAdvanced: "Show advanced parameters",
+    showOnlyChangedProcess: "Show only changed process values",
     columnProperty: "Property",
   },
   compareFilament: {
@@ -71,6 +72,7 @@ export const messagesEn = {
     noMatches: "No matching filaments",
     removeAria: "Remove",
     removeTooltip: "Remove",
+    showOnlyChanged: "Show only changed filament values",
   },
   chainColumn: {
     profile: "Profile",
