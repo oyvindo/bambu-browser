@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -31,6 +29,7 @@ import { useTranslations } from "@/localization/context";
 
 import { CompareFilamentToolbar } from "./CompareFilamentToolbar";
 import { ProfileTreeGrid } from "./ProfileTreeGrid";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type SidebarSection = "filament_custom" | "filament_standard" | "process";
 
@@ -65,33 +64,30 @@ function parseGroupKey(
 
 export function BambuProfileWorkbench() {
   const t = useTranslations();
-  const [apiBase] = React.useState(() => getBambuApiBaseUrl());
-  const [apiOk, setApiOk] = React.useState<boolean | null>(null);
-  const [studioRootLabel, setStudioRootLabel] = React.useState<string>("");
-  const [layout, setLayout] = React.useState<"users" | "user" | null>(null);
-  const [accountNames, setAccountNames] = React.useState<string[]>([]);
-  const [selectedUsername, setSelectedUsername] = React.useState<string | null>(
+  const [apiBase] = useState(() => getBambuApiBaseUrl());
+  const [apiOk, setApiOk] = useState<boolean | null>(null);
+  const [studioRootLabel, setStudioRootLabel] = useState<string>("");
+  const [layout, setLayout] = useState<"users" | "user" | null>(null);
+  const [accountNames, setAccountNames] = useState<string[]>([]);
+  const [selectedUsername, setSelectedUsername] = useState<string | null>(null);
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
+
+  const [profiles, setProfiles] = useState<UserProfileEntry[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [chain, setChain] = useState<InheritanceChainLevel[]>([]);
+  const [resolving, setResolving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeExtruderIndex, setActiveExtruderIndex] = useState(0);
+  const [compareFilamentPath, setCompareFilamentPath] = useState<string | null>(
     null,
   );
-  const [showAllAccounts, setShowAllAccounts] = React.useState(false);
-
-  const [profiles, setProfiles] = React.useState<UserProfileEntry[]>([]);
-  const [scanning, setScanning] = React.useState(false);
-  const [selectedPath, setSelectedPath] = React.useState<string | null>(null);
-  const [chain, setChain] = React.useState<InheritanceChainLevel[]>([]);
-  const [resolving, setResolving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [activeExtruderIndex, setActiveExtruderIndex] = React.useState(0);
-  const [compareFilamentPath, setCompareFilamentPath] = React.useState<
-    string | null
-  >(null);
-  const [systemFilamentEntries, setSystemFilamentEntries] = React.useState<
+  const [systemFilamentEntries, setSystemFilamentEntries] = useState<
     SystemFilamentEntry[]
   >([]);
-  const [loadingSystemFilaments, setLoadingSystemFilaments] =
-    React.useState(false);
+  const [loadingSystemFilaments, setLoadingSystemFilaments] = useState(false);
 
-  const selectedProfile = React.useMemo(
+  const selectedProfile = useMemo(
     () => profiles.find((p) => p.relativePath === selectedPath) ?? null,
     [profiles, selectedPath],
   );
@@ -100,7 +96,7 @@ export function BambuProfileWorkbench() {
     selectedProfile?.kind === "filament" &&
     selectedProfile.filamentCategory === "custom";
 
-  const loadAccounts = React.useCallback(async () => {
+  const loadAccounts = useCallback(async () => {
     setError(null);
     try {
       const health = await fetchApiHealth();
@@ -133,11 +129,11 @@ export function BambuProfileWorkbench() {
     }
   }, [t]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     void loadAccounts();
   }, [loadAccounts]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (apiOk !== true) return;
     let cancelled = false;
     setScanning(true);
@@ -184,11 +180,11 @@ export function BambuProfileWorkbench() {
     };
   }, [apiOk, selectedUsername, showAllAccounts, t]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCompareFilamentPath(null);
   }, [selectedPath]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (apiOk !== true || !isCustomFilamentProfile) {
       setSystemFilamentEntries([]);
       return;
@@ -210,7 +206,7 @@ export function BambuProfileWorkbench() {
     };
   }, [apiOk, isCustomFilamentProfile]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!selectedPath || apiOk !== true) {
       setChain([]);
       return;
@@ -244,7 +240,7 @@ export function BambuProfileWorkbench() {
     };
   }, [selectedPath, apiOk, t, isCustomFilamentProfile, compareFilamentPath]);
 
-  const grouped = React.useMemo(() => {
+  const grouped = useMemo(() => {
     const m = new Map<string, UserProfileEntry[]>();
     for (const p of profiles) {
       const section = sidebarSectionForProfile(p);
@@ -267,7 +263,7 @@ export function BambuProfileWorkbench() {
     });
   }, [profiles, showAllAccounts]);
 
-  const firstProcessGroupIndex = React.useMemo(
+  const firstProcessGroupIndex = useMemo(
     () =>
       grouped.findIndex(([key]) => {
         const { section } = parseGroupKey(key, showAllAccounts);
@@ -276,7 +272,7 @@ export function BambuProfileWorkbench() {
     [grouped, showAllAccounts],
   );
 
-  const sidebarGroupHeading = React.useCallback(
+  const sidebarGroupHeading = useCallback(
     (mapKey: string) => {
       const { userId, section } = parseGroupKey(mapKey, showAllAccounts);
       const label =

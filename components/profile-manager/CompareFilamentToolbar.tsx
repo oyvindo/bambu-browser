@@ -22,7 +22,7 @@ import {
   type SystemFilamentEntry,
 } from "@/lib/bambu/system-filament-filters";
 import { useTranslations } from "@/localization/context";
-import { cn } from "@/lib/utils/index";
+import { cn } from "@/lib/utils";
 
 function fileLabel(relativePath: string): string {
   const parts = relativePath.split("/").filter(Boolean);
@@ -254,7 +254,7 @@ export function CompareFilamentToolbar({
                       onChange={() => toggleRootBrand(b.id)}
                       disabled={disabled || loadingList || !rootLocationOn}
                     />
-                    <span className="break-words">{b.label}</span>
+                    <span className="wrap-break-word">{b.label}</span>
                   </label>
                 ))}
               </div>
