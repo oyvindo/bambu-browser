@@ -52,10 +52,9 @@ export const messagesNb = {
     refreshConnection: "Oppdater tilkobling",
     retryApi: "Prøv API på nytt",
     refreshList: "Oppdater liste",
-    allAccounts: "Alle kontoer",
     bambuAccount: "Bambu Lab-konto",
     noAccounts: "Ingen kontoer",
-    allAccountsHint: "Viser alle profiler under users/ eller user/",
+    showOnlyChanged: "Vis bare endrede verdier",
   },
   errors: {
     serverCannotReadRoot:
@@ -77,7 +76,6 @@ export const messagesNb = {
     optionalNextEnv: "Valgfri miljøvariabel for Next:",
   },
   sidebar: {
-    profilesHeading: "Profiler",
     connectFirst:
       "Koble til først: åpne «Slik kobler du til» i topplinjen, eller bruk Ping API / velg mappe.",
     loading: "Laster…",
@@ -92,9 +90,7 @@ export const messagesNb = {
   },
   treeGrid: {
     emptyHint:
-      "Last en profil for å vise arvetreet (én kolonne per mal i kjeden).",
-    showAdvanced: "Vis avanserte parametere",
-    showOnlyChangedProcess: "Vis bare endrede prosessverdier",
+      "Last et filament eller en prosess for å vise arvetreet (én kolonne per mal i kjeden).",
     columnProperty: "Parameter",
   },
   compareFilament: {
@@ -110,7 +106,6 @@ export const messagesNb = {
     noMatches: "Ingen treff",
     removeAria: "Fjern",
     removeTooltip: "Fjern",
-    showOnlyChanged: "Vis bare endrede filamentverdier",
   },
   chainColumn: {
     profileFilament: "Filamentprofil",

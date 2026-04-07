@@ -11,7 +11,6 @@ import {
   fetchApiHealth,
   fetchApiMeta,
   fetchApiProfilesForAccount,
-  fetchApiProfilesFull,
   fetchApiResolve,
   fetchApiSystemFilaments,
   getBambuApiBaseUrl,
@@ -71,23 +70,6 @@ function sidebarSectionForProfile(p: UserProfileEntry): SidebarSection {
   return "filament_standard";
 }
 
-const GROUP_KEY_SEP = "\u0000";
-
-function parseGroupKey(
-  key: string,
-  showAllAccounts: boolean,
-): { userId: string | null; section: SidebarSection } {
-  if (!showAllAccounts) {
-    return { userId: null, section: key as SidebarSection };
-  }
-  const i = key.indexOf(GROUP_KEY_SEP);
-  if (i === -1) return { userId: null, section: key as SidebarSection };
-  return {
-    userId: key.slice(0, i),
-    section: key.slice(i + 1) as SidebarSection,
-  };
-}
-
 export function BambuProfileWorkbench() {
   const t = useTranslations();
   const [apiBase] = useState(() => getBambuApiBaseUrl());
@@ -102,7 +84,6 @@ export function BambuProfileWorkbench() {
   const [layout, setLayout] = useState<"users" | "user" | null>(null);
   const [accountNames, setAccountNames] = useState<string[]>([]);
   const [selectedUsername, setSelectedUsername] = useState<string | null>(null);
-  const [showAllAccounts, setShowAllAccounts] = useState(false);
 
   const [profiles, setProfiles] = useState<UserProfileEntry[]>([]);
   const [scanning, setScanning] = useState(false);
@@ -114,8 +95,7 @@ export function BambuProfileWorkbench() {
   const [compareFilamentPath, setCompareFilamentPath] = useState<string | null>(
     null,
   );
-  const [showOnlyChangedProcess, setShowOnlyChangedProcess] = useState(true);
-  const [showOnlyChangedFilament, setShowOnlyChangedFilament] = useState(true);
+  const [showOnlyChanged, setShowOnlyChanged] = useState(true);
   const [systemFilamentEntries, setSystemFilamentEntries] = useState<
     SystemFilamentEntry[]
   >([]);
@@ -250,22 +230,11 @@ export function BambuProfileWorkbench() {
           const all =
             await listUserProfileEntriesFromStudioRoot(studioRootHandle);
           let list = all;
-          if (!showAllAccounts) {
-            if (!selectedUsername) {
-              list = [];
-            } else {
-              list = all.filter((p) => p.userId === selectedUsername);
-            }
+          if (!selectedUsername) {
+            list = [];
+          } else {
+            list = all.filter((p) => p.userId === selectedUsername);
           }
-          if (!cancelled) {
-            setProfiles(list);
-            setSelectedPath(null);
-            setChain([]);
-          }
-          return;
-        }
-        if (showAllAccounts) {
-          const { profiles: list } = await fetchApiProfilesFull();
           if (!cancelled) {
             setProfiles(list);
             setSelectedPath(null);
@@ -302,12 +271,10 @@ export function BambuProfileWorkbench() {
     return () => {
       cancelled = true;
     };
-  }, [apiOk, dataMode, studioRootHandle, selectedUsername, showAllAccounts, t]);
+  }, [apiOk, dataMode, studioRootHandle, selectedUsername, t]);
 
   useEffect(() => {
     setCompareFilamentPath(null);
-    setShowOnlyChangedProcess(true);
-    setShowOnlyChangedFilament(true);
   }, [selectedPath]);
 
   useEffect(() => {
@@ -396,49 +363,32 @@ export function BambuProfileWorkbench() {
   ]);
 
   const grouped = useMemo(() => {
-    const m = new Map<string, UserProfileEntry[]>();
+    const m = new Map<SidebarSection, UserProfileEntry[]>();
     for (const p of profiles) {
       const section = sidebarSectionForProfile(p);
-      const key = showAllAccounts
-        ? `${p.userId}${GROUP_KEY_SEP}${section}`
-        : section;
-      const arr = m.get(key) ?? [];
+      const arr = m.get(section) ?? [];
       arr.push(p);
-      m.set(key, arr);
+      m.set(section, arr);
     }
-    return Array.from(m.entries()).sort(([a], [b]) => {
-      const pa = parseGroupKey(a, showAllAccounts);
-      const pb = parseGroupKey(b, showAllAccounts);
-      if (showAllAccounts) {
-        if (pa.userId !== pb.userId) {
-          return (pa.userId ?? "").localeCompare(pb.userId ?? "");
-        }
-      }
-      return SECTION_ORDER[pa.section] - SECTION_ORDER[pb.section];
-    });
-  }, [profiles, showAllAccounts]);
+    return Array.from(m.entries()).sort(
+      ([a], [b]) => SECTION_ORDER[a] - SECTION_ORDER[b],
+    );
+  }, [profiles]);
 
   const firstProcessGroupIndex = useMemo(
-    () =>
-      grouped.findIndex(([key]) => {
-        const { section } = parseGroupKey(key, showAllAccounts);
-        return section === "process";
-      }),
-    [grouped, showAllAccounts],
+    () => grouped.findIndex(([key]) => key === "process"),
+    [grouped],
   );
 
   const sidebarGroupHeading = useCallback(
-    (mapKey: string) => {
-      const { userId, section } = parseGroupKey(mapKey, showAllAccounts);
-      const label =
-        section === "filament_custom"
-          ? t("sidebar.groupCustomFilaments")
-          : section === "filament_standard"
-            ? t("sidebar.groupFilament")
-            : t("sidebar.groupProcess");
-      return showAllAccounts && userId ? `${userId} · ${label}` : label;
+    (section: SidebarSection) => {
+      return section === "filament_custom"
+        ? t("sidebar.groupCustomFilaments")
+        : section === "filament_standard"
+          ? t("sidebar.groupFilament")
+          : t("sidebar.groupProcess");
     },
-    [showAllAccounts, t],
+    [t],
   );
 
   const handlePingOrRefresh = useCallback(() => {
@@ -463,15 +413,8 @@ export function BambuProfileWorkbench() {
           const all =
             await listUserProfileEntriesFromStudioRoot(studioRootHandle);
           let list = all;
-          if (!showAllAccounts) {
-            if (!selectedUsername) list = [];
-            else list = all.filter((p) => p.userId === selectedUsername);
-          }
-          setProfiles(list);
-          return;
-        }
-        if (showAllAccounts) {
-          const { profiles: list } = await fetchApiProfilesFull();
+          if (!selectedUsername) list = [];
+          else list = all.filter((p) => p.userId === selectedUsername);
           setProfiles(list);
           return;
         }
@@ -489,7 +432,7 @@ export function BambuProfileWorkbench() {
       }
     };
     void run();
-  }, [dataMode, studioRootHandle, showAllAccounts, selectedUsername, t]);
+  }, [dataMode, studioRootHandle, selectedUsername, t]);
 
   const handleSwitchToApi = useCallback(() => {
     localStorage.setItem(DATA_MODE_STORAGE_KEY, "api");
@@ -693,49 +636,35 @@ export function BambuProfileWorkbench() {
               <span className="text-muted-foreground block text-xs font-medium">
                 {t("controls.bambuAccount")}
               </span>
-              {!showAllAccounts ? (
-                <NativeSelectField className="w-full max-w-full">
-                  <select
-                    className="border-input bg-background h-9 w-full max-w-full appearance-none rounded-md border px-2 pr-8 text-sm"
-                    value={selectedUsername ?? ""}
-                    onChange={(e) =>
-                      setSelectedUsername(e.target.value || null)
-                    }
-                    disabled={apiOk !== true || accountNames.length === 0}
-                  >
-                    {accountNames.length === 0 ? (
-                      <option value="">{t("controls.noAccounts")}</option>
-                    ) : (
-                      accountNames.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </NativeSelectField>
-              ) : (
-                <p className="text-muted-foreground text-xs leading-snug">
-                  {t("controls.allAccountsHint")}
-                </p>
-              )}
-              <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pt-0.5 text-xs">
+              <NativeSelectField className="w-full max-w-full">
+                <select
+                  className="border-input bg-background h-9 w-full max-w-full appearance-none rounded-md border px-2 pr-8 text-sm"
+                  value={selectedUsername ?? ""}
+                  onChange={(e) => setSelectedUsername(e.target.value || null)}
+                  disabled={apiOk !== true || accountNames.length === 0}
+                >
+                  {accountNames.length === 0 ? (
+                    <option value="">{t("controls.noAccounts")}</option>
+                  ) : (
+                    accountNames.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </NativeSelectField>
+              <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pt-1 text-xs">
                 <input
                   type="checkbox"
-                  checked={showAllAccounts}
-                  onChange={(e) => setShowAllAccounts(e.target.checked)}
-                  disabled={apiOk !== true}
+                  checked={showOnlyChanged}
+                  onChange={(e) => setShowOnlyChanged(e.target.checked)}
                 />
-                {t("controls.allAccounts")}
+                {t("controls.showOnlyChanged")}
               </label>
             </div>
           </div>
 
-          <div className="border-border w-full border-t">
-            <div className="text-muted-foreground border-border w-full border-b px-2 py-2 text-xs font-medium">
-              {t("sidebar.profilesHeading")}
-            </div>
-          </div>
           <div className="min-h-0 flex-1 overflow-y-auto py-2">
             {apiOk !== true ? (
               <p className="text-muted-foreground px-2 py-4 text-sm">
@@ -753,10 +682,7 @@ export function BambuProfileWorkbench() {
             ) : (
               <ul className="flex flex-col">
                 {grouped.map(([mapKey, items], index) => {
-                  const { section: sidebarSection } = parseGroupKey(
-                    mapKey,
-                    showAllAccounts,
-                  );
+                  const sidebarSection = mapKey;
                   const filamentGroupDefaultOpen =
                     sidebarSection === "filament_standard";
                   return (
@@ -850,18 +776,6 @@ export function BambuProfileWorkbench() {
               </CollapsibleContent>
             </Collapsible>
           ) : null}
-          {isFilamentProfile && selectedPath && apiOk === true ? (
-            <div className="border-border border-b px-4 py-2">
-              <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={showOnlyChangedFilament}
-                  onChange={(e) => setShowOnlyChangedFilament(e.target.checked)}
-                />
-                {t("compareFilament.showOnlyChanged")}
-              </label>
-            </div>
-          ) : null}
           <div className="min-h-0 flex-1 overflow-auto py-4">
             {resolving ? (
               <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
@@ -872,15 +786,11 @@ export function BambuProfileWorkbench() {
               <ProfileTreeGrid
                 chain={chain}
                 activeExtruderIndex={activeExtruderIndex}
-                showAdvancedCheckbox={isProcessProfile}
                 showOnlyChangedLeaf={
-                  isProcessProfile
-                    ? showOnlyChangedProcess
-                    : isFilamentProfile
-                      ? showOnlyChangedFilament
-                      : false
+                  isProcessProfile || isFilamentProfile
+                    ? showOnlyChanged
+                    : false
                 }
-                onShowOnlyChangedLeafChange={setShowOnlyChangedProcess}
               />
             )}
           </div>

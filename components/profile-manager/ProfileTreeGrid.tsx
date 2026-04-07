@@ -58,21 +58,15 @@ export type ProfileTreeGridProps = {
   /** Used when a JSON value is an array (e.g. dual / quad tool). Default 0. */
   activeExtruderIndex?: number;
   className?: string;
-  /** When false, hide “Show advanced parameters” (non-process profiles). */
-  showAdvancedCheckbox?: boolean;
   /** When true, hide rows where the leaf profile cell is not an override vs. parent. */
   showOnlyChangedLeaf?: boolean;
-  /** Used with {@link showAdvancedCheckbox} for the process “changed only” toggle. */
-  onShowOnlyChangedLeafChange?: (value: boolean) => void;
 };
 
 export function ProfileTreeGrid({
   chain,
   activeExtruderIndex = 0,
   className,
-  showAdvancedCheckbox = true,
   showOnlyChangedLeaf = false,
-  onShowOnlyChangedLeafChange,
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
@@ -103,8 +97,6 @@ export function ProfileTreeGrid({
   const uiTree = isFilamentProfile
     ? BAMBU_FILAMENT_UI_TREE
     : BAMBU_PROCESS_UI_TREE;
-
-  const [showAdvanced, setShowAdvanced] = React.useState(true);
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
     {},
@@ -151,29 +143,6 @@ export function ProfileTreeGrid({
   return (
     <Tooltip.Provider delay={400}>
       <div className={cn("w-full space-y-3", className)}>
-        {showAdvancedCheckbox ? (
-          <div className="space-y-2 pl-4">
-            <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                checked={showAdvanced}
-                onChange={(e) => setShowAdvanced(e.target.checked)}
-              />
-              {t("treeGrid.showAdvanced")}
-            </label>
-            <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                checked={showOnlyChangedLeaf}
-                onChange={(e) =>
-                  onShowOnlyChangedLeafChange?.(e.target.checked)
-                }
-              />
-              {t("treeGrid.showOnlyChangedProcess")}
-            </label>
-          </div>
-        ) : null}
-
         <div className="w-full overflow-x-auto">
           <Table className="border-collapse">
             <TableHeader className="[&_tr]:border-0">
@@ -209,7 +178,6 @@ export function ProfileTreeGrid({
                 const visibleSubgroups = group.subgroups
                   .map((subgroup) => {
                     const visibleProps = subgroup.properties.filter((p) => {
-                      if (!(showAdvanced || !p.advanced)) return false;
                       if (!showOnlyChangedLeaf) return true;
                       return isLeafInheritanceOverride(
                         chain,

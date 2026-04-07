@@ -69,12 +69,6 @@ export async function fetchApiProfilesForAccount(account: string): Promise<{
   return apiGet(`/api/profiles?${q.toString()}`);
 }
 
-export async function fetchApiProfilesFull(): Promise<{
-  profiles: UserProfileEntry[];
-}> {
-  return apiGet("/api/profiles?full=1");
-}
-
 export type ApiSystemFilaments = { entries: SystemFilamentEntry[] };
 
 export async function fetchApiSystemFilaments(): Promise<ApiSystemFilaments> {

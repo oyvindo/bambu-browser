@@ -50,10 +50,9 @@ export const messagesEn = {
     refreshConnection: "Refresh connection",
     retryApi: "Retry API",
     refreshList: "Refresh list",
-    allAccounts: "All accounts",
     bambuAccount: "Bambu Lab Account",
     noAccounts: "No accounts",
-    allAccountsHint: "Showing every profile under users/ or user/",
+    showOnlyChanged: "Show only changed values",
   },
   errors: {
     serverCannotReadRoot:
@@ -75,7 +74,6 @@ export const messagesEn = {
     optionalNextEnv: "Optional env for Next:",
   },
   sidebar: {
-    profilesHeading: "Profiles",
     connectFirst:
       "Connect first: open “How to connect” in the header, or use Ping API / choose a folder.",
     loading: "Loading…",
@@ -90,9 +88,7 @@ export const messagesEn = {
   },
   treeGrid: {
     emptyHint:
-      "Load a profile to show the inheritance tree (one column per template in the chain).",
-    showAdvanced: "Show advanced parameters",
-    showOnlyChangedProcess: "Show only changed process values",
+      "Load a filament or process to show the inheritance tree (one column per template in the chain).",
     columnProperty: "Property",
   },
   compareFilament: {
@@ -108,7 +104,6 @@ export const messagesEn = {
     noMatches: "No matching filaments",
     removeAria: "Remove",
     removeTooltip: "Remove",
-    showOnlyChanged: "Show only changed filament values",
   },
   chainColumn: {
     profileFilament: "Filament profile",
