@@ -186,13 +186,13 @@ export function CompareFilamentToolbar({
 
   return (
     <Tooltip.Provider delay={400}>
-      <div className="border-border space-y-3 border-t px-4 py-3">
+      <div className="border-border min-w-0 max-w-full space-y-3 border-t px-4 py-3">
         {hasRootEntries || subfolderNames.length > 0 ? (
-          <div className="space-y-1.5">
+          <div className="min-w-0 max-w-full space-y-1.5">
             <span className="text-muted-foreground block text-xs font-medium">
               {t("compareFilament.foldersHeading")}
             </span>
-            <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto pr-1">
+            <div className="flex min-w-0 max-h-32 flex-wrap gap-2 overflow-y-auto pr-1">
               {hasRootEntries ? (
                 <Button
                   type="button"
@@ -231,13 +231,13 @@ export function CompareFilamentToolbar({
           </div>
         ) : null}
 
-        <div className="space-y-1.5">
+        <div className="min-w-0 max-w-full space-y-1.5">
           <span className="text-muted-foreground block text-xs font-medium">
             {t("compareFilament.brandsHeading")}
           </span>
           <div className="flex flex-col gap-2">
             {rootBrandOptions.length > 0 ? (
-              <div className="flex max-h-32 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1">
+              <div className="flex min-w-0 max-h-32 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1">
                 {rootBrandOptions.map((b) => (
                   <label
                     key={b.id}
@@ -262,7 +262,7 @@ export function CompareFilamentToolbar({
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="min-w-0 max-w-full space-y-3">
           <span className="text-muted-foreground block text-xs font-medium">
             {t("compareFilament.materialsHeading")}
           </span>
@@ -278,7 +278,7 @@ export function CompareFilamentToolbar({
               <div
                 key={folderKey || "root"}
                 className={cn(
-                  "space-y-1.5",
+                  "min-w-0 max-w-full space-y-1.5",
                   !locOn && "text-muted-foreground opacity-50",
                 )}
               >
@@ -289,7 +289,7 @@ export function CompareFilamentToolbar({
                 ) : null}
                 <div
                   className={cn(
-                    "flex max-h-28 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1",
+                    "flex min-w-0 max-h-28 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1",
                     folderKey !== "" && "border-border ml-3 border-l pl-3",
                   )}
                 >
@@ -297,7 +297,7 @@ export function CompareFilamentToolbar({
                     <label
                       key={`${folderKey}:${id}`}
                       className={cn(
-                        "flex items-center gap-1.5 text-xs whitespace-nowrap",
+                        "flex min-w-0 max-w-full items-center gap-1.5 text-xs wrap-break-word",
                         disabled || loadingList || !locOn
                           ? "cursor-not-allowed"
                           : "text-foreground cursor-pointer",
@@ -305,11 +305,12 @@ export function CompareFilamentToolbar({
                     >
                       <input
                         type="checkbox"
+                        className="shrink-0"
                         checked={sel?.has(id) ?? false}
                         onChange={() => toggleMaterial(folderKey, id)}
                         disabled={disabled || loadingList || !locOn}
                       />
-                      {id}
+                      <span className="min-w-0 wrap-break-word">{id}</span>
                     </label>
                   ))}
                 </div>

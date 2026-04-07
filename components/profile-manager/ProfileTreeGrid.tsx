@@ -5,7 +5,6 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import * as React from "react";
 
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -60,13 +59,23 @@ export type ProfileTreeGridProps = {
   className?: string;
   /** When true, hide rows where the leaf profile cell is not an override vs. parent. */
   showOnlyChangedLeaf?: boolean;
+  /** Renders as the first row inside the sticky table header (e.g. compare-to-filament accordion). */
+  compareAccordion?: React.ReactNode;
 };
+
+const STICKY_HEADER_SURFACE =
+  "bg-background shadow-[0_6px_16px_-4px_rgb(15_23_42_/_0.18),0_2px_6px_-2px_rgb(15_23_42_/_0.1)] dark:shadow-[0_8px_20px_-4px_rgb(0_0_0_/_0.55),0_2px_8px_-2px_rgb(0_0_0_/_0.4)]";
+
+/** No overflow-* here: any overflow other than visible between the scroll parent and thead breaks position:sticky. */
+const TABLE_FRAME =
+  "border-border bg-background mx-2 mb-2 min-w-0 rounded-lg border";
 
 export function ProfileTreeGrid({
   chain,
   activeExtruderIndex = 0,
   className,
   showOnlyChangedLeaf = false,
+  compareAccordion,
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
@@ -127,14 +136,23 @@ export function ProfileTreeGrid({
 
   if (chain.length === 0 || columns.length === 0) {
     return (
-      <div
-        className={cn(
-          "text-muted-foreground border-border rounded-lg border border-dashed p-8 text-center text-sm",
-          className,
-        )}
-      >
-        {t("treeGrid.emptyHint")}
-      </div>
+      <Tooltip.Provider delay={400}>
+        <div className={cn(TABLE_FRAME, className)}>
+          {compareAccordion ? (
+            <div
+              className={cn(
+                "border-border sticky top-0 z-30 isolate border-b",
+                STICKY_HEADER_SURFACE,
+              )}
+            >
+              {compareAccordion}
+            </div>
+          ) : null}
+          <div className="text-muted-foreground border-border m-3 rounded-md border border-dashed p-8 text-center text-sm">
+            {t("treeGrid.emptyHint")}
+          </div>
+        </div>
+      </Tooltip.Provider>
     );
   }
 
@@ -142,62 +160,83 @@ export function ProfileTreeGrid({
 
   return (
     <Tooltip.Provider delay={400}>
-      <div className={cn("w-full space-y-3", className)}>
-        <div className="w-full overflow-x-auto">
-          <Table className="border-collapse">
-            <TableHeader className="[&_tr]:border-0">
-              <TableRow className="border-0 hover:bg-transparent">
-                <TableHead className="min-w-[220px] border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60">
-                  <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                    {t("treeGrid.columnProperty")}
-                  </span>
-                </TableHead>
-                {columns.map((col) => {
-                  const name = fileLabel(col.level.relativePath);
-                  return (
-                    <TableHead
-                      key={col.index}
-                      className="min-w-[120px] max-w-[200px] border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60"
-                      title={col.level.relativePath}
-                    >
-                      <span className="mb-1 block text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                        {col.roleLabel}
-                      </span>
-                      <span className="block truncate font-mono text-xs font-bold tabular-nums leading-snug text-slate-900 dark:text-slate-100">
-                        {name}
-                      </span>
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            </TableHeader>
-            <TableBody className="[&_tr]:border-0">
-              {uiTree.map((group, groupIndex) => {
-                const groupOpen = openGroups[group.id] !== false;
-                const isLastGroup = groupIndex === uiTree.length - 1;
-                const visibleSubgroups = group.subgroups
-                  .map((subgroup) => {
-                    const visibleProps = subgroup.properties.filter((p) => {
-                      if (!showOnlyChangedLeaf) return true;
-                      return isLeafInheritanceOverride(
-                        chain,
-                        p.key,
-                        p.unit,
-                        activeExtruderIndex,
-                      );
-                    });
-                    return { subgroup, visibleProps };
-                  })
-                  .filter((x) => x.visibleProps.length > 0);
-                if (visibleSubgroups.length === 0) return null;
+      <div className={cn(TABLE_FRAME, className)}>
+        {compareAccordion ? (
+          <div className="border-border w-full min-w-0 max-w-full border-b bg-background whitespace-normal">
+            <div className="min-w-0 max-w-full overflow-x-auto rounded-t-lg">
+              {compareAccordion}
+            </div>
+          </div>
+        ) : null}
+        <table className="w-full min-w-max caption-bottom border-separate border-spacing-0 text-sm">
+          <TableHeader
+            className={cn(
+              "sticky top-0 z-30 isolate [&_tr]:border-0",
+              STICKY_HEADER_SURFACE,
+            )}
+          >
+            <TableRow className="border-0 bg-background hover:bg-transparent">
+              <TableHead
+                className={cn(
+                  "w-px max-w-fit whitespace-nowrap border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60",
+                  compareAccordion ? "" : "rounded-tl-lg",
+                )}
+              >
+                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                  {t("treeGrid.columnProperty")}
+                </span>
+              </TableHead>
+              {columns.map((col, colIdx) => {
+                const name = fileLabel(col.level.relativePath);
+                const isLastHead = colIdx === columns.length - 1;
                 return (
-                  <React.Fragment key={group.id}>
-                    <TableRow className="border-0 bg-slate-100/90 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/65">
-                      <TableCell colSpan={colCount} className="p-0">
+                  <TableHead
+                    key={col.index}
+                    className={cn(
+                      "min-w-[120px] max-w-[200px] border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60",
+                      isLastHead && "rounded-tr-lg",
+                    )}
+                    title={col.level.relativePath}
+                  >
+                    <span className="mb-1 block text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                      {col.roleLabel}
+                    </span>
+                    <span className="block truncate font-mono text-xs font-bold tabular-nums leading-snug text-slate-900 dark:text-slate-100">
+                      {name}
+                    </span>
+                  </TableHead>
+                );
+              })}
+            </TableRow>
+          </TableHeader>
+          <TableBody className="[&_tr]:border-0">
+            {uiTree.map((group, groupIndex) => {
+              const groupOpen = openGroups[group.id] !== false;
+              const isLastGroup = groupIndex === uiTree.length - 1;
+              const visibleSubgroups = group.subgroups
+                .map((subgroup) => {
+                  const visibleProps = subgroup.properties.filter((p) => {
+                    if (!showOnlyChangedLeaf) return true;
+                    return isLeafInheritanceOverride(
+                      chain,
+                      p.key,
+                      p.unit,
+                      activeExtruderIndex,
+                    );
+                  });
+                  return { subgroup, visibleProps };
+                })
+                .filter((x) => x.visibleProps.length > 0);
+              if (visibleSubgroups.length === 0) return null;
+              return (
+                <React.Fragment key={group.id}>
+                  <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">
+                    <TableCell colSpan={colCount} className="p-0">
+                      <div className="mx-2 rounded-md bg-slate-100/90 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/65">
                         <button
                           type="button"
                           onClick={() => toggleGroup(group.id)}
-                          className="flex w-full items-center gap-2 py-3 text-left text-sm font-semibold tracking-tight text-slate-900 uppercase dark:text-slate-100"
+                          className="flex w-full items-center gap-2 px-2 py-3 text-left text-sm font-semibold tracking-tight text-slate-900 uppercase dark:text-slate-100"
                         >
                           {groupOpen ? (
                             <ChevronDown
@@ -212,22 +251,21 @@ export function ProfileTreeGrid({
                           )}
                           {group.label}
                         </button>
-                      </TableCell>
-                    </TableRow>
-                    {groupOpen &&
-                      visibleSubgroups.map(({ subgroup, visibleProps }) => {
-                        const subOpen = openSubgroups[subgroup.id] !== false;
-                        return (
-                          <React.Fragment key={subgroup.id}>
-                            <TableRow className="border-0 bg-slate-50/90 hover:bg-slate-100/70 dark:bg-slate-900/35 dark:hover:bg-slate-900/50">
-                              <TableCell
-                                colSpan={colCount}
-                                className="p-0 pl-10"
-                              >
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {groupOpen &&
+                    visibleSubgroups.map(({ subgroup, visibleProps }) => {
+                      const subOpen = openSubgroups[subgroup.id] !== false;
+                      return (
+                        <React.Fragment key={subgroup.id}>
+                          <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">
+                            <TableCell colSpan={colCount} className="p-0">
+                              <div className="mx-2 rounded-md bg-slate-50/90 hover:bg-slate-100/70 dark:bg-slate-900/35 dark:hover:bg-slate-900/50">
                                 <button
                                   type="button"
                                   onClick={() => toggleSubgroup(subgroup.id)}
-                                  className="flex w-full items-center gap-2 py-2.5 text-left text-xs font-medium text-slate-500 dark:text-slate-400"
+                                  className="flex w-full items-center gap-2 py-2.5 pl-10 pr-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400"
                                 >
                                   {subOpen ? (
                                     <ChevronDown
@@ -242,109 +280,108 @@ export function ProfileTreeGrid({
                                   )}
                                   {subgroup.label}
                                 </button>
-                              </TableCell>
-                            </TableRow>
-                            {subOpen &&
-                              visibleProps.map((prop) => {
-                                const key = prop.key;
-                                const unit = prop.unit;
-                                const title = propertyRowTitle(prop);
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {subOpen &&
+                            visibleProps.map((prop) => {
+                              const key = prop.key;
+                              const unit = prop.unit;
+                              const title = propertyRowTitle(prop);
 
-                                const effectiveValues = columns.map((col) =>
-                                  mergedValueAt(chain, col.index, key),
-                                );
+                              const effectiveValues = columns.map((col) =>
+                                mergedValueAt(chain, col.index, key),
+                              );
 
-                                const cellTexts = effectiveValues.map((v) =>
-                                  formatBambuMappedValue(
-                                    v,
-                                    unit,
-                                    activeExtruderIndex,
-                                  ),
-                                );
+                              const cellTexts = effectiveValues.map((v) =>
+                                formatBambuMappedValue(
+                                  v,
+                                  unit,
+                                  activeExtruderIndex,
+                                ),
+                              );
 
-                                const overridesParent = cellTexts.map(
-                                  (text, i) =>
-                                    i > 0 && text !== cellTexts[i - 1],
-                                );
+                              const overridesParent = cellTexts.map(
+                                (text, i) => i > 0 && text !== cellTexts[i - 1],
+                              );
 
-                                const isOddStripe = zebraDataRow % 2 === 1;
-                                zebraDataRow += 1;
-                                const rowStripe = isOddStripe
-                                  ? "bg-slate-50/50 dark:bg-slate-900/15"
-                                  : "bg-background";
+                              const isOddStripe = zebraDataRow % 2 === 1;
+                              zebraDataRow += 1;
+                              const rowStripe = isOddStripe
+                                ? "bg-slate-50/50 dark:bg-slate-900/15"
+                                : "bg-background";
 
-                                return (
-                                  <TableRow
-                                    key={key}
+                              return (
+                                <TableRow
+                                  key={key}
+                                  className={cn(
+                                    "border-0 border-slate-100/60 transition-colors dark:border-slate-800/50",
+                                    rowStripe,
+                                    "hover:bg-slate-100/35 dark:hover:bg-slate-800/25",
+                                  )}
+                                >
+                                  <TableCell
                                     className={cn(
-                                      "border-0 border-slate-100/60 transition-colors dark:border-slate-800/50",
+                                      "w-px max-w-fit whitespace-nowrap border-b border-slate-100/50 py-3 pl-28 align-middle dark:border-slate-800/40",
                                       rowStripe,
-                                      "hover:bg-slate-100/35 dark:hover:bg-slate-800/25",
                                     )}
                                   >
+                                    <div className="flex max-w-max flex-nowrap items-baseline gap-x-1.5">
+                                      <span className="text-sm font-normal whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        {title}
+                                      </span>
+                                      <PropertyHelpTooltipLazy
+                                        label={title}
+                                        propertyKey={key}
+                                      />
+                                    </div>
+                                    <span
+                                      className="mt-0.5 block max-w-max font-mono text-[10px] whitespace-nowrap text-slate-400 dark:text-slate-500"
+                                      title={key}
+                                    >
+                                      {key}
+                                    </span>
+                                  </TableCell>
+                                  {columns.map((col, i) => (
                                     <TableCell
+                                      key={col.index}
                                       className={cn(
-                                        "whitespace-normal border-b border-slate-100/50 py-3 pl-28 align-middle dark:border-slate-800/40",
+                                        "border-b border-slate-100/50 py-3 align-middle dark:border-slate-800/40",
                                         rowStripe,
                                       )}
+                                      title={col.level.relativePath}
                                     >
-                                      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                                        <span className="text-sm font-normal text-slate-700 dark:text-slate-300">
-                                          {title}
-                                        </span>
-                                        <PropertyHelpTooltipLazy
-                                          label={title}
-                                          propertyKey={key}
-                                        />
-                                      </div>
                                       <span
-                                        className="mt-0.5 block font-mono text-[10px] text-slate-400 dark:text-slate-500"
-                                        title={key}
+                                        className={cn(
+                                          "inline-flex min-h-[1.625rem] items-center font-mono text-sm tabular-nums text-slate-900 dark:text-slate-100",
+                                          overridesParent[i] &&
+                                            "rounded-[calc(var(--radius-md)/2)] bg-emerald-100/85 px-3 py-1 text-slate-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-100",
+                                        )}
                                       >
-                                        {key}
+                                        {cellTexts[i]}
                                       </span>
                                     </TableCell>
-                                    {columns.map((col, i) => (
-                                      <TableCell
-                                        key={col.index}
-                                        className={cn(
-                                          "border-b border-slate-100/50 py-3 align-middle dark:border-slate-800/40",
-                                          rowStripe,
-                                        )}
-                                        title={col.level.relativePath}
-                                      >
-                                        <span
-                                          className={cn(
-                                            "inline-flex min-h-[1.625rem] items-center font-mono text-sm tabular-nums text-slate-900 dark:text-slate-100",
-                                            overridesParent[i] &&
-                                              "rounded-[calc(var(--radius-md)/2)] bg-emerald-100/85 px-3 py-1 text-slate-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-100",
-                                          )}
-                                        >
-                                          {cellTexts[i]}
-                                        </span>
-                                      </TableCell>
-                                    ))}
-                                  </TableRow>
-                                );
-                              })}
-                          </React.Fragment>
-                        );
-                      })}
-                    {!isLastGroup ? (
-                      <TableRow className="h-5 border-0 bg-transparent hover:bg-transparent">
-                        <TableCell
-                          colSpan={colCount}
-                          className="h-5 border-0 p-0"
-                          aria-hidden
-                        />
-                      </TableRow>
-                    ) : null}
-                  </React.Fragment>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                                  ))}
+                                </TableRow>
+                              );
+                            })}
+                        </React.Fragment>
+                      );
+                    })}
+                  {!isLastGroup ? (
+                    <TableRow className="h-5 border-0 bg-transparent hover:bg-transparent">
+                      <TableCell
+                        colSpan={colCount}
+                        className="h-5 border-0 p-0"
+                        aria-hidden
+                      />
+                    </TableRow>
+                  ) : null}
+                </React.Fragment>
+              );
+            })}
+          </TableBody>
+        </table>
       </div>
     </Tooltip.Provider>
   );
