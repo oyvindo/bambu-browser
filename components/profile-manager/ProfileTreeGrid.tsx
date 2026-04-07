@@ -178,7 +178,7 @@ export function ProfileTreeGrid({
             <TableRow className="border-0 bg-background hover:bg-transparent">
               <TableHead
                 className={cn(
-                  "w-px max-w-fit whitespace-nowrap border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60",
+                  "w-px max-w-fit whitespace-nowrap border-b border-slate-100/50 bg-background py-5 align-bottom dark:border-slate-800/40",
                   compareAccordion ? "" : "rounded-tl-lg",
                 )}
               >
@@ -193,7 +193,7 @@ export function ProfileTreeGrid({
                   <TableHead
                     key={col.index}
                     className={cn(
-                      "min-w-[120px] max-w-[200px] border-b-2 border-slate-200/90 bg-background py-5 align-bottom dark:border-slate-600/60",
+                      "min-w-[120px] max-w-[200px] border-b border-slate-100/50 bg-background py-5 align-bottom dark:border-slate-800/40",
                       isLastHead && "rounded-tr-lg",
                     )}
                     title={col.level.relativePath}
