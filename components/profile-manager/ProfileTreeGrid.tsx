@@ -115,6 +115,10 @@ export function ProfileTreeGrid({
     Record<string, boolean>
   >({});
 
+  const [propertySearch, setPropertySearch] = React.useState("");
+  const propertySearchTrim = propertySearch.trim().toLowerCase();
+  const propertySearchActive = propertySearchTrim.length > 0;
+
   React.useEffect(() => {
     const initG: Record<string, boolean> = {};
     const initSg: Record<string, boolean> = {};
@@ -178,13 +182,28 @@ export function ProfileTreeGrid({
             <TableRow className="border-0 bg-background hover:bg-transparent">
               <TableHead
                 className={cn(
-                  "w-px max-w-fit whitespace-nowrap border-b border-slate-100/50 bg-background py-5 align-bottom dark:border-slate-800/40",
+                  "min-w-0 border-b border-slate-100/50 bg-background p-4 align-bottom dark:border-slate-800/40",
                   compareAccordion ? "" : "rounded-tl-lg",
                 )}
               >
-                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                  {t("treeGrid.columnProperty")}
-                </span>
+                <div className="flex w-full min-w-0 items-end justify-between gap-4">
+                  <span className="shrink-0 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                    {t("treeGrid.columnProperty")}
+                  </span>
+                  <div className="flex min-w-0 shrink flex-col items-start gap-1.5">
+                    <span className="text-muted-foreground block text-xs font-medium">
+                      {t("treeGrid.searchLabel")}
+                    </span>
+                    <input
+                      type="search"
+                      value={propertySearch}
+                      onChange={(e) => setPropertySearch(e.target.value)}
+                      placeholder={t("treeGrid.propertySearchPlaceholder")}
+                      className="border-input bg-background placeholder:text-muted-foreground h-8 w-full min-w-40 max-w-56 rounded-md border px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                      aria-label={t("treeGrid.propertySearchPlaceholder")}
+                    />
+                  </div>
+                </div>
               </TableHead>
               {columns.map((col, colIdx) => {
                 const name = fileLabel(col.level.relativePath);
@@ -211,11 +230,20 @@ export function ProfileTreeGrid({
           </TableHeader>
           <TableBody className="[&_tr]:border-0">
             {uiTree.map((group, groupIndex) => {
-              const groupOpen = openGroups[group.id] !== false;
+              const groupOpen = propertySearchActive
+                ? true
+                : openGroups[group.id] !== false;
               const isLastGroup = groupIndex === uiTree.length - 1;
               const visibleSubgroups = group.subgroups
                 .map((subgroup) => {
                   const visibleProps = subgroup.properties.filter((p) => {
+                    const title = propertyRowTitle(p).toLowerCase();
+                    if (
+                      propertySearchTrim &&
+                      !title.includes(propertySearchTrim)
+                    ) {
+                      return false;
+                    }
                     if (!showOnlyChangedLeaf) return true;
                     return isLeafInheritanceOverride(
                       chain,
@@ -256,7 +284,9 @@ export function ProfileTreeGrid({
                   </TableRow>
                   {groupOpen &&
                     visibleSubgroups.map(({ subgroup, visibleProps }) => {
-                      const subOpen = openSubgroups[subgroup.id] !== false;
+                      const subOpen = propertySearchActive
+                        ? true
+                        : openSubgroups[subgroup.id] !== false;
                       return (
                         <React.Fragment key={subgroup.id}>
                           <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">

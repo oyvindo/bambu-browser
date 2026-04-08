@@ -90,6 +90,8 @@ export const messagesEn = {
     emptyHint:
       "Load a filament or process to show the inheritance tree (one column per template in the chain).",
     columnProperty: "Property",
+    searchLabel: "Search",
+    propertySearchPlaceholder: "Filter by property name…",
   },
   compareFilament: {
     materialsHeading: "Material",

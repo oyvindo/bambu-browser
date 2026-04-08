@@ -92,6 +92,8 @@ export const messagesNb = {
     emptyHint:
       "Last et filament eller en prosess for å vise arvetreet (én kolonne per mal i kjeden).",
     columnProperty: "Parameter",
+    searchLabel: "Søk",
+    propertySearchPlaceholder: "Filtrer på parameternavn…",
   },
   compareFilament: {
     materialsHeading: "Materiale",
