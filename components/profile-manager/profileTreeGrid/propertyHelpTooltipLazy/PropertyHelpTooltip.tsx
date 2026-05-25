@@ -5,7 +5,7 @@ import { Info } from "lucide-react";
 
 import { useLocale, useTranslations } from "@/localization/context";
 import { propertyTooltipForKey } from "@/lib/bambu/property-tooltips";
-import { cn } from "@/lib/utils/index";
+import { cn } from "@/lib/utils";
 
 export function PropertyHelpTooltip({
   label,

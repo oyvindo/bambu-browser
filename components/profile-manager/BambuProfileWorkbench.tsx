@@ -33,7 +33,7 @@ import {
   pickBambuStudioFolder,
   type InheritanceChainLevel,
 } from "@/lib/bambu/resolver";
-import { cn } from "@/lib/utils/index";
+import { cn } from "@/lib/utils";
 import {
   ChevronDown,
   HelpCircle,
