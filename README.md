@@ -90,24 +90,24 @@ The app is split into **two processes**:
 
 2. **Local HTTP API** (`server.js`, started with `npm run api`) — plain Node with `http` and `fs/promises`. It reads the Bambu Studio directory on disk, validates paths under the configured root, and returns JSON. Alternatively, the same data can be read in the browser via the **File System Access** folder picker when the page runs in a **secure context** (see limitations above); the local API remains the reliable option for paths such as **macOS Library** that the picker may block.
 
-**`lib/bambu/`** holds client-side domain logic: API client (`bambu-api-client.ts`), profile and inheritance resolution (`resolver.ts`, `mapping.ts`), helpers for displaying inheritance chains (`chain-display.ts`), file-handling / validation helpers where needed, and related types. **`components/profile-manager/`** is the profile tree and toolbar UI (for example `ProfileTreeGrid`, `BambuProfileWorkbench`). **`components/ui/`** is reusable primitives (buttons, table, collapsible). **`localization/`** handles locales (context, strings, process-parameter tooltips). **`components/providers.tsx`** wires `next-themes` (light/dark) and the locale provider around the app. Fonts and global styles live in `app/layout.tsx` and `app/globals.css`.
+**`lib/bambu/`** holds client-side domain logic: API client (`bambu-api-client.ts`), profile and inheritance resolution (`resolver.ts`, `mapping.ts`), helpers for displaying inheritance chains (`chain-display.ts`), file-handling / validation helpers where needed, and related types. **`components/profile-manager/`** is the profile tree and toolbar UI (for example `ProfileTreeGrid`, `BambuProfileWorkbench`). **`components/ui/`** is reusable primitives (buttons, table, collapsible). **`localization/`** handles locales (context, strings, process-parameter tooltips). **`components/providers.tsx`** wires `@wrksz/themes` (light/dark) and the locale provider around the app. Fonts and global styles live in `app/layout.tsx` and `app/globals.css`.
 
 ### Packages and tooling
 
-| Area                  | Package                                                              | Role                                                        |
-| --------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Framework             | `next`                                                               | App Router, routing, build/start                            |
-| UI                    | `react`, `react-dom`                                                 | Component library                                           |
-| Components / headless | `@base-ui/react`                                                     | Unstyled primitives for building UI                         |
-| Variants              | `class-variance-authority`                                           | Variant-based Tailwind classes on components                |
-| Classes               | `clsx`, `tailwind-merge`                                             | Merge and dedupe CSS class names                            |
-| Icons                 | `lucide-react`                                                       | Icons in the UI                                             |
-| Theme                 | `next-themes`                                                        | Light/dark/system via `class` on `<html>`                   |
-| CLI / scaffolding     | `shadcn`                                                             | shadcn/ui tooling for component setup (project conventions) |
-| Animation             | `tw-animate-css`                                                     | Tailwind-oriented animation utilities                       |
-| Styling               | `tailwindcss`, `@tailwindcss/postcss`                                | Tailwind CSS v4 with PostCSS                                |
-| Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom`        | Type-checking                                               |
-| Quality               | `eslint`, `eslint-config-next`, `eslint-config-prettier`, `prettier` | Lint and formatting                                         |
+| Area                  | Package                                                              | Role                                                                    |
+| --------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Framework             | `next`                                                               | App Router, routing, build/start                                        |
+| UI                    | `react`, `react-dom`                                                 | Component library                                                       |
+| Components / headless | `@base-ui/react`                                                     | Unstyled primitives for building UI                                     |
+| Variants              | `class-variance-authority`                                           | Variant-based Tailwind classes on components                            |
+| Classes               | `clsx`, `tailwind-merge`                                             | Merge and dedupe CSS class names                                        |
+| Icons                 | `lucide-react`                                                       | Icons in the UI                                                         |
+| Theme                 | `@wrksz/themes`                                                      | Light/dark/system via `class` on `<html>` (Next.js 16 / React 19 ready) |
+| CLI / scaffolding     | `shadcn`                                                             | shadcn/ui tooling for component setup (project conventions)             |
+| Animation             | `tw-animate-css`                                                     | Tailwind-oriented animation utilities                                   |
+| Styling               | `tailwindcss`, `@tailwindcss/postcss`                                | Tailwind CSS v4 with PostCSS                                            |
+| Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom`        | Type-checking                                                           |
+| Quality               | `eslint`, `eslint-config-next`, `eslint-config-prettier`, `prettier` | Lint and formatting                                                     |
 
 Versions live in `package.json`; bump `next` and `eslint-config-next` together if you change the Next.js version.
 

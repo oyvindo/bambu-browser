@@ -1,7 +1,5 @@
-"use client";
-
 import * as React from "react";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@wrksz/themes/next";
 
 import { LocaleProvider } from "@/localization/context";
 

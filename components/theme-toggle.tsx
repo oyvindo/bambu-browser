@@ -1,13 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@wrksz/themes/client";
 
 import { NativeSelectField } from "@/components/native-select-field";
 import { useTranslations } from "@/localization/context";
 
+type ThemeChoice = "light" | "dark" | "system";
+
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme<ThemeChoice>();
   const t = useTranslations();
   const [mounted, setMounted] = React.useState(false);
 
@@ -22,7 +24,7 @@ export function ThemeToggle() {
         <select
           className="border-input bg-background h-8 w-full min-w-30 appearance-none rounded-md border px-2 pr-8 text-sm"
           value={mounted ? theme : "system"}
-          onChange={(e) => setTheme(e.target.value)}
+          onChange={(e) => setTheme(e.target.value as ThemeChoice)}
           disabled={!mounted}
           aria-label={t("theme.aria")}
         >
