@@ -1,7 +1,11 @@
 /**
- * Remembers the last chosen BambuStudio directory so showDirectoryPicker can use it as startIn.
+ * Remembers the last chosen slicer directories so showDirectoryPicker can use them as startIn.
  * Browsers cannot open the dialog at an arbitrary path (e.g. ~/Library/...) without a prior handle.
+ *
+ * Handles are persisted per slicer (BambuStudio / OrcaSlicer) under separate keys.
  */
+
+import type { SlicerKind } from "./bambu-api-client";
 
 type DirectoryHandleWithPermissions = FileSystemDirectoryHandle & {
   queryPermission?: (descriptor: {
@@ -15,9 +19,14 @@ type DirectoryHandleWithPermissions = FileSystemDirectoryHandle & {
 const DB_NAME = "bambu-browser-fs";
 const STORE = "handles";
 const KEY_STUDIO_ROOT = "lastBambuStudioRoot";
+const KEY_ORCA_ROOT = "lastOrcaSlicerRoot";
 const KEY_USERS_DIR = "lastBambuUsersDir";
 const KEY_SYSTEM_PROCESS = "lastBambuSystemProcess";
 const KEY_SYSTEM_FILAMENT = "lastBambuSystemFilament";
+
+function rootKeyForSlicer(slicer: SlicerKind): string {
+  return slicer === "orca" ? KEY_ORCA_ROOT : KEY_STUDIO_ROOT;
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -74,6 +83,19 @@ export async function loadBambuStudioRootHandle(): Promise<
   FileSystemDirectoryHandle | undefined
 > {
   return getDirectoryHandle(KEY_STUDIO_ROOT);
+}
+
+export async function saveSlicerRootHandle(
+  slicer: SlicerKind,
+  handle: FileSystemDirectoryHandle,
+): Promise<void> {
+  await putDirectoryHandle(rootKeyForSlicer(slicer), handle);
+}
+
+export async function loadSlicerRootHandle(
+  slicer: SlicerKind,
+): Promise<FileSystemDirectoryHandle | undefined> {
+  return getDirectoryHandle(rootKeyForSlicer(slicer));
 }
 
 export async function saveUsersDirHandle(

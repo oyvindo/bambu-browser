@@ -219,6 +219,21 @@ export async function pickBambuStudioFolder(options?: {
   return pickDirectory({ id: "bambu-studio-root", ...options });
 }
 
+export async function pickOrcaSlicerFolder(options?: {
+  startIn?: FileSystemDirectoryHandle;
+}): Promise<FileSystemDirectoryHandle | null> {
+  return pickDirectory({ id: "orca-slicer-root", ...options });
+}
+
+export async function pickSlicerFolder(
+  slicer: "bambu" | "orca",
+  options?: { startIn?: FileSystemDirectoryHandle },
+): Promise<FileSystemDirectoryHandle | null> {
+  return slicer === "orca"
+    ? pickOrcaSlicerFolder(options)
+    : pickBambuStudioFolder(options);
+}
+
 /**
  * Resolves `inherits` chains using a virtual path layout (full studio or split handles).
  */

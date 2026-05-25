@@ -2,12 +2,20 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Øyvind Øyen
  *
- * Local BambuStudio JSON API (Node fs — bypasses browser sandbox on ~/Library).
+ * Local slicer JSON API (Node fs — bypasses browser sandbox on ~/Library).
+ *
+ * Supports both **BambuStudio** and **OrcaSlicer** data roots. The active root
+ * is chosen per request via `?slicer=bambu|orca` (default: `bambu`).
  *
  * Usage:
- *   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" PORT=3847 node server.js
+ *   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" \
+ *   ORCASLICER_ROOT="/path/to/OrcaSlicer" \
+ *   PORT=3847 node server.js
  *
- * Defaults (macOS): ~/Library/Application Support/BambuStudio
+ * Defaults (macOS):
+ *   - bambu: ~/Library/Application Support/BambuStudio
+ *   - orca:  ~/Library/Application Support/OrcaSlicer
+ *
  * Frontend: set NEXT_PUBLIC_BAMBU_API_URL=http://127.0.0.1:3847
  */
 
@@ -17,18 +25,27 @@ const path = require("path");
 const os = require("os");
 
 const PORT = Number(process.env.PORT || 3847);
-const DEFAULT_ROOT =
-  process.platform === "darwin"
-    ? path.join(os.homedir(), "Library", "Application Support", "BambuStudio")
-    : path.join(os.homedir(), "BambuStudio");
 
-const STUDIO_ROOT = path.resolve(process.env.BAMBUSTUDIO_ROOT || DEFAULT_ROOT);
+const DEFAULT_ROOTS = {
+  bambu:
+    process.platform === "darwin"
+      ? path.join(os.homedir(), "Library", "Application Support", "BambuStudio")
+      : path.join(os.homedir(), "BambuStudio"),
+  orca:
+    process.platform === "darwin"
+      ? path.join(os.homedir(), "Library", "Application Support", "OrcaSlicer")
+      : path.join(os.homedir(), "OrcaSlicer"),
+};
 
-const SYSTEM_PROCESS_DIR = "system/BBL/process";
-const SYSTEM_FILAMENT_DIR = "system/BBL/filament";
+const ROOTS = {
+  bambu: path.resolve(process.env.BAMBUSTUDIO_ROOT || DEFAULT_ROOTS.bambu),
+  orca: path.resolve(process.env.ORCASLICER_ROOT || DEFAULT_ROOTS.orca),
+};
+
+/** BambuStudio puts everything under a single vendor folder (`BBL`). */
+const BAMBU_SYSTEM_VENDOR = "BBL";
 /** Same logical path as BambuStudio/system/BBL/filament/fdm_filament_common.json */
-const FDM_FILAMENT_COMMON_RELATIVE =
-  "system/BBL/filament/fdm_filament_common.json";
+const FDM_FILAMENT_COMMON_FILENAME = "fdm_filament_common.json";
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -39,6 +56,16 @@ function setCors(res) {
 function sendJson(res, status, body) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(body));
+}
+
+/** `?slicer=orca` selects OrcaSlicer; anything else (including missing) → bambu. */
+function getSlicer(url) {
+  const v = (url.searchParams.get("slicer") || "").toLowerCase();
+  return v === "orca" ? "orca" : "bambu";
+}
+
+function rootForSlicer(slicer) {
+  return ROOTS[slicer];
 }
 
 function normalizeRelativePath(p) {
@@ -52,10 +79,14 @@ function normalizeRelativePath(p) {
 function normalizeInheritsReference(raw) {
   let t = String(raw).trim().replace(/\\/g, "/");
   const lower = t.toLowerCase();
-  const needle = "bambustudio/";
-  const idx = lower.lastIndexOf(needle);
-  if (idx !== -1) {
-    t = t.slice(idx + needle.length);
+  // Strip a leading "BambuStudio/" or "OrcaSlicer/" anchor if some preset
+  // happens to ship absolute-ish references.
+  for (const needle of ["bambustudio/", "orcaslicer/"]) {
+    const idx = lower.lastIndexOf(needle);
+    if (idx !== -1) {
+      t = t.slice(idx + needle.length);
+      break;
+    }
   }
   return normalizeRelativePath(t);
 }
@@ -88,7 +119,7 @@ function safeFsPath(rootAbs, relativePosix) {
   const sep = path.sep;
   const prefix = rootResolved.endsWith(sep) ? rootResolved : rootResolved + sep;
   if (resolved !== rootResolved && !resolved.startsWith(prefix)) {
-    throw new Error("Path escapes BambuStudio root");
+    throw new Error("Path escapes slicer root");
   }
   return resolved;
 }
@@ -118,8 +149,40 @@ function inferProfileKind(relPath) {
     : "process";
 }
 
-function systemDirForKind(kind) {
-  return kind === "filament" ? SYSTEM_FILAMENT_DIR : SYSTEM_PROCESS_DIR;
+/**
+ * Returns the list of `system/<vendor>/<kind>` dirs to search for inherits
+ * references. Bambu uses a single vendor (BBL); Orca enumerates every
+ * top-level vendor folder under `system/`.
+ */
+async function systemSearchDirs(rootAbs, slicer, kind) {
+  const sub = kind === "filament" ? "filament" : "process";
+  if (slicer === "bambu") {
+    return [`system/${BAMBU_SYSTEM_VENDOR}/${sub}`];
+  }
+  const sysAbs = path.join(rootAbs, "system");
+  let ents;
+  try {
+    ents = await fs.readdir(sysAbs, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const dirs = [];
+  for (const e of ents) {
+    if (e.isDirectory()) {
+      dirs.push(`system/${e.name}/${sub}`);
+    }
+  }
+  return dirs;
+}
+
+/** Best-effort lookup of `fdm_filament_common.json` across known system dirs. */
+async function findFdmFilamentCommon(rootAbs, slicer) {
+  const dirs = await systemSearchDirs(rootAbs, slicer, "filament");
+  for (const d of dirs) {
+    const rel = joinRel(d, FDM_FILAMENT_COMMON_FILENAME);
+    if (await fileExists(rootAbs, rel)) return rel;
+  }
+  return null;
 }
 
 function normalizeInheritsFileName(inherits) {
@@ -140,6 +203,7 @@ function getInheritsField(data) {
 
 async function resolveParentRelativePath(
   rootAbs,
+  slicer,
   currentPath,
   inheritsRaw,
   kind,
@@ -147,7 +211,7 @@ async function resolveParentRelativePath(
   const trimmed = inheritsRaw.trim();
   const normalizedPath = normalizeRelativePath(currentPath);
   const currentDir = dirnameRel(normalizedPath);
-  const systemDir = systemDirForKind(kind);
+  const sysDirs = await systemSearchDirs(rootAbs, slicer, kind);
   const ref = normalizeInheritsReference(trimmed);
 
   if (ref.includes("/")) {
@@ -166,7 +230,7 @@ async function resolveParentRelativePath(
   if (kind === "filament" && !isUnderFilamentBase(currentPath)) {
     add(joinRel(currentDir, "base"));
   }
-  add(systemDir);
+  for (const d of sysDirs) add(d);
 
   for (const dir of searchDirs) {
     const rel = joinRel(dir, fileName);
@@ -177,6 +241,7 @@ async function resolveParentRelativePath(
 
 async function resolveInheritanceRecursive(
   rootAbs,
+  slicer,
   userFilePath,
   kind,
   visited,
@@ -190,37 +255,33 @@ async function resolveInheritanceRecursive(
 
   if (!inherits) {
     const leaf = { relativePath: p, data };
-    if (
-      kind === "filament" &&
-      normalizeRelativePath(p) !==
-        normalizeRelativePath(FDM_FILAMENT_COMMON_RELATIVE)
-    ) {
-      let commonData = {};
-      if (await fileExists(rootAbs, FDM_FILAMENT_COMMON_RELATIVE)) {
-        commonData = await readJsonFile(rootAbs, FDM_FILAMENT_COMMON_RELATIVE);
+    if (kind === "filament") {
+      const commonRel = await findFdmFilamentCommon(rootAbs, slicer);
+      if (commonRel && normalizeRelativePath(p) !== commonRel) {
+        const commonData = await readJsonFile(rootAbs, commonRel);
+        return [{ relativePath: commonRel, data: commonData }, leaf];
       }
-      return [
-        { relativePath: FDM_FILAMENT_COMMON_RELATIVE, data: commonData },
-        leaf,
-      ];
     }
     return [leaf];
   }
 
   const parentPath = await resolveParentRelativePath(
     rootAbs,
+    slicer,
     p,
     inherits,
     kind,
   );
   if (!parentPath) {
+    const sysDirs = await systemSearchDirs(rootAbs, slicer, kind);
     throw new Error(
-      `Could not resolve inherits "${inherits}" from "${p}". Tried same folder and ${systemDirForKind(kind)}.`,
+      `Could not resolve inherits "${inherits}" from "${p}". Tried same folder and ${sysDirs.join(", ") || "(no system dirs)"}.`,
     );
   }
 
   const ancestors = await resolveInheritanceRecursive(
     rootAbs,
+    slicer,
     parentPath,
     kind,
     visited,
@@ -290,44 +351,62 @@ function isUnderscorePresetFileName(name) {
 }
 
 /**
- * system/BBL/filament: root-level JSON + one level of subfolders (e.g. Polymaker / P1P).
+ * For Bambu: system/BBL/filament root-level JSON + one subfolder level.
+ * For Orca: aggregate the same shape across every vendor folder under system/.
  * Returns { relativePath, folder, fileName }.
  */
-async function listSystemFilamentEntries(rootAbs) {
-  const base = "system/BBL/filament";
-  const dirAbs = path.join(rootAbs, "system", "BBL", "filament");
+async function listSystemFilamentEntries(rootAbs, slicer) {
+  const vendorBases =
+    slicer === "bambu"
+      ? [`system/${BAMBU_SYSTEM_VENDOR}/filament`]
+      : await (async () => {
+          const sysAbs = path.join(rootAbs, "system");
+          let ents;
+          try {
+            ents = await fs.readdir(sysAbs, { withFileTypes: true });
+          } catch {
+            return [];
+          }
+          return ents
+            .filter((e) => e.isDirectory())
+            .map((e) => `system/${e.name}/filament`);
+        })();
+
   const out = [];
-  let ents;
-  try {
-    ents = await fs.readdir(dirAbs, { withFileTypes: true });
-  } catch {
-    return out;
-  }
-  for (const e of ents) {
-    if (
-      e.isFile() &&
-      e.name.toLowerCase().endsWith(".json") &&
-      !isFdmFilamentInternalPreset(e.name) &&
-      !isSupportPresetFileName(e.name) &&
-      !isUnderscorePresetFileName(e.name)
-    ) {
-      out.push({
-        relativePath: joinRel(base, e.name),
-        folder: "",
-        fileName: e.name,
-      });
-    } else if (e.isDirectory()) {
-      const subAbs = path.join(dirAbs, e.name);
-      const files = await listJsonInDir(subAbs);
-      for (const f of files) {
-        if (isFdmFilamentInternalPreset(f)) continue;
-        if (isSupportPresetFileName(f)) continue;
-        if (isUnderscorePresetFileName(f)) continue;
+  for (const base of vendorBases) {
+    const dirAbs = path.join(rootAbs, ...base.split("/"));
+    let ents;
+    try {
+      ents = await fs.readdir(dirAbs, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of ents) {
+      if (
+        e.isFile() &&
+        e.name.toLowerCase().endsWith(".json") &&
+        !isFdmFilamentInternalPreset(e.name) &&
+        !isSupportPresetFileName(e.name) &&
+        !isUnderscorePresetFileName(e.name)
+      ) {
         out.push({
-          relativePath: joinRel(joinRel(base, e.name), f),
-          folder: e.name,
-          fileName: f,
+          relativePath: joinRel(base, e.name),
+          folder: "",
+          fileName: e.name,
         });
+      } else if (e.isDirectory()) {
+        const subAbs = path.join(dirAbs, e.name);
+        const files = await listJsonInDir(subAbs);
+        for (const f of files) {
+          if (isFdmFilamentInternalPreset(f)) continue;
+          if (isSupportPresetFileName(f)) continue;
+          if (isUnderscorePresetFileName(f)) continue;
+          out.push({
+            relativePath: joinRel(joinRel(base, e.name), f),
+            folder: e.name,
+            fileName: f,
+          });
+        }
       }
     }
   }
@@ -405,42 +484,51 @@ async function handleRequest(req, res) {
   }
 
   const route = url.pathname;
+  const slicer = getSlicer(url);
+  const slicerRoot = rootForSlicer(slicer);
 
   if (route === "/health" || route === "/api/health") {
     try {
-      await fs.access(STUDIO_ROOT);
-      return sendJson(res, 200, { ok: true, root: STUDIO_ROOT });
+      await fs.access(slicerRoot);
+      return sendJson(res, 200, { ok: true, root: slicerRoot, slicer });
     } catch {
       return sendJson(res, 200, {
         ok: false,
-        root: STUDIO_ROOT,
+        root: slicerRoot,
+        slicer,
         error:
-          "BambuStudio root not found or not readable. Set BAMBUSTUDIO_ROOT.",
+          slicer === "orca"
+            ? "OrcaSlicer root not found or not readable. Set ORCASLICER_ROOT."
+            : "BambuStudio root not found or not readable. Set BAMBUSTUDIO_ROOT.",
       });
     }
   }
 
   try {
-    await fs.access(STUDIO_ROOT);
+    await fs.access(slicerRoot);
   } catch {
     return sendJson(res, 500, {
-      error: `BambuStudio root not found or not readable: ${STUDIO_ROOT}`,
-      hint: "Set BAMBUSTUDIO_ROOT to your BambuStudio folder.",
+      error: `${slicer === "orca" ? "OrcaSlicer" : "BambuStudio"} root not found or not readable: ${slicerRoot}`,
+      hint:
+        slicer === "orca"
+          ? "Set ORCASLICER_ROOT to your OrcaSlicer folder."
+          : "Set BAMBUSTUDIO_ROOT to your BambuStudio folder.",
     });
   }
 
   if (route === "/api/meta") {
-    const { layout, accounts } = await detectLayout(STUDIO_ROOT);
+    const { layout, accounts } = await detectLayout(slicerRoot);
     return sendJson(res, 200, {
-      root: STUDIO_ROOT,
+      root: slicerRoot,
+      slicer,
       layout,
       accountCount: accounts.length,
     });
   }
 
   if (route === "/api/accounts") {
-    const { layout, accounts } = await detectLayout(STUDIO_ROOT);
-    return sendJson(res, 200, { layout, accounts });
+    const { layout, accounts } = await detectLayout(slicerRoot);
+    return sendJson(res, 200, { layout, accounts, slicer });
   }
 
   if (route === "/api/profiles") {
@@ -448,8 +536,8 @@ async function handleRequest(req, res) {
       url.searchParams.get("full") === "1" ||
       url.searchParams.get("full") === "true";
     if (full) {
-      const profiles = await listAllProfiles(STUDIO_ROOT);
-      return sendJson(res, 200, { profiles });
+      const profiles = await listAllProfiles(slicerRoot);
+      return sendJson(res, 200, { profiles, slicer });
     }
     const account = url.searchParams.get("account");
     if (!account) {
@@ -457,20 +545,20 @@ async function handleRequest(req, res) {
         error: "Missing account query (or use full=1)",
       });
     }
-    const { layout } = await detectLayout(STUDIO_ROOT);
+    const { layout } = await detectLayout(slicerRoot);
     if (!layout) {
       return sendJson(res, 404, {
-        error: "No users/ or user/ directory under BambuStudio root",
+        error: `No users/ or user/ directory under ${slicer === "orca" ? "OrcaSlicer" : "BambuStudio"} root`,
       });
     }
-    const profiles = await listProfilesForAccount(STUDIO_ROOT, layout, account);
-    return sendJson(res, 200, { profiles, layout });
+    const profiles = await listProfilesForAccount(slicerRoot, layout, account);
+    return sendJson(res, 200, { profiles, layout, slicer });
   }
 
   if (route === "/api/system-filaments") {
     try {
-      const entries = await listSystemFilamentEntries(STUDIO_ROOT);
-      return sendJson(res, 200, { entries });
+      const entries = await listSystemFilamentEntries(slicerRoot, slicer);
+      return sendJson(res, 200, { entries, slicer });
     } catch (e) {
       return sendJson(res, 500, {
         error:
@@ -484,7 +572,7 @@ async function handleRequest(req, res) {
     if (!rel) {
       return sendJson(res, 400, {
         error:
-          "Missing path query (POSIX path under BambuStudio, e.g. users/name/process/x.json)",
+          "Missing path query (POSIX path under slicer root, e.g. users/name/process/x.json)",
       });
     }
     const compareRaw = url.searchParams.get("compareWith");
@@ -495,14 +583,14 @@ async function handleRequest(req, res) {
     let normalized;
     try {
       normalized = normalizeRelativePath(rel);
-      safeFsPath(STUDIO_ROOT, normalized);
+      safeFsPath(slicerRoot, normalized);
       if (compareNorm) {
-        if (!compareNorm.startsWith("system/BBL/filament/")) {
+        if (!compareNorm.startsWith("system/")) {
           return sendJson(res, 400, {
-            error: "compareWith must be under system/BBL/filament/",
+            error: "compareWith must be under system/",
           });
         }
-        safeFsPath(STUDIO_ROOT, compareNorm);
+        safeFsPath(slicerRoot, compareNorm);
         if (!compareNorm.toLowerCase().endsWith(".json")) {
           return sendJson(res, 400, {
             error: "compareWith must be a .json file",
@@ -523,9 +611,10 @@ async function handleRequest(req, res) {
     try {
       let chain;
       if (compareNorm) {
-        const customData = await readJsonFile(STUDIO_ROOT, normalized);
+        const customData = await readJsonFile(slicerRoot, normalized);
         const compareChain = await resolveInheritanceRecursive(
-          STUDIO_ROOT,
+          slicerRoot,
+          slicer,
           compareNorm,
           "filament",
           new Set(),
@@ -536,13 +625,14 @@ async function handleRequest(req, res) {
         ];
       } else {
         chain = await resolveInheritanceRecursive(
-          STUDIO_ROOT,
+          slicerRoot,
+          slicer,
           normalized,
           kind,
           new Set(),
         );
       }
-      return sendJson(res, 200, { chain });
+      return sendJson(res, 200, { chain, slicer });
     } catch (e) {
       return sendJson(res, 500, {
         error: e instanceof Error ? e.message : "Resolve failed",
@@ -560,6 +650,7 @@ async function handleRequest(req, res) {
       "/api/system-filaments",
       "/api/resolve?path=",
     ],
+    note: "All routes accept ?slicer=bambu|orca (default bambu)",
   });
 }
 
@@ -573,6 +664,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "127.0.0.1", () => {
-  console.log(`BambuStudio API listening on http://127.0.0.1:${PORT}`);
-  console.log(`Reading from: ${STUDIO_ROOT}`);
+  console.log(`Slicer API listening on http://127.0.0.1:${PORT}`);
+  console.log(`  bambu root: ${ROOTS.bambu}`);
+  console.log(`  orca  root: ${ROOTS.orca}`);
 });

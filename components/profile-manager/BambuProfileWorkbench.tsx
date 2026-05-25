@@ -14,6 +14,7 @@ import {
   fetchApiResolve,
   fetchApiSystemFilaments,
   getBambuApiBaseUrl,
+  type SlicerKind,
   type SystemFilamentEntry,
 } from "@/lib/bambu/bambu-api-client";
 import {
@@ -25,22 +26,21 @@ import type { UserProfileEntry } from "@/lib/bambu/list-user-profiles";
 import { listUserProfileEntriesFromStudioRoot } from "@/lib/bambu/list-user-profiles";
 import {
   ensureReadAccess,
-  loadBambuStudioRootHandle,
-  saveBambuStudioRootHandle,
+  loadSlicerRootHandle,
+  saveSlicerRootHandle,
 } from "@/lib/bambu/persisted-root-handle";
 import {
   isFileSystemAccessSupported,
   pickBambuStudioFolder,
+  pickSlicerFolder,
   type InheritanceChainLevel,
 } from "@/lib/bambu/resolver";
 import { cn } from "@/lib/utils";
+import { ChevronDown, HelpCircle, Loader2, Server } from "lucide-react";
 import {
-  ChevronDown,
-  HelpCircle,
-  Loader2,
-  RefreshCw,
-  Server,
-} from "lucide-react";
+  BambuStudioIcon,
+  OrcaSlicerIcon,
+} from "@/components/icons/slicer-icons";
 
 import { LanguageSelect } from "@/components/language-select";
 import { NativeSelectField } from "@/components/native-select-field";
@@ -53,8 +53,15 @@ import { ProfileTreeGrid } from "./ProfileTreeGrid";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 const DATA_MODE_STORAGE_KEY = "bambu-browser-data-mode";
+const ACTIVE_SLICER_STORAGE_KEY = "bambu-browser-active-slicer";
 
 type DataMode = "api" | "browser";
+
+function readPersistedSlicer(): SlicerKind {
+  if (typeof window === "undefined") return "bambu";
+  const raw = window.localStorage.getItem(ACTIVE_SLICER_STORAGE_KEY);
+  return raw === "orca" ? "orca" : "bambu";
+}
 
 type SidebarSection = "filament_custom" | "filament_standard" | "process";
 
@@ -74,6 +81,7 @@ export function BambuProfileWorkbench() {
   const t = useTranslations();
   const [apiBase] = useState(() => getBambuApiBaseUrl());
   const [dataMode, setDataMode] = useState<DataMode>("api");
+  const [activeSlicer, setActiveSlicer] = useState<SlicerKind>("bambu");
   const [studioRootHandle, setStudioRootHandle] =
     useState<FileSystemDirectoryHandle | null>(null);
   const [dataSourceModalOpen, setDataSourceModalOpen] = useState(false);
@@ -115,38 +123,42 @@ export function BambuProfileWorkbench() {
   const isCustomFilamentProfile =
     isFilamentProfile && selectedProfile.filamentCategory === "custom";
 
-  const loadApiConnection = useCallback(async () => {
-    setError(null);
-    try {
-      const health = await fetchApiHealth();
-      if (!health.ok) {
+  const loadApiConnection = useCallback(
+    async (slicerOverride?: SlicerKind) => {
+      const slicer = slicerOverride ?? activeSlicer;
+      setError(null);
+      try {
+        const health = await fetchApiHealth(slicer);
+        if (!health.ok) {
+          setApiOk(false);
+          setAccountNames([]);
+          setStudioRootLabel(health.root);
+          setLayout(null);
+          setError(
+            health.error ||
+              t("errors.serverCannotReadRoot", { root: health.root }),
+          );
+          return;
+        }
+        setApiOk(true);
+        const meta = await fetchApiMeta(slicer);
+        setStudioRootLabel(meta.root);
+        setLayout(meta.layout);
+        const { accounts } = await fetchApiAccounts(slicer);
+        setAccountNames(accounts);
+        setSelectedUsername((prev) =>
+          prev && accounts.includes(prev) ? prev : (accounts[0] ?? null),
+        );
+      } catch (e) {
         setApiOk(false);
         setAccountNames([]);
-        setStudioRootLabel(health.root);
+        setStudioRootLabel("");
         setLayout(null);
-        setError(
-          health.error ||
-            t("errors.serverCannotReadRoot", { root: health.root }),
-        );
-        return;
+        setError(e instanceof Error ? e.message : t("errors.cannotReachApi"));
       }
-      setApiOk(true);
-      const meta = await fetchApiMeta();
-      setStudioRootLabel(meta.root);
-      setLayout(meta.layout);
-      const { accounts } = await fetchApiAccounts();
-      setAccountNames(accounts);
-      setSelectedUsername((prev) =>
-        prev && accounts.includes(prev) ? prev : (accounts[0] ?? null),
-      );
-    } catch (e) {
-      setApiOk(false);
-      setAccountNames([]);
-      setStudioRootLabel("");
-      setLayout(null);
-      setError(e instanceof Error ? e.message : t("errors.cannotReachApi"));
-    }
-  }, [t]);
+    },
+    [t, activeSlicer],
+  );
 
   const loadBrowserConnection = useCallback(
     async (root: FileSystemDirectoryHandle) => {
@@ -185,12 +197,14 @@ export function BambuProfileWorkbench() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const persistedSlicer = readPersistedSlicer();
+      if (!cancelled) setActiveSlicer(persistedSlicer);
       const browserPreferred =
         typeof window !== "undefined" &&
         localStorage.getItem(DATA_MODE_STORAGE_KEY) === "browser";
       if (browserPreferred) {
         setDataMode("browser");
-        const h = await loadBambuStudioRootHandle();
+        const h = await loadSlicerRootHandle(persistedSlicer);
         if (cancelled) return;
         if (h && (await ensureReadAccess(h))) {
           setStudioRootHandle(h);
@@ -201,7 +215,7 @@ export function BambuProfileWorkbench() {
         }
       } else {
         setDataMode("api");
-        if (!cancelled) await loadApiConnection();
+        if (!cancelled) await loadApiConnection(persistedSlicer);
       }
     })();
     return () => {
@@ -250,8 +264,10 @@ export function BambuProfileWorkbench() {
           }
           return;
         }
-        const { profiles: list } =
-          await fetchApiProfilesForAccount(selectedUsername);
+        const { profiles: list } = await fetchApiProfilesForAccount(
+          selectedUsername,
+          activeSlicer,
+        );
         if (!cancelled) {
           setProfiles(list);
           setSelectedPath(null);
@@ -271,7 +287,7 @@ export function BambuProfileWorkbench() {
     return () => {
       cancelled = true;
     };
-  }, [apiOk, dataMode, studioRootHandle, selectedUsername, t]);
+  }, [apiOk, dataMode, studioRootHandle, selectedUsername, activeSlicer, t]);
 
   useEffect(() => {
     setCompareFilamentPath(null);
@@ -291,7 +307,7 @@ export function BambuProfileWorkbench() {
             await listSystemFilamentEntriesFromStudioRoot(studioRootHandle);
           if (!cancelled) setSystemFilamentEntries(entries);
         } else if (dataMode === "api") {
-          const { entries } = await fetchApiSystemFilaments();
+          const { entries } = await fetchApiSystemFilaments(activeSlicer);
           if (!cancelled) setSystemFilamentEntries(entries);
         } else if (!cancelled) {
           setSystemFilamentEntries([]);
@@ -306,7 +322,13 @@ export function BambuProfileWorkbench() {
     return () => {
       cancelled = true;
     };
-  }, [apiOk, isCustomFilamentProfile, dataMode, studioRootHandle]);
+  }, [
+    apiOk,
+    isCustomFilamentProfile,
+    dataMode,
+    studioRootHandle,
+    activeSlicer,
+  ]);
 
   useEffect(() => {
     if (!selectedPath || apiOk !== true) {
@@ -330,7 +352,11 @@ export function BambuProfileWorkbench() {
           );
           if (!cancelled) setChain(c);
         } else if (dataMode === "api") {
-          const { chain: c } = await fetchApiResolve(selectedPath, compareArg);
+          const { chain: c } = await fetchApiResolve(
+            selectedPath,
+            compareArg,
+            activeSlicer,
+          );
           if (!cancelled) setChain(c);
         } else if (!cancelled) {
           setChain([]);
@@ -360,6 +386,7 @@ export function BambuProfileWorkbench() {
     compareFilamentPath,
     dataMode,
     studioRootHandle,
+    activeSlicer,
   ]);
 
   const grouped = useMemo(() => {
@@ -400,40 +427,6 @@ export function BambuProfileWorkbench() {
     void loadApiConnection();
   }, [dataMode, studioRootHandle, loadApiConnection, loadBrowserConnection]);
 
-  const handleRefreshProfileList = useCallback(() => {
-    setScanning(true);
-    setError(null);
-    const run = async () => {
-      try {
-        if (dataMode === "browser") {
-          if (!studioRootHandle) {
-            setProfiles([]);
-            return;
-          }
-          const all =
-            await listUserProfileEntriesFromStudioRoot(studioRootHandle);
-          let list = all;
-          if (!selectedUsername) list = [];
-          else list = all.filter((p) => p.userId === selectedUsername);
-          setProfiles(list);
-          return;
-        }
-        if (!selectedUsername) {
-          setProfiles([]);
-          return;
-        }
-        const { profiles: list } =
-          await fetchApiProfilesForAccount(selectedUsername);
-        setProfiles(list);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : t("errors.refreshFailed"));
-      } finally {
-        setScanning(false);
-      }
-    };
-    void run();
-  }, [dataMode, studioRootHandle, selectedUsername, t]);
-
   const handleSwitchToApi = useCallback(() => {
     localStorage.setItem(DATA_MODE_STORAGE_KEY, "api");
     setDataMode("api");
@@ -446,7 +439,7 @@ export function BambuProfileWorkbench() {
     setError(null);
     setPickingFolder(true);
     try {
-      const previous = await loadBambuStudioRootHandle();
+      const previous = await loadSlicerRootHandle(activeSlicer);
       const startIn =
         previous && (await ensureReadAccess(previous)) ? previous : undefined;
       const dir = await pickBambuStudioFolder(
@@ -456,7 +449,7 @@ export function BambuProfileWorkbench() {
         setError(t("errors.folderPickCancelled"));
         return;
       }
-      await saveBambuStudioRootHandle(dir);
+      await saveSlicerRootHandle(activeSlicer, dir);
       localStorage.setItem(DATA_MODE_STORAGE_KEY, "browser");
       setDataMode("browser");
       setStudioRootHandle(dir);
@@ -476,7 +469,58 @@ export function BambuProfileWorkbench() {
     } finally {
       setPickingFolder(false);
     }
-  }, [loadBrowserConnection, t]);
+  }, [loadBrowserConnection, t, activeSlicer]);
+
+  const handleSelectSlicer = useCallback(
+    (next: SlicerKind) => {
+      setActiveSlicer(next);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(ACTIVE_SLICER_STORAGE_KEY, next);
+      }
+      setError(null);
+      setSelectedPath(null);
+      setChain([]);
+
+      if (dataMode === "api") {
+        void loadApiConnection(next);
+        return;
+      }
+
+      void (async () => {
+        const saved = await loadSlicerRootHandle(next);
+        if (saved && (await ensureReadAccess(saved))) {
+          setStudioRootHandle(saved);
+          await loadBrowserConnection(saved);
+          return;
+        }
+        setPickingFolder(true);
+        try {
+          const dir = await pickSlicerFolder(next);
+          if (!dir) {
+            setError(t("errors.folderPickCancelled"));
+            return;
+          }
+          await saveSlicerRootHandle(next, dir);
+          setStudioRootHandle(dir);
+          await loadBrowserConnection(dir);
+        } catch (e) {
+          const name = e instanceof Error ? e.name : "";
+          if (name === "AbortError") {
+            setError(t("errors.folderPickCancelled"));
+          } else if (name === "NotAllowedError") {
+            setError(t("errors.folderPermissionDenied"));
+          } else {
+            setError(
+              e instanceof Error ? e.message : t("errors.loadProfilesFailed"),
+            );
+          }
+        } finally {
+          setPickingFolder(false);
+        }
+      })();
+    },
+    [dataMode, loadApiConnection, loadBrowserConnection, t],
+  );
 
   return (
     <div className="bg-background flex min-h-0 flex-1 flex-col">
@@ -597,38 +641,55 @@ export function BambuProfileWorkbench() {
           )}
         >
           <div className="space-y-3 px-2 py-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => void handlePingOrRefresh()}
+              disabled={scanning}
+            >
+              <Server className="size-4" />
+              {dataMode === "browser"
+                ? studioRootHandle
+                  ? t("controls.refreshConnection")
+                  : t("dataSource.chooseFolder")
+                : apiOk === false
+                  ? t("controls.retryApi")
+                  : t("controls.pingApi")}
+            </Button>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                variant="outline"
+                variant={activeSlicer === "bambu" ? "default" : "outline"}
                 size="sm"
                 className="min-w-26 flex-1"
-                onClick={() => void handlePingOrRefresh()}
-                disabled={scanning}
+                onClick={() => handleSelectSlicer("bambu")}
+                disabled={scanning || pickingFolder}
+                aria-pressed={activeSlicer === "bambu"}
               >
-                <Server className="size-4" />
-                {dataMode === "browser"
-                  ? studioRootHandle
-                    ? t("controls.refreshConnection")
-                    : t("dataSource.chooseFolder")
-                  : apiOk === false
-                    ? t("controls.retryApi")
-                    : t("controls.pingApi")}
+                {scanning && activeSlicer === "bambu" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <BambuStudioIcon className="size-4" />
+                )}
+                {t("controls.useBambuStudio")}
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant={activeSlicer === "orca" ? "default" : "outline"}
                 size="sm"
                 className="min-w-26 flex-1"
-                onClick={() => void handleRefreshProfileList()}
-                disabled={scanning || apiOk !== true}
+                onClick={() => handleSelectSlicer("orca")}
+                disabled={scanning || pickingFolder}
+                aria-pressed={activeSlicer === "orca"}
               >
-                {scanning ? (
+                {scanning && activeSlicer === "orca" ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <RefreshCw className="size-4" />
+                  <OrcaSlicerIcon className="size-4" />
                 )}
-                {t("controls.refreshList")}
+                {t("controls.useOrcaSlicer")}
               </Button>
             </div>
 
