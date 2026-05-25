@@ -99,7 +99,7 @@ The app is split into **two processes**:
 | Framework             | `next`                                                               | App Router, routing, build/start                                        |
 | UI                    | `react`, `react-dom`                                                 | Component library                                                       |
 | Components / headless | `@base-ui/react`                                                     | Unstyled primitives for building UI                                     |
-| Variants              | `class-variance-authority`                                           | Variant-based Tailwind classes on components                            |
+| Variants              | `tailwind-variants`                                                  | Variant-based Tailwind classes on components (with built-in twMerge)    |
 | Classes               | `clsx`, `tailwind-merge`                                             | Merge and dedupe CSS class names                                        |
 | Icons                 | `lucide-react`                                                       | Icons in the UI                                                         |
 | Theme                 | `@wrksz/themes`                                                      | Light/dark/system via `class` on `<html>` (Next.js 16 / React 19 ready) |
