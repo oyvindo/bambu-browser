@@ -693,7 +693,7 @@ export function BambuProfileWorkbench() {
                       {index === firstProcessGroupIndex &&
                       firstProcessGroupIndex > 0 ? (
                         <div
-                          className="border-border w-full border-t shadow-[0_2px_5px_-2px_rgb(15_23_42_/_0.12)] dark:shadow-[0_2px_6px_-1px_rgb(0_0_0_/_0.35)]"
+                          className="border-border w-full border-t shadow-[0_2px_5px_-2px_rgb(15_23_42/0.12)] dark:shadow-[0_2px_6px_-1px_rgb(0_0_0/0.35)]"
                           aria-hidden
                         />
                       ) : null}
@@ -704,7 +704,7 @@ export function BambuProfileWorkbench() {
                         <CollapsibleTrigger
                           type="button"
                           className={cn(
-                            "text-muted-foreground bg-muted/70 dark:bg-muted/50 hover:bg-muted/90 dark:hover:bg-muted/60 flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11px] font-semibold tracking-wide uppercase",
+                            "text-foreground/80 bg-muted/80 dark:bg-muted/50 hover:bg-muted/90 dark:hover:bg-muted/90 flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11px] font-semibold tracking-wide uppercase",
                             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                             "[&[data-panel-open]>svg]:rotate-180",
                           )}
@@ -713,7 +713,7 @@ export function BambuProfileWorkbench() {
                             {sidebarGroupHeading(mapKey)}
                           </span>
                           <ChevronDown
-                            className="text-muted-foreground size-3.5 shrink-0 opacity-80 transition-transform duration-200"
+                            className="text-foreground/70 size-3.5 shrink-0 transition-transform duration-200"
                             aria-hidden
                           />
                         </CollapsibleTrigger>
@@ -727,9 +727,9 @@ export function BambuProfileWorkbench() {
                                     setSelectedPath(p.relativePath)
                                   }
                                   className={cn(
-                                    "hover:bg-muted w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
+                                    "hover:bg-blue-300 hover:text-blue-50 w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
                                     selectedPath === p.relativePath &&
-                                      "bg-muted font-medium",
+                                      "bg-blue-400 text-blue-50",
                                   )}
                                 >
                                   {p.fileName}
