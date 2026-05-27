@@ -92,6 +92,8 @@ export const messagesEn = {
     columnProperty: "Property",
     searchLabel: "Search",
     propertySearchPlaceholder: "Filter by property name…",
+    copyToClipboard: "Copy to clipboard",
+    downloadProfile: "Download profile",
   },
   compareFilament: {
     materialsHeading: "Material",

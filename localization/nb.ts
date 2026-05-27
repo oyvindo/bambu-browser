@@ -94,6 +94,8 @@ export const messagesNb = {
     columnProperty: "Parameter",
     searchLabel: "Søk",
     propertySearchPlaceholder: "Filtrer på parameternavn…",
+    copyToClipboard: "Kopier til utklippstavle",
+    downloadProfile: "Last ned profil",
   },
   compareFilament: {
     materialsHeading: "Materiale",

@@ -190,3 +190,49 @@ export function isLeafInheritanceOverride(
   );
   return parentText !== leafText;
 }
+
+/** Union of every key defined on chain levels from root through `uptoInclusive`. */
+export const collectMergedProfileKeys = (
+  chain: readonly InheritanceChainLevel[],
+  uptoInclusive?: number,
+): string[] => {
+  const n = chain.length;
+  if (n === 0) return [];
+  const end = uptoInclusive ?? n - 1;
+  const keys = new Set<string>();
+  for (let i = 0; i <= end; i++) {
+    const level = chain[i];
+    if (!level) continue;
+    for (const key of Object.keys(level.data)) {
+      keys.add(key);
+    }
+  }
+  return [...keys].sort();
+};
+
+/**
+ * Flat profile object with each key’s effective value after inheritance
+ * (same values as the right-most “profile” column in the tree grid).
+ */
+export const buildMergedProfileData = (
+  chain: readonly InheritanceChainLevel[],
+  uptoInclusive?: number,
+): Record<string, unknown> => {
+  const n = chain.length;
+  if (n === 0) return {};
+  const end = uptoInclusive ?? n - 1;
+  const out: Record<string, unknown> = {};
+  for (const key of collectMergedProfileKeys(chain, end)) {
+    const value = mergedValueAt(chain, end, key);
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
+};
+
+export const mergedProfileJsonString = (
+  chain: readonly InheritanceChainLevel[],
+  uptoInclusive?: number,
+): string =>
+  JSON.stringify(buildMergedProfileData(chain, uptoInclusive), null, 2);

@@ -23,6 +23,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { PropertyHelpTooltipLazy } from "@/components/profile-manager/profileTreeGrid/PropertyHelpTooltipLazy";
 import { useTranslations } from "@/localization";
 import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
+import { ProfileColumnExportActions } from "@/components/profile-manager/profileTreeGrid/profileTable/ProfileColumnExportActions";
 
 type ProfileTableProps = {
   activeExtruderIndex?: number;
@@ -137,6 +138,7 @@ export const ProfileTable = ({
           {columns.map((col, colIdx) => {
             const name = fileLabel(col.level.relativePath);
             const isLastHead = colIdx === columns.length - 1;
+            const isProfileColumn = colIdx === columns.length - 1;
             return (
               <TableHead
                 key={col.index}
@@ -146,9 +148,14 @@ export const ProfileTable = ({
                 )}
                 title={col.level.relativePath}
               >
-                <span className="mb-1 block text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                  {col.roleLabel}
-                </span>
+                <div className="mb-1 flex items-center gap-1.5">
+                  {isProfileColumn ? (
+                    <ProfileColumnExportActions chain={chain} />
+                  ) : null}
+                  <span className="text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                    {col.roleLabel}
+                  </span>
+                </div>
                 <span className="block truncate font-mono text-xs font-bold tabular-nums leading-snug text-slate-900 dark:text-slate-100">
                   {name}
                 </span>
