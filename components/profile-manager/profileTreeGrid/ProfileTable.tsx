@@ -138,7 +138,6 @@ export const ProfileTable = ({
           {columns.map((col, colIdx) => {
             const name = fileLabel(col.level.relativePath);
             const isLastHead = colIdx === columns.length - 1;
-            const isProfileColumn = colIdx === columns.length - 1;
             return (
               <TableHead
                 key={col.index}
@@ -149,9 +148,10 @@ export const ProfileTable = ({
                 title={col.level.relativePath}
               >
                 <div className="mb-1 flex items-center gap-1.5">
-                  {isProfileColumn ? (
-                    <ProfileColumnExportActions chain={chain} />
-                  ) : null}
+                  <ProfileColumnExportActions
+                    chain={chain}
+                    columnIndex={col.index}
+                  />
                   <span className="text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
                     {col.roleLabel}
                   </span>

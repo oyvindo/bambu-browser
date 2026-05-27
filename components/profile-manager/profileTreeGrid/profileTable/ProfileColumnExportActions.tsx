@@ -11,20 +11,23 @@ import {
 
 type ProfileColumnExportActionsProps = {
   chain: readonly InheritanceChainLevel[];
+  /** Inheritance column index (root = 0 … selected profile = n − 1). */
+  columnIndex: number;
 };
 
 export const ProfileColumnExportActions = ({
   chain,
+  columnIndex,
 }: ProfileColumnExportActionsProps) => {
   const t = useTranslations();
 
   const onCopy = React.useCallback(() => {
-    void copyMergedProfileToClipboard(chain);
-  }, [chain]);
+    void copyMergedProfileToClipboard(chain, columnIndex);
+  }, [chain, columnIndex]);
 
   const onDownload = React.useCallback(() => {
-    downloadMergedProfileJson(chain);
-  }, [chain]);
+    downloadMergedProfileJson(chain, columnIndex);
+  }, [chain, columnIndex]);
 
   const iconClass =
     "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200";

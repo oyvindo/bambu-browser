@@ -4,18 +4,20 @@ import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileT
 
 export const copyMergedProfileToClipboard = async (
   chain: readonly InheritanceChainLevel[],
+  uptoInclusive: number,
 ): Promise<void> => {
-  const json = mergedProfileJsonString(chain);
+  const json = mergedProfileJsonString(chain, uptoInclusive);
   await navigator.clipboard.writeText(json);
 };
 
 export const downloadMergedProfileJson = (
   chain: readonly InheritanceChainLevel[],
+  uptoInclusive: number,
 ): void => {
-  const leaf = chain[chain.length - 1];
-  if (!leaf) return;
-  const json = mergedProfileJsonString(chain);
-  const filename = fileLabel(leaf.relativePath);
+  const level = chain[uptoInclusive];
+  if (!level) return;
+  const json = mergedProfileJsonString(chain, uptoInclusive);
+  const filename = fileLabel(level.relativePath);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
