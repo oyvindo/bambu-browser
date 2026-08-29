@@ -120,6 +120,8 @@ export const messagesNb = {
     diffSideBySide: "Side-om-side-diff",
     discard: "Forkast endringer",
     cancel: "Avbryt",
+    minimize: "Minimer",
+    maximize: "Maksimer",
     keepEditing: "Fortsett å redigere",
     confirmDiscard: "Forkaste ulagrede endringer?",
     confirmDiscardBody:

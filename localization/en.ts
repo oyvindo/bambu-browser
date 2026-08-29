@@ -117,6 +117,8 @@ export const messagesEn = {
     diffSideBySide: "Side-by-side diff",
     discard: "Discard changes",
     cancel: "Cancel",
+    minimize: "Minimize",
+    maximize: "Maximize",
     keepEditing: "Keep editing",
     confirmDiscard: "Discard unsaved changes?",
     confirmDiscardBody:

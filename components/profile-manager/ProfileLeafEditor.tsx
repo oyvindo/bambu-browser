@@ -1,7 +1,7 @@
 "use client";
 
 import { Tooltip } from "@base-ui/react/tooltip";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { PropertyHelpTooltipLazy } from "@/components/profile-manager/profileTreeGrid/PropertyHelpTooltipLazy";
 import { toast } from "@/components/ui/toast";
 import {
@@ -23,7 +23,7 @@ import type { ProfileKind } from "@/lib/bambu/resolver";
 import { useLocale, useTranslations } from "@/localization";
 import { localizedPropertyLabel } from "@/localization/profile-fields";
 import { cn } from "@/lib/utils/index";
-import { Columns2, List, Loader2, X } from "lucide-react";
+import { Columns2, List, Loader2, Maximize2, Minimize2, X } from "lucide-react";
 import * as React from "react";
 import { createPortal } from "react-dom";
 
@@ -349,11 +349,18 @@ export function ProfileLeafEditor({
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [dirty]);
 
+  const setMaximizedState = (next: boolean) => {
+    if (next) {
+      const appHeader =
+        document.querySelector<HTMLElement>("[data-app-header]");
+      setAppHeaderBottom(appHeader?.getBoundingClientRect().bottom ?? 0);
+    }
+    setMaximized(next);
+  };
+
   const toggleMaximized = (event: React.MouseEvent) => {
     if ((event.target as HTMLElement).closest("button")) return;
-    const appHeader = document.querySelector<HTMLElement>("[data-app-header]");
-    setAppHeaderBottom(appHeader?.getBoundingClientRect().bottom ?? 0);
-    setMaximized((current) => !current);
+    setMaximizedState(!maximized);
   };
 
   const updateDraft = (next: string) => {
@@ -464,15 +471,58 @@ export function ProfileLeafEditor({
               {t("profileEditor.intro")}
             </p>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={requestClose}
-            aria-label={t("profileEditor.cancel")}
-          >
-            <X aria-hidden />
-          </Button>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Tooltip.Provider delay={200}>
+              <Tooltip.Root>
+                <Tooltip.Trigger
+                  type="button"
+                  className={buttonVariants({
+                    variant: "ghost",
+                    size: "icon-sm",
+                  })}
+                  onClick={() => setMaximizedState(!maximized)}
+                  aria-label={
+                    maximized
+                      ? t("profileEditor.minimize")
+                      : t("profileEditor.maximize")
+                  }
+                >
+                  {maximized ? (
+                    <Minimize2 aria-hidden />
+                  ) : (
+                    <Maximize2 aria-hidden />
+                  )}
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Positioner
+                    side="bottom"
+                    sideOffset={8}
+                    className="z-500"
+                  >
+                    <Tooltip.Popup
+                      className={cn(
+                        "bg-popover text-popover-foreground border-border rounded-md border px-2.5 py-1.5 text-xs shadow-md",
+                        "leading-snug",
+                      )}
+                    >
+                      {maximized
+                        ? t("profileEditor.minimize")
+                        : t("profileEditor.maximize")}
+                    </Tooltip.Popup>
+                  </Tooltip.Positioner>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={requestClose}
+              aria-label={t("profileEditor.cancel")}
+            >
+              <X aria-hidden />
+            </Button>
+          </div>
         </header>
 
         {showingChanges ? (
