@@ -11,6 +11,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "validate:bambu-schema": "vitest run lib/bambu/profile-schema.local.test.ts",
+    "generate:config-bounds": "node scripts/generate-profile-config-bounds.mjs",
     "api": "node server.js"
   },
   "dependencies": {
