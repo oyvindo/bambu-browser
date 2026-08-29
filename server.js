@@ -183,7 +183,7 @@ async function replaceProfileFile(rootAbs, relPosix, formattedJson) {
     throw error;
   }
   const expectedKind = inferProfileKind(relPosix);
-  for (const key of ["inherits", "type", "name"]) {
+  for (const key of ["inherits", "type", "name", "from"]) {
     if (JSON.stringify(current[key]) === JSON.stringify(next[key])) continue;
     const spellsOutInheritedKind =
       !(key in current) && key === "type" && next.type === expectedKind;

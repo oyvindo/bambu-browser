@@ -133,6 +133,18 @@ export async function writeEditableProfileUnderRoot(
   if (String(current.from).toLowerCase() === "system") {
     throw new Error("System profiles are read-only.");
   }
+  const nextRecord = next as Record<string, unknown>;
+  const expectedKind =
+    splitPath(normalized)[2] === "filament" ? "filament" : "process";
+  for (const key of ["inherits", "type", "name", "from"] as const) {
+    if (JSON.stringify(current[key]) === JSON.stringify(nextRecord[key])) {
+      continue;
+    }
+    const spellsOutInheritedKind =
+      !(key in current) && key === "type" && nextRecord.type === expectedKind;
+    if (spellsOutInheritedKind) continue;
+    throw new Error(`${key} cannot be changed.`);
+  }
   const handle = await getFileHandleFromRoot(root, normalized);
   if (!handle) throw new Error(`Profile not found: ${normalized}`);
   const writable = await handle.createWritable();
