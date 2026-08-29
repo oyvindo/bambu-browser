@@ -54,29 +54,61 @@ type LocaleContextValue = {
 
 const LocaleContext = React.createContext<LocaleContextValue | null>(null);
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = React.useState<AppLocale>(DEFAULT_LOCALE);
-  const [ready, setReady] = React.useState(false);
+/**
+ * The stored locale is browser state, so it is exposed as an external store:
+ * the server snapshot stays on the default locale and React re-renders with the
+ * persisted one once hydration is done.
+ */
+const localeListeners = new Set<() => void>();
+let localeSnapshot: AppLocale | null = null;
 
-  React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LOCALE_STORAGE_KEY);
-      if (raw && (APP_LOCALES as readonly string[]).includes(raw)) {
-        setLocaleState(raw as AppLocale);
-      }
-    } catch {
-      /* ignore */
+function readStoredLocale(): AppLocale {
+  try {
+    const raw = localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (raw && (APP_LOCALES as readonly string[]).includes(raw)) {
+      return raw as AppLocale;
     }
-    setReady(true);
-  }, []);
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_LOCALE;
+}
+
+function subscribeLocale(onStoreChange: () => void): () => void {
+  localeListeners.add(onStoreChange);
+  return () => {
+    localeListeners.delete(onStoreChange);
+  };
+}
+
+function getLocaleSnapshot(): AppLocale {
+  localeSnapshot ??= readStoredLocale();
+  return localeSnapshot;
+}
+
+function getServerLocaleSnapshot(): AppLocale {
+  return DEFAULT_LOCALE;
+}
+
+function storeLocale(next: AppLocale): void {
+  localeSnapshot = next;
+  try {
+    localStorage.setItem(LOCALE_STORAGE_KEY, next);
+  } catch {
+    /* ignore */
+  }
+  for (const listener of localeListeners) listener();
+}
+
+export function LocaleProvider({ children }: { children: React.ReactNode }) {
+  const locale = React.useSyncExternalStore(
+    subscribeLocale,
+    getLocaleSnapshot,
+    getServerLocaleSnapshot,
+  );
 
   const setLocale = React.useCallback((next: AppLocale) => {
-    setLocaleState(next);
-    try {
-      localStorage.setItem(LOCALE_STORAGE_KEY, next);
-    } catch {
-      /* ignore */
-    }
+    storeLocale(next);
   }, []);
 
   const messages = LOCALE_MESSAGES[locale];
@@ -93,10 +125,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   );
 
   React.useEffect(() => {
-    if (!ready) return;
     document.documentElement.lang = locale === "nb" ? "nb" : "en";
     document.title = messages.meta.title;
-  }, [locale, messages.meta.title, ready]);
+  }, [locale, messages.meta.title]);
 
   const value = React.useMemo(
     () => ({ locale, setLocale, messages, t }),

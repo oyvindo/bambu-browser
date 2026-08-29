@@ -33,6 +33,7 @@ import {
   pickBambuStudioFolder,
   type InheritanceChainLevel,
 } from "@/lib/bambu/resolver";
+import { useIsHydrated } from "@/lib/hooks/use-is-hydrated";
 import { cn } from "@/lib/utils";
 import {
   ChevronDown,
@@ -92,19 +93,30 @@ export function BambuProfileWorkbench() {
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeExtruderIndex, setActiveExtruderIndex] = useState(0);
-  const [compareFilamentPath, setCompareFilamentPath] = useState<string | null>(
-    null,
-  );
+  // Keyed by profile so the comparison resets when another profile is selected.
+  const [compareFilament, setCompareFilament] = useState<{
+    profilePath: string | null;
+    relativePath: string | null;
+  }>({ profilePath: null, relativePath: null });
   const [showOnlyChanged, setShowOnlyChanged] = useState(true);
   const [systemFilamentEntries, setSystemFilamentEntries] = useState<
     SystemFilamentEntry[]
   >([]);
   const [loadingSystemFilaments, setLoadingSystemFilaments] = useState(false);
 
-  const [fsSupported, setFsSupported] = useState(false);
-  useEffect(() => {
-    setFsSupported(isFileSystemAccessSupported());
-  }, []);
+  const fsSupported = useIsHydrated() && isFileSystemAccessSupported();
+
+  const compareFilamentPath =
+    compareFilament.profilePath === selectedPath
+      ? compareFilament.relativePath
+      : null;
+
+  const setCompareFilamentPath = useCallback(
+    (next: string | null) => {
+      setCompareFilament({ profilePath: selectedPath, relativePath: next });
+    },
+    [selectedPath],
+  );
 
   const selectedProfile = useMemo(
     () => profiles.find((p) => p.relativePath === selectedPath) ?? null,
@@ -214,9 +226,9 @@ export function BambuProfileWorkbench() {
   useEffect(() => {
     if (apiOk !== true) return;
     let cancelled = false;
-    setScanning(true);
-    setError(null);
     (async () => {
+      setScanning(true);
+      setError(null);
       try {
         if (dataMode === "browser") {
           if (!studioRootHandle) {
@@ -274,17 +286,13 @@ export function BambuProfileWorkbench() {
   }, [apiOk, dataMode, studioRootHandle, selectedUsername, t]);
 
   useEffect(() => {
-    setCompareFilamentPath(null);
-  }, [selectedPath]);
-
-  useEffect(() => {
-    if (apiOk !== true || !isCustomFilamentProfile) {
-      setSystemFilamentEntries([]);
-      return;
-    }
     let cancelled = false;
-    setLoadingSystemFilaments(true);
     const load = async () => {
+      if (apiOk !== true || !isCustomFilamentProfile) {
+        setSystemFilamentEntries([]);
+        return;
+      }
+      setLoadingSystemFilaments(true);
       try {
         if (dataMode === "browser" && studioRootHandle) {
           const entries =
@@ -309,18 +317,18 @@ export function BambuProfileWorkbench() {
   }, [apiOk, isCustomFilamentProfile, dataMode, studioRootHandle]);
 
   useEffect(() => {
-    if (!selectedPath || apiOk !== true) {
-      setChain([]);
-      return;
-    }
     let cancelled = false;
-    setResolving(true);
-    setError(null);
     const compareArg =
       isCustomFilamentProfile && compareFilamentPath
         ? compareFilamentPath
         : null;
     const run = async () => {
+      if (!selectedPath || apiOk !== true) {
+        setChain([]);
+        return;
+      }
+      setResolving(true);
+      setError(null);
       try {
         if (dataMode === "browser" && studioRootHandle) {
           const c = await resolveChainFromStudioRoot(

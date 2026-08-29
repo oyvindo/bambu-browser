@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTheme } from "@wrksz/themes/client";
 
 import { NativeSelectField } from "@/components/native-select-field";
+import { useIsHydrated } from "@/lib/hooks/use-is-hydrated";
 import { useTranslations } from "@/localization/context";
 
 type ThemeChoice = "light" | "dark" | "system";
@@ -11,11 +12,7 @@ type ThemeChoice = "light" | "dark" | "system";
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme<ThemeChoice>();
   const t = useTranslations();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsHydrated();
 
   return (
     <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">

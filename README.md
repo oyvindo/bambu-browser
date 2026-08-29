@@ -100,7 +100,7 @@ The app is split into **two processes**:
 | UI                    | `react`, `react-dom`                                                 | Component library                                                       |
 | Components / headless | `@base-ui/react`                                                     | Unstyled primitives for building UI                                     |
 | Variants              | `tailwind-variants`                                                  | Variant-based Tailwind classes on components (with built-in twMerge)    |
-| Classes               | `clsx`, `tailwind-merge`                                             | Merge and dedupe CSS class names                                        |
+| Classes               | `tailwind-merge`                                                     | Merge and dedupe CSS class names                                        |
 | Icons                 | `lucide-react`                                                       | Icons in the UI                                                         |
 | Theme                 | `@wrksz/themes`                                                      | Light/dark/system via `class` on `<html>` (Next.js 16 / React 19 ready) |
 | CLI / scaffolding     | `shadcn`                                                             | shadcn/ui tooling for component setup (project conventions)             |

@@ -25,6 +25,19 @@ import { useTranslations } from "@/localization";
 import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
 import { ProfileColumnExportActions } from "@/components/profile-manager/profileTreeGrid/profileTable/ProfileColumnExportActions";
 
+type UiTree = typeof BAMBU_PROCESS_UI_TREE;
+
+type CollapsedState = {
+  tree: UiTree;
+  groups: Record<string, boolean>;
+  subgroups: Record<string, boolean>;
+};
+
+/** Collapsing applies to the tree it happened in; another tree starts expanded. */
+function collapsedForTree(state: CollapsedState, tree: UiTree): CollapsedState {
+  return state.tree === tree ? state : { tree, groups: {}, subgroups: {} };
+}
+
 type ProfileTableProps = {
   activeExtruderIndex?: number;
   chain: readonly InheritanceChainLevel[];
@@ -72,32 +85,38 @@ export const ProfileTable = ({
     ? BAMBU_FILAMENT_UI_TREE
     : BAMBU_PROCESS_UI_TREE;
 
-  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
-    {},
+  // Everything starts expanded, so only the collapsed ones are tracked. The
+  // tree is part of the state so switching profile kind expands everything again.
+  const [collapsed, setCollapsed] = React.useState<CollapsedState>(() => ({
+    tree: uiTree,
+    groups: {},
+    subgroups: {},
+  }));
+
+  const collapsedInTree = collapsedForTree(collapsed, uiTree);
+
+  const toggleGroup = React.useCallback(
+    (id: string) => {
+      setCollapsed((prev) => {
+        const base = collapsedForTree(prev, uiTree);
+        return { ...base, groups: { ...base.groups, [id]: !base.groups[id] } };
+      });
+    },
+    [uiTree],
   );
 
-  const [openSubgroups, setOpenSubgroups] = React.useState<
-    Record<string, boolean>
-  >({});
-
-  React.useEffect(() => {
-    const initG: Record<string, boolean> = {};
-    const initSg: Record<string, boolean> = {};
-    for (const g of uiTree) {
-      initG[g.id] = true;
-      for (const sg of g.subgroups) initSg[sg.id] = true;
-    }
-    setOpenGroups(initG);
-    setOpenSubgroups(initSg);
-  }, [isFilamentProfile, uiTree]);
-
-  const toggleGroup = React.useCallback((id: string) => {
-    setOpenGroups((s) => ({ ...s, [id]: !s[id] }));
-  }, []);
-
-  const toggleSubgroup = React.useCallback((id: string) => {
-    setOpenSubgroups((s) => ({ ...s, [id]: !s[id] }));
-  }, []);
+  const toggleSubgroup = React.useCallback(
+    (id: string) => {
+      setCollapsed((prev) => {
+        const base = collapsedForTree(prev, uiTree);
+        return {
+          ...base,
+          subgroups: { ...base.subgroups, [id]: !base.subgroups[id] },
+        };
+      });
+    },
+    [uiTree],
+  );
 
   let zebraDataRow = 0;
 
@@ -166,7 +185,9 @@ export const ProfileTable = ({
       </TableHeader>
       <TableBody className="[&_tr]:border-0">
         {uiTree.map((group, groupIndex) => {
-          const groupOpen = propertySearchActive ? true : openGroups[group.id];
+          const groupOpen = propertySearchActive
+            ? true
+            : !collapsedInTree.groups[group.id];
           const isLastGroup = groupIndex === uiTree.length - 1;
           const visibleSubgroups = group.subgroups
             .map((subgroup) => {
@@ -217,7 +238,7 @@ export const ProfileTable = ({
                 visibleSubgroups.map(({ subgroup, visibleProps }) => {
                   const subOpen = propertySearchActive
                     ? true
-                    : openSubgroups[subgroup.id];
+                    : !collapsedInTree.subgroups[subgroup.id];
                   return (
                     <React.Fragment key={subgroup.id}>
                       <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">

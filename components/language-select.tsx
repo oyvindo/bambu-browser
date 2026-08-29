@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "@/localization/context";
 import type { AppLocale } from "@/localization/types";
 import { APP_LOCALES, DEFAULT_LOCALE } from "@/localization/types";
 import { NativeSelectField } from "@/components/native-select-field";
+import { useIsHydrated } from "@/lib/hooks/use-is-hydrated";
 import { messagesEn } from "@/localization/en";
 import { messagesNb } from "@/localization/nb";
 
@@ -18,11 +19,7 @@ const OPTION_LABEL: Record<AppLocale, string> = {
 export function LanguageSelect() {
   const { locale, setLocale } = useLocale();
   const t = useTranslations();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsHydrated();
 
   return (
     <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">

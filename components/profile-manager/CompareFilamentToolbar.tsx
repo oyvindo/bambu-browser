@@ -38,6 +38,12 @@ export type CompareFilamentToolbarProps = {
   loadingList?: boolean;
 };
 
+type FilterSelection = {
+  materialSelByFolder: Map<string, Set<string>>;
+  rootBrandSel: Set<string>;
+  locationSel: Set<string>;
+};
+
 export function CompareFilamentToolbar({
   entries,
   value,
@@ -49,16 +55,6 @@ export function CompareFilamentToolbar({
   const t = useTranslations();
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
-  const [materialSelByFolder, setMaterialSelByFolder] = React.useState<
-    Map<string, Set<string>>
-  >(() => new Map());
-  const [rootBrandSel, setRootBrandSel] = React.useState<Set<string>>(
-    () => new Set(),
-  );
-  const [locationSel, setLocationSel] = React.useState<Set<string>>(
-    () => new Set([SYSTEM_FILAMENT_ROOT_KEY]),
-  );
-  const filtersInitRef = React.useRef(false);
 
   const listEntries = React.useMemo(
     () =>
@@ -91,48 +87,52 @@ export function CompareFilamentToolbar({
     [listEntries],
   );
 
-  React.useEffect(() => {
-    if (listEntries.length === 0) {
-      filtersInitRef.current = false;
-      setMaterialSelByFolder(new Map());
-      setLocationSel(new Set([SYSTEM_FILAMENT_ROOT_KEY]));
-      return;
-    }
-    setMaterialSelByFolder((prev) => {
-      const keys = orderedMaterialLocationKeys(listEntries);
-      const next = new Map(prev);
-      let changed = false;
-      for (const key of keys) {
-        if (next.has(key)) continue;
+  const defaultSelection = React.useMemo<FilterSelection>(() => {
+    const materialSelByFolder = new Map<string, Set<string>>();
+    let rootBrandSel = new Set<string>();
+    if (listEntries.length > 0) {
+      for (const key of orderedMaterialLocationKeys(listEntries)) {
         const mats = discoverMaterialsForLocation(listEntries, key);
-        next.set(key, defaultMaterialSelectionForDiscoveredList(mats));
-        changed = true;
+        materialSelByFolder.set(
+          key,
+          defaultMaterialSelectionForDiscoveredList(mats),
+        );
       }
-      for (const k of [...next.keys()]) {
-        if (!keys.includes(k)) {
-          next.delete(k);
-          changed = true;
-        }
+      rootBrandSel = defaultBrandIds(rootBrandOptions);
+      if (rootBrandSel.size === 0 && rootBrandOptions.length > 0) {
+        rootBrandSel = new Set(rootBrandOptions.map((b) => b.id));
       }
-      return changed ? next : prev;
-    });
-  }, [listEntries]);
-
-  React.useEffect(() => {
-    if (listEntries.length === 0) return;
-    if (filtersInitRef.current) return;
-    filtersInitRef.current = true;
-
-    let nextRootBrand = defaultBrandIds(rootBrandOptions);
-    if (nextRootBrand.size === 0 && rootBrandOptions.length > 0) {
-      nextRootBrand = new Set(rootBrandOptions.map((b) => b.id));
     }
-    setRootBrandSel(nextRootBrand);
+    return {
+      materialSelByFolder,
+      rootBrandSel,
+      locationSel: new Set([SYSTEM_FILAMENT_ROOT_KEY]),
+    };
   }, [listEntries, rootBrandOptions]);
 
-  React.useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
+  // Only user changes are kept in state; they are dropped as soon as another
+  // set of entries arrives, which falls back to the defaults for that set.
+  const [selectionOverride, setSelectionOverride] = React.useState<{
+    source: readonly SystemFilamentEntry[];
+    selection: FilterSelection;
+  } | null>(null);
+
+  const { materialSelByFolder, rootBrandSel, locationSel } =
+    selectionOverride?.source === listEntries
+      ? selectionOverride.selection
+      : defaultSelection;
+
+  const updateSelection = React.useCallback(
+    (update: (previous: FilterSelection) => FilterSelection) => {
+      setSelectionOverride((prev) => ({
+        source: listEntries,
+        selection: update(
+          prev?.source === listEntries ? prev.selection : defaultSelection,
+        ),
+      }));
+    },
+    [listEntries, defaultSelection],
+  );
 
   const filteredEntries = React.useMemo(
     () =>
@@ -153,33 +153,47 @@ export function CompareFilamentToolbar({
 
   const displayLabel = value ? fileLabel(value) : "";
 
-  const toggleMaterial = React.useCallback((folderKey: string, id: string) => {
-    setMaterialSelByFolder((prev) => {
-      const n = new Map(prev);
-      const cur = new Set(n.get(folderKey) ?? []);
-      if (cur.has(id)) cur.delete(id);
-      else cur.add(id);
-      n.set(folderKey, cur);
-      return n;
-    });
-  }, []);
+  const toggleMaterial = React.useCallback(
+    (folderKey: string, id: string) => {
+      updateSelection((prev) => {
+        const n = new Map(prev.materialSelByFolder);
+        const cur = new Set(n.get(folderKey) ?? []);
+        if (cur.has(id)) cur.delete(id);
+        else cur.add(id);
+        n.set(folderKey, cur);
+        return { ...prev, materialSelByFolder: n };
+      });
+    },
+    [updateSelection],
+  );
 
-  const toggleRootBrand = React.useCallback((id: string) => {
-    setRootBrandSel((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }, []);
+  const toggleRootBrand = React.useCallback(
+    (id: string) => {
+      updateSelection((prev) => {
+        const n = new Set(prev.rootBrandSel);
+        if (n.has(id)) n.delete(id);
+        else n.add(id);
+        return { ...prev, rootBrandSel: n };
+      });
+    },
+    [updateSelection],
+  );
 
-  const toggleLocation = React.useCallback((key: string) => {
-    setLocationSel((prev) => {
-      const n = new Set(prev);
-      if (n.has(key)) n.delete(key);
-      else n.add(key);
-      return n;
-    });
+  const toggleLocation = React.useCallback(
+    (key: string) => {
+      updateSelection((prev) => {
+        const n = new Set(prev.locationSel);
+        if (n.has(key)) n.delete(key);
+        else n.add(key);
+        return { ...prev, locationSel: n };
+      });
+    },
+    [updateSelection],
+  );
+
+  const handleOpenChange = React.useCallback((next: boolean) => {
+    setOpen(next);
+    if (!next) setQuery("");
   }, []);
 
   const rootLocationOn = locationSel.has(SYSTEM_FILAMENT_ROOT_KEY);
@@ -321,7 +335,7 @@ export function CompareFilamentToolbar({
 
         <div className="space-y-1.5">
           <div className="flex min-w-0 items-center gap-2">
-            <Popover.Root open={open} onOpenChange={setOpen}>
+            <Popover.Root open={open} onOpenChange={handleOpenChange}>
               <Popover.Trigger
                 type="button"
                 disabled={disabled || loadingList}
@@ -395,7 +409,7 @@ export function CompareFilamentToolbar({
                               role="presentation"
                               className="list-none"
                             >
-                              <div className="bg-muted/80 text-muted-foreground sticky top-0 z-[1] px-2 py-1.5 text-[11px] font-semibold tracking-wide uppercase">
+                              <div className="bg-muted/80 text-muted-foreground sticky top-0 z-1 px-2 py-1.5 text-[11px] font-semibold tracking-wide uppercase">
                                 {group.folder
                                   ? group.folder
                                   : t("compareFilament.rootFolder")}

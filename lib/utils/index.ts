@@ -1,6 +1,5 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn as cnTailwindVariants, type ClassValue } from "tailwind-variants";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+export function cn(...inputs: ClassValue[]): string {
+  return cnTailwindVariants(inputs) ?? "";
 }
