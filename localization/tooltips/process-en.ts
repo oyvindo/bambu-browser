@@ -1,5 +1,13 @@
 /**
  * English hover copy for process profile keys (TreeGrid).
+ *
+ * Setting semantics are based on Bambu Studio's current PrintConfig.cpp and,
+ * where available, the official Bambu Lab Wiki:
+ * https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/PrintConfig.cpp
+ * https://wiki.bambulab.com/en/software/bambu-studio/
+ *
+ * Keep practical guidance conservative: do not infer behavior from preset
+ * values, and distinguish prime-tower priming from filament flushing.
  */
 
 export type ProcessTooltipEntry = {
@@ -17,9 +25,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
 > = {
   layer_height: {
     impact:
-      "Sets how thick each printed layer is. Smaller values improve detail and surface finish but increase print time and the number of seams.",
+      "Sets the thickness of each printed layer. Smaller values can improve detail and surface finish but require more layers and usually increase print time.",
     related:
-      "Ties to speeds and line widths: very thin layers often need tuned extrusion and sometimes lower speeds to stay reliable.",
+      "Bambu recommends a normal layer height of roughly 20–70% of nozzle diameter; the configured extruder limits are the final constraint.",
   },
   initial_layer_print_height: {
     impact:
@@ -29,9 +37,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   line_width: {
     impact:
-      "Default target extrusion width for features that do not use a specific override. Raising it deposits more plastic per mm of path (stronger, faster) but can hurt fine detail.",
+      "Default extrusion width used when a feature-specific line width is set to zero. Feature-specific widths override it where applicable.",
     related:
-      "Region overrides (outer_wall_line_width, sparse_infill_line_width, etc.) take precedence where set.",
+      "Outer wall, inner wall, top surface, solid infill, and sparse infill can each define their own line width.",
   },
   initial_layer_line_width: {
     impact:
@@ -47,15 +55,15 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   inner_wall_line_width: {
     impact:
-      "Width of internal perimeters. Thinner inner walls can save time and filament; too thin may weaken the shell or show gaps.",
+      "Sets the extrusion width of inner walls. It changes the geometry used to generate internal perimeter paths.",
     related:
-      "outer_wall_line_width and wall_loops determine overall shell behavior with this setting.",
+      "Use it together with outer_wall_line_width and wall_loops; changing width does not by itself guarantee a faster or stronger print.",
   },
   sparse_infill_line_width: {
     impact:
-      "Line width used for sparse infill. Wider lines put down more plastic per pass, making infill behave more “solid” at the same density setting.",
+      "Sets the extrusion width of sparse-infill paths. The requested infill density remains controlled separately.",
     related:
-      "sparse_infill_density and sparse_infill_speed should stay coherent with this to avoid under- or over-extrusion inside the part.",
+      "This width is also the reference used by percentage-based settings such as infill/wall overlap.",
   },
   internal_solid_infill_line_width: {
     impact:
@@ -64,10 +72,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
       "top_surface_line_width and top_shell_layers affect how the top skin finishes over this infill.",
   },
   top_surface_line_width: {
-    impact:
-      "Extrusion width on top visible surfaces. Slightly wider can hide nozzle lines; too wide can look ribbed or over-extruded.",
+    impact: "Sets the extrusion width used on the model's top surfaces.",
     related:
-      "top_shell_layers and sparse infill below determine whether the top has enough support to look smooth.",
+      "Top shell layers, flow calibration, and support from the infill below also affect top-surface quality.",
   },
   wall_generator: {
     impact:
@@ -95,9 +102,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   enable_arc_fitting: {
     impact:
-      "Converts short segments into arcs where possible for smoother motion and smaller G-code. Usually safe; disable if you hit firmware or motion issues with arcs.",
+      "Fits suitable toolpath segments to G2/G3 arc moves using the same tolerance as the configured resolution.",
     related:
-      "Printer capability for arc commands must match; otherwise the host may linearize paths.",
+      "Enable it only when the printer firmware supports G2/G3 arc commands correctly.",
   },
   bridge_flow: {
     impact:
@@ -119,15 +126,15 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   bottom_shell_layers: {
     impact:
-      "Solid layers on the bottom (and horizontal floors). More layers improve bottom finish and help span sparse infill below flat regions.",
+      "Sets the number of solid layers in the bottom shell, including the bottom surface layer.",
     related:
-      "First-layer settings and brim/skirt options affect the very bottom; this controls thickness above that.",
+      "If that layer count is thinner than the configured bottom-shell thickness, Bambu Studio increases the number of layers.",
   },
   wall_infill_order: {
     impact:
-      "Whether walls print before or after infill in a layer. Changes overhang behavior, internal stresses, and sometimes surface quality on complex parts.",
+      "Legacy setting that selected the order of inner walls, outer walls, and infill within a layer.",
     related:
-      "infill_wall_overlap and infill speeds affect how cleanly infill meets the walls.",
+      "Current Bambu Studio migrates this key to wall_sequence; new profiles should use the current setting.",
   },
   sparse_infill_density: {
     impact:
@@ -179,9 +186,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   travel_speed: {
     impact:
-      "Speed of non-printing moves. Higher values reduce stringing length and print time but can increase ghosting or noise if mechanics are pushed hard.",
+      "Sets the speed of non-extruding travel moves. Higher values reduce travel time but may increase noise or motion errors if the machine is pushed too hard.",
     related:
-      "travel_acceleration is the paired limit for how quickly the toolhead changes direction between travels.",
+      "Travel acceleration determines how quickly the requested travel speed can be reached; path length itself does not change.",
   },
   default_acceleration: {
     impact:
@@ -209,9 +216,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   support_style: {
     impact:
-      "Preset that tweaks support gap, interface behavior, or density patterns depending on Bambu Studio version—aimed at balance of hold vs. release.",
+      "Selects the shape and construction strategy of the support. Normal styles trade a regular, stable grid against snug material-saving towers; tree styles change branch merging and strength.",
     related:
-      "support_top_z_distance and support_interface_pattern refine contact quality beyond the style preset.",
+      "Available styles depend on support_type. Contact gaps and interface patterns are configured separately.",
   },
   support_on_build_plate_only: {
     impact:
@@ -221,9 +228,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   support_threshold_angle: {
     impact:
-      "Maximum overhang angle before the slicer adds support. Lower angles add more supports (safer bridges); higher angles reduce supports but risk droop.",
+      "Generates automatic support for surfaces whose slope to the horizontal is below this threshold. A larger threshold generally generates more support.",
     related:
-      "layer_height affects what counts as a steep overhang per layer; pair with support_top_z_distance.",
+      "Bambu Studio measures this angle from the horizontal, which is the opposite convention from some overhang test models.",
   },
   support_top_z_distance: {
     impact:
@@ -233,9 +240,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   support_bottom_z_distance: {
     impact:
-      "Gap settings for support meeting the model from below (where applicable). Similar trade-off: adhesion vs. ease of separation.",
+      "Sets the vertical gap between a bottom support interface and the object beneath it.",
     related:
-      "support_top_z_distance and support_interface_pattern define the full contact picture.",
+      "This applies where support starts on an object surface; support_top_z_distance controls the gap below a supported object surface.",
   },
   support_interface_pattern: {
     impact:
@@ -245,9 +252,9 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   brim_type: {
     impact:
-      "Adds extra first-layer area around the model to resist warping and improve adhesion on small or tall footprints.",
+      "Controls whether Bambu Studio generates a brim on the outer side, inner side, both sides, automatically, or not at all.",
     related:
-      "brim_width and brim_object_gap control how far it extends and how it detaches from the part outline.",
+      "A brim increases first-layer contact area. In automatic mode, Bambu Studio calculates the required brim for each object.",
   },
   brim_width: {
     impact:
@@ -280,14 +287,13 @@ export const PROCESS_TOOLTIPS_EN: Readonly<
   },
   enable_prime_tower: {
     impact:
-      "Adds a tower used to purge and stabilize flow when switching materials or colors. Important for multi-material prints to avoid bleed in the model.",
+      "Adds a tower that removes residual material from the nozzle and stabilizes nozzle pressure before printing the object after a filament change or smooth timelapse move.",
     related:
-      "prime_tower_width sets cross-section; AMS wipe volumes and toolchange settings (elsewhere) complete the picture.",
+      "The prime tower is not the filament flush: flushing removes the previous material, while the tower restores consistent flow and wipes the nozzle.",
   },
   prime_tower_width: {
-    impact:
-      "Width of the prime tower footprint. Wider towers are more stable and hold more purge per layer; too narrow can topple or clog.",
+    impact: "Sets the width of the prime-tower footprint.",
     related:
-      "enable_prime_tower must be on; material volumes per swap should match tower capacity.",
+      "Prime volume controls how much is printed on the tower for each switch. It is separate from the filament flushing volume.",
   },
 };

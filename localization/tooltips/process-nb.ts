@@ -1,5 +1,13 @@
 /**
  * Norwegian hover copy for process profile keys (TreeGrid).
+ *
+ * Betydningen av innstillingene er kontrollert mot Bambu Studios gjeldende
+ * PrintConfig.cpp og, der det finnes, den offisielle Bambu Lab-wikien:
+ * https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/PrintConfig.cpp
+ * https://wiki.bambulab.com/en/software/bambu-studio/
+ *
+ * Praktiske råd skal være konservative: Ikke utled oppførsel fra verdier i
+ * profilene, og skill priming i prime tower fra spyling ved filamentbytte.
  */
 
 import type { ProcessTooltipEntry } from "./process-en";
@@ -14,9 +22,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
 > = {
   layer_height: {
     impact:
-      "Angir tykkelsen på hvert printlag. Mindre verdier gir bedre detaljer og overflate, men øker printtid og antall sømmer.",
+      "Angir tykkelsen på hvert printlag. Mindre verdier kan gi bedre detaljer og overflate, men krever flere lag og øker vanligvis printtiden.",
     related:
-      "Henger sammen med hastigheter og linjebredder: veldig tynne lag trenger ofte justert ekstrudering og noen ganger lavere hastighet for å være stabilt.",
+      "Bambu anbefaler normalt en laghøyde på omtrent 20–70 % av dysediameteren. De konfigurerte ekstrudergrensene er endelig begrensning.",
   },
   initial_layer_print_height: {
     impact:
@@ -26,9 +34,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   line_width: {
     impact:
-      "Målbredden for ekstrudering der det ikke finnes eget unntak. Høyere verdi legger mer plast per mm bane (sterkere, raskere), men kan ødelegge fine detaljer.",
+      "Standard ekstruderingsbredde som brukes når en egenskapsspesifikk linjebredde er satt til null. Spesifikke bredder overstyrer den der de gjelder.",
     related:
-      "Regionoverstyr (outer_wall_line_width, sparse_infill_line_width osv.) gjelder der de er satt.",
+      "Yttervegg, innervegg, toppflate, solid infill og sparsom infill kan ha hver sin linjebredde.",
   },
   initial_layer_line_width: {
     impact:
@@ -44,15 +52,15 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   inner_wall_line_width: {
     impact:
-      "Bredde på indre omkretser. Tynnere indre vegger sparer tid og filament; for tynt kan svekke skallet eller gi glipper.",
+      "Angir ekstruderingsbredden for innervegger. Den endrer geometrien som brukes til å generere indre veggbaner.",
     related:
-      "outer_wall_line_width og wall_loops bestemmer skallet sammen med denne innstillingen.",
+      "Bruk den sammen med outer_wall_line_width og wall_loops. En breddeendring garanterer ikke i seg selv raskere eller sterkere utskrift.",
   },
   sparse_infill_line_width: {
     impact:
-      "Linjebredde for sparsom infill. Bredere linjer legger mer plast per pass og gjør infill mer «solid» ved samme tetthet.",
+      "Angir ekstruderingsbredden for banene i sparsom infill. Ønsket infilltetthet styres separat.",
     related:
-      "sparse_infill_density og sparse_infill_speed bør stemme med dette for å unngå under- eller overekstrudering inne i delen.",
+      "Bredden brukes også som referanse for prosentbaserte innstillinger som overlapping mellom infill og vegg.",
   },
   internal_solid_infill_line_width: {
     impact:
@@ -61,10 +69,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
       "top_surface_line_width og top_shell_layers påvirker hvordan toppen blir over denne infillen.",
   },
   top_surface_line_width: {
-    impact:
-      "Ekstruderingsbredde på synlige toppflater. Litt bredere kan skjule dysestriper; for bredt kan se ribbet eller overekstrudert ut.",
+    impact: "Angir ekstruderingsbredden som brukes på modellens toppflater.",
     related:
-      "top_shell_layers og sparsom infill under avgjør om toppen får nok støtte til å bli glatt.",
+      "Antall topplag, flytkalibrering og støtten fra infill under påvirker også kvaliteten på toppflaten.",
   },
   wall_generator: {
     impact:
@@ -92,9 +99,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   enable_arc_fitting: {
     impact:
-      "Gjør korte segmenter om til buer der det er mulig for jevnere bevegelse og mindre G-kode. Vanligvis trygt; skru av ved problemer med buer i firmware/bevegelse.",
+      "Tilpasser egnede segmenter i verktøybanen til G2/G3-buebevegelser med samme toleranse som den konfigurerte oppløsningen.",
     related:
-      "Skriveren må støtte bukommandoer; ellers kan verten linearisere baner.",
+      "Aktiver bare når skriverens firmware støtter G2/G3-buekommandoer korrekt.",
   },
   bridge_flow: {
     impact:
@@ -116,15 +123,15 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   bottom_shell_layers: {
     impact:
-      "Solide lag på bunnen (og horisontale gulv). Flere lag forbedrer bunnfinish og hjelper over sparsom infill under flate soner.",
+      "Angir antall solide lag i bunnskallet, inkludert laget på selve bunnflaten.",
     related:
-      "Første-lags-innstillinger og brim/skjørt påvirker selve bunnen; dette styrer tykkelsen over det.",
+      "Hvis antallet gir et tynnere skall enn konfigurert bunnskalltykkelse, øker Bambu Studio antall lag.",
   },
   wall_infill_order: {
     impact:
-      "Om vegger printes før eller etter infill i et lag. Endrer overheng, indre spenning og noen ganger overflate på komplekse deler.",
+      "Eldre innstilling som valgte rekkefølgen på innervegger, yttervegger og infill i et lag.",
     related:
-      "infill_wall_overlap og infill-hastigheter påvirker hvor rent infill møter veggene.",
+      "Gjeldende Bambu Studio flytter denne nøkkelen til wall_sequence. Nye profiler bør bruke den gjeldende innstillingen.",
   },
   sparse_infill_density: {
     impact:
@@ -176,9 +183,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   travel_speed: {
     impact:
-      "Hastighet på ikke-printende bevegelser. Høyere reduserer stringlengde og tid, men kan øke ghosting eller støy hvis mekanikk presses.",
+      "Angir hastigheten for forflytninger uten ekstrudering. Høyere verdi reduserer forflytningstiden, men kan gi mer støy eller bevegelsesfeil hvis maskinen presses for hardt.",
     related:
-      "travel_acceleration er tilsvarende grense for retningsendringer mellom travels.",
+      "Travel acceleration bestemmer hvor raskt ønsket forflytningshastighet kan nås. Selve banelengden endres ikke.",
   },
   default_acceleration: {
     impact:
@@ -206,9 +213,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   support_style: {
     impact:
-      "Forhåndsvalg som justerer støtteglipp, grensesjikt eller tetthet avhengig av Bambu Studio-versjon – balanse mellom hold og løsning.",
+      "Velger form og oppbygning for støtten. Normalstiler balanserer et regelmessig, stabilt rutenett mot materialbesparende snug-tårn; trestiler endrer sammenslåing og styrke på grener.",
     related:
-      "support_top_z_distance og support_interface_pattern finjusterer kontakt utover stilen.",
+      "Tilgjengelige stiler avhenger av support_type. Kontaktavstand og grensesjiktmønster konfigureres separat.",
   },
   support_on_build_plate_only: {
     impact:
@@ -218,9 +225,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   support_threshold_angle: {
     impact:
-      "Maks overhengvinkel før sliceren legger støtte. Lavere vinkler gir mer støtte (tryggere broer); høyere reduserer støtte men øker dupp-risiko.",
+      "Genererer automatisk støtte for flater med helning mot horisontalplanet under denne terskelen. En større terskel gir vanligvis mer støtte.",
     related:
-      "layer_height påvirker hva som regnes som bratt overheng per lag; kombiner med support_top_z_distance.",
+      "Bambu Studio måler vinkelen fra horisontalplanet, som er motsatt konvensjon av enkelte testmodeller for overheng.",
   },
   support_top_z_distance: {
     impact:
@@ -230,9 +237,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   support_bottom_z_distance: {
     impact:
-      "Glipp der støtte møter modellen nedenfra (der det gjelder). Samme avveining: feste vs. enkel løsning.",
+      "Angir den vertikale avstanden mellom et nedre støttegrensesjikt og objektet under.",
     related:
-      "support_top_z_distance og support_interface_pattern beskriver hele kontaktbildet.",
+      "Dette gjelder der støtte starter på en objektflate. support_top_z_distance styrer avstanden under en støttet objektflate.",
   },
   support_interface_pattern: {
     impact:
@@ -242,9 +249,9 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   brim_type: {
     impact:
-      "Legger ekstra første-lags-flate rundt modellen mot warp og bedre feste på små eller høye fotavtrykk.",
+      "Styrer om Bambu Studio lager brim på utsiden, innsiden, begge sider, automatisk eller ikke i det hele tatt.",
     related:
-      "brim_width og brim_object_gap styrer utstrekning og hvordan brim løsner fra omrisset.",
+      "Brim øker kontaktflaten på første lag. I automatisk modus beregner Bambu Studio nødvendig brim for hvert objekt.",
   },
   brim_width: {
     impact:
@@ -276,14 +283,13 @@ export const PROCESS_TOOLTIPS_NB: Readonly<
   },
   enable_prime_tower: {
     impact:
-      "Legger til et tårn for å spyle og stabilisere flyt ved bytte av materiale eller farge. Viktig for flermateriale for å unngå blødning i modellen.",
+      "Legger til et tårn som fjerner materialrester fra dysen og stabiliserer dysetrykket før objektet printes etter et filamentbytte eller en bevegelse for jevn timelapse.",
     related:
-      "prime_tower_width setter tverrsnitt; AMS-spylevolum og verktøybytte (andre steder) fullfører bildet.",
+      "Prime tower er ikke filamentspylingen: Spyling fjerner det forrige materialet, mens tårnet gjenoppretter jevn flyt og tørker av dysen.",
   },
   prime_tower_width: {
-    impact:
-      "Bredde på prime tower-fotavtrykket. Bredere tårn er mer stabile og rommer mer spyle per lag; for smalt kan velte eller tette.",
+    impact: "Angir bredden på fotavtrykket til prime tower.",
     related:
-      "enable_prime_tower må være på; volum per bytte bør matche tårnet.",
+      "Prime volume styrer hvor mye som printes på tårnet ved hvert bytte. Det er separat fra volumet for filamentspyling.",
   },
 };
