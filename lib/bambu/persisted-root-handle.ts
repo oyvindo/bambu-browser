@@ -143,3 +143,21 @@ export async function ensureReadAccess(
     return false;
   }
 }
+
+/** Request write access only when the user attempts to edit a profile. */
+export async function ensureWriteAccess(
+  handle: FileSystemDirectoryHandle,
+): Promise<boolean> {
+  try {
+    const h = handle as DirectoryHandleWithPermissions;
+    const query = h.queryPermission?.bind(h);
+    const request = h.requestPermission?.bind(h);
+    if (!query || !request) return true;
+    const q = await query({ mode: "readwrite" });
+    if (q === "granted") return true;
+    if (q === "denied") return false;
+    return (await request({ mode: "readwrite" })) === "granted";
+  } catch {
+    return false;
+  }
+}

@@ -83,3 +83,64 @@ export async function readJsonUnderRoot(
   }
   return parsed as Record<string, unknown>;
 }
+
+function assertEditableUserProfilePath(relativePath: string): string {
+  const normalized = normalizeRelativePath(relativePath);
+  const parts = splitPath(normalized);
+  const validRoot = parts[0] === "user" || parts[0] === "users";
+  const validKind = parts[2] === "process" || parts[2] === "filament";
+  if (
+    !validRoot ||
+    !validKind ||
+    parts.some((part) => part === "..") ||
+    !normalized.toLowerCase().endsWith(".json")
+  ) {
+    throw new Error(
+      "Only existing user process and filament JSON files are editable.",
+    );
+  }
+  return normalized;
+}
+
+export async function readEditableProfileUnderRoot(
+  root: FileSystemDirectoryHandle,
+  relativePath: string,
+): Promise<Record<string, unknown>> {
+  const normalized = assertEditableUserProfilePath(relativePath);
+  const data = await readJsonUnderRoot(root, normalized);
+  if (String(data.from).toLowerCase() === "system") {
+    throw new Error("System profiles are read-only.");
+  }
+  return data;
+}
+
+export async function writeEditableProfileUnderRoot(
+  root: FileSystemDirectoryHandle,
+  relativePath: string,
+  formattedJson: string,
+): Promise<void> {
+  const normalized = assertEditableUserProfilePath(relativePath);
+  const current = await readEditableProfileUnderRoot(root, normalized);
+  const next: unknown = JSON.parse(formattedJson);
+  if (next === null || typeof next !== "object" || Array.isArray(next)) {
+    throw new Error("Profile JSON must be an object.");
+  }
+  if (
+    String((next as Record<string, unknown>).from).toLowerCase() === "system"
+  ) {
+    throw new Error("System profiles are read-only.");
+  }
+  if (String(current.from).toLowerCase() === "system") {
+    throw new Error("System profiles are read-only.");
+  }
+  const handle = await getFileHandleFromRoot(root, normalized);
+  if (!handle) throw new Error(`Profile not found: ${normalized}`);
+  const writable = await handle.createWritable();
+  try {
+    await writable.write(formattedJson);
+    await writable.close();
+  } catch (error) {
+    await writable.abort();
+    throw error;
+  }
+}

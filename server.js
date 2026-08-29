@@ -23,6 +23,12 @@ const DEFAULT_ROOT =
     : path.join(os.homedir(), "BambuStudio");
 
 const STUDIO_ROOT = path.resolve(process.env.BAMBUSTUDIO_ROOT || DEFAULT_ROOT);
+const WRITE_ORIGINS = new Set(
+  String(process.env.BAMBU_BROWSER_WRITE_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
 
 const SYSTEM_PROCESS_DIR = "system/BBL/process";
 const SYSTEM_FILAMENT_DIR = "system/BBL/filament";
@@ -33,9 +39,28 @@ const FDM_PROCESS_COMMON_RELATIVE =
 const FDM_FILAMENT_COMMON_RELATIVE =
   "system/BBL/filament/fdm_filament_common.json";
 
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+function writeOriginAllowed(origin) {
+  if (!origin) return true;
+  if (WRITE_ORIGINS.has(origin)) return true;
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function setCors(req, res) {
+  const origin = req.headers.origin;
+  const requestedMethod = req.headers["access-control-request-method"];
+  const writeRequest = req.method === "PUT" || requestedMethod === "PUT";
+  if (!writeRequest) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  } else if (origin && writeOriginAllowed(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, PUT, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
@@ -113,6 +138,74 @@ async function readJsonFile(rootAbs, relPosix) {
     throw new Error(`Invalid profile JSON (expected object): ${relPosix}`);
   }
   return data;
+}
+
+function editableUserProfilePath(raw) {
+  const normalized = normalizeRelativePath(raw);
+  const parts = normalized.split("/").filter(Boolean);
+  if (
+    (parts[0] !== "user" && parts[0] !== "users") ||
+    (parts[2] !== "process" && parts[2] !== "filament") ||
+    parts.some((part) => part === "..") ||
+    !normalized.toLowerCase().endsWith(".json")
+  ) {
+    throw new Error(
+      "Only existing user process and filament JSON files are editable.",
+    );
+  }
+  safeFsPath(STUDIO_ROOT, normalized);
+  return normalized;
+}
+
+async function readRequestText(req, maxBytes = 2 * 1024 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > maxBytes) throw new Error("Request body is too large.");
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function replaceProfileFile(rootAbs, relPosix, formattedJson) {
+  const current = await readJsonFile(rootAbs, relPosix);
+  const next = JSON.parse(formattedJson);
+  if (next === null || typeof next !== "object" || Array.isArray(next)) {
+    throw new Error("Profile JSON must be an object.");
+  }
+  if (
+    String(current.from).toLowerCase() === "system" ||
+    String(next.from).toLowerCase() === "system"
+  ) {
+    const error = new Error("System profiles are read-only.");
+    error.statusCode = 403;
+    throw error;
+  }
+  const expectedKind = inferProfileKind(relPosix);
+  for (const key of ["inherits", "type", "name"]) {
+    if (JSON.stringify(current[key]) === JSON.stringify(next[key])) continue;
+    const spellsOutInheritedKind =
+      !(key in current) && key === "type" && next.type === expectedKind;
+    if (spellsOutInheritedKind) continue;
+    throw new Error(`${key} cannot be changed.`);
+  }
+  if (next.type !== undefined && next.type !== expectedKind) {
+    throw new Error(`type must remain "${expectedKind}".`);
+  }
+
+  const full = safeFsPath(rootAbs, relPosix);
+  const temporary = `${full}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await fs.writeFile(temporary, formattedJson, {
+      encoding: "utf8",
+      flag: "wx",
+    });
+    await fs.rename(temporary, full);
+  } catch (error) {
+    await fs.rm(temporary, { force: true }).catch(() => {});
+    throw error;
+  }
 }
 
 function inferProfileKind(relPath) {
@@ -388,12 +481,18 @@ async function listAllProfiles(rootAbs) {
 }
 
 async function handleRequest(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === "OPTIONS") {
+    if (
+      req.headers["access-control-request-method"] === "PUT" &&
+      !writeOriginAllowed(req.headers.origin)
+    ) {
+      return sendJson(res, 403, { error: "Origin is not allowed to write." });
+    }
     res.writeHead(204);
     return res.end();
   }
-  if (req.method !== "GET") {
+  if (req.method !== "GET" && req.method !== "PUT") {
     return sendJson(res, 405, { error: "Method not allowed" });
   }
 
@@ -405,6 +504,13 @@ async function handleRequest(req, res) {
   }
 
   const route = url.pathname;
+
+  if (req.method === "PUT" && route !== "/api/profile-file") {
+    return sendJson(res, 405, { error: "Method not allowed" });
+  }
+  if (req.method === "PUT" && !writeOriginAllowed(req.headers.origin)) {
+    return sendJson(res, 403, { error: "Origin is not allowed to write." });
+  }
 
   if (route === "/health" || route === "/api/health") {
     try {
@@ -427,6 +533,39 @@ async function handleRequest(req, res) {
       error: `BambuStudio root not found or not readable: ${STUDIO_ROOT}`,
       hint: "Set BAMBUSTUDIO_ROOT to your BambuStudio folder.",
     });
+  }
+
+  if (route === "/api/profile-file") {
+    const rawPath = url.searchParams.get("path");
+    if (!rawPath) {
+      return sendJson(res, 400, { error: "Missing path query" });
+    }
+    let relativePath;
+    try {
+      relativePath = editableUserProfilePath(rawPath);
+      const current = await readJsonFile(STUDIO_ROOT, relativePath);
+      if (String(current.from).toLowerCase() === "system") {
+        return sendJson(res, 403, { error: "System profiles are read-only." });
+      }
+      if (req.method === "GET") {
+        return sendJson(res, 200, { relativePath, data: current });
+      }
+      const body = await readRequestText(req);
+      await replaceProfileFile(STUDIO_ROOT, relativePath, body);
+      return sendJson(res, 200, { ok: true, relativePath });
+    } catch (e) {
+      const status =
+        typeof e?.statusCode === "number"
+          ? e.statusCode
+          : e?.code === "ENOENT"
+            ? 404
+            : e instanceof SyntaxError
+              ? 400
+              : 400;
+      return sendJson(res, status, {
+        error: e instanceof Error ? e.message : "Profile file operation failed",
+      });
+    }
   }
 
   if (route === "/api/meta") {
@@ -558,6 +697,7 @@ async function handleRequest(req, res) {
       "/api/accounts",
       "/api/profiles",
       "/api/system-filaments",
+      "/api/profile-file?path=",
       "/api/resolve?path=",
     ],
   });

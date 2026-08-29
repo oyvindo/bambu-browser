@@ -40,6 +40,33 @@ async function apiGet<T>(path: string): Promise<T> {
   return data as T;
 }
 
+async function apiPut<T>(path: string, body: string): Promise<T> {
+  const base = getBambuApiBaseUrl();
+  const res = await fetch(`${base}${path}`, {
+    method: "PUT",
+    cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+  const text = await res.text();
+  let data: unknown;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(`API returned non-JSON (${res.status})`);
+  }
+  if (!res.ok) {
+    const hasError =
+      data !== null && typeof data === "object" && "error" in data;
+    throw new Error(
+      hasError
+        ? String((data as { error: string }).error)
+        : `HTTP ${res.status}`,
+    );
+  }
+  return data as T;
+}
+
 export type ApiHealth = { ok: boolean; root: string; error?: string };
 
 /** 200 even when root is missing; check `ok` for a readable BambuStudio path. */
@@ -86,4 +113,20 @@ export async function fetchApiResolve(
     q.set("compareWith", compareWith.trim());
   }
   return apiGet(`/api/resolve?${q.toString()}`);
+}
+
+export async function fetchApiProfileFile(path: string): Promise<{
+  relativePath: string;
+  data: Record<string, unknown>;
+}> {
+  const q = new URLSearchParams({ path });
+  return apiGet(`/api/profile-file?${q.toString()}`);
+}
+
+export async function replaceApiProfileFile(
+  path: string,
+  formattedJson: string,
+): Promise<{ ok: true; relativePath: string }> {
+  const q = new URLSearchParams({ path });
+  return apiPut(`/api/profile-file?${q.toString()}`, formattedJson);
 }

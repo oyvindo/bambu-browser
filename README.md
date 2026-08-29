@@ -19,7 +19,7 @@ Bambu Studio stores machine, process, and filament presets under an application-
    npm install
    ```
 
-2. **Start the local JSON API** (in a separate terminal). It serves read-only metadata and file paths from your Bambu Studio root.
+2. **Start the local JSON API** (in a separate terminal). It reads profiles and can replace explicitly selected user process/filament files under your Bambu Studio root.
 
    ```bash
    npm run api
@@ -28,6 +28,7 @@ Bambu Studio stores machine, process, and filament presets under an application-
    Optional environment variables:
    - **`BAMBUSTUDIO_ROOT`** — absolute path to the Bambu Studio data folder. If omitted, the server uses the default for your OS (on macOS: `~/Library/Application Support/BambuStudio`).
    - **`PORT`** — API port (default **3847**).
+   - **`BAMBU_BROWSER_WRITE_ORIGINS`** — optional comma-separated non-localhost browser origins that may use the profile write endpoint. Localhost and 127.0.0.1 origins are allowed automatically.
 
    Example:
 
@@ -66,8 +67,8 @@ Bambu Studio stores machine, process, and filament presets under an application-
 
 **Intended use is on your own machine, bound to localhost (or loopback), not as a service on the open internet.**
 
-- The helper server (`server.js`) **reads files under your Bambu Studio directory** and exposes them through HTTP. It is a **development-style local tool**, not a hardened production API.
-- The API enables **broad CORS** so the browser can call it from your dev origin. Combined with filesystem access under the configured root, exposing this server on a **LAN IP or hostname** would let **any site or client that can reach the port** request that data. **Do not** bind it to `0.0.0.0` or deploy it where untrusted networks can reach it unless you fully understand and accept that risk.
+- The helper server (`server.js`) reads files under your Bambu Studio directory and can replace existing user process/filament JSON files. System profiles and paths outside `user/` or `users/` are read-only. It is a **development-style local tool**, not a hardened production API.
+- Read endpoints enable broad CORS. Write requests are limited to localhost/127.0.0.1 browser origins unless explicitly added with `BAMBU_BROWSER_WRITE_ORIGINS`. **Do not** bind the server to `0.0.0.0` or deploy it where untrusted networks can reach it.
 - The Next.js app and browser features involved (secure context, optional file-picker flows) are **designed around local development** on `http://localhost` / `http://127.0.0.1`. Running the stack elsewhere may hit browser or mixed-content restrictions.
 
 ### Browser folder (File System Access)
@@ -137,8 +138,24 @@ Override it when necessary:
 BAMBUSTUDIO_ROOT="/path/to/BambuStudio" npm run validate:bambu-schema
 ```
 
-Only key names are committed; Bambu profile values are never copied into this
+Generated validation metadata (known keys, value shapes, and small categorical
+allowlists) is committed; complete Bambu profiles are never copied into this
 repository.
+
+Numeric limits and option types come from Bambu Studio's own
+`src/libslic3r/PrintConfig.cpp` rather than from the range of values that
+happens to appear in the shipped profiles. Refresh that artifact with:
+
+```sh
+npm run generate:config-bounds
+```
+
+It downloads `PrintConfig.cpp` from the BambuStudio repository. Point it at a
+local checkout instead when you prefer:
+
+```sh
+BAMBUSTUDIO_PRINTCONFIG="/path/to/BambuStudio/src/libslic3r/PrintConfig.cpp" npm run generate:config-bounds
+```
 
 ### Directory map (short)
 
@@ -148,7 +165,7 @@ repository.
 - `lib/utils/` — Shared helpers (for example `cn`)
 - `localization/` — Translations and `LocaleProvider`
 - `types/` — Shared types where needed
-- `server.js` — Local read-only HTTP API over the Bambu Studio data directory
+- `server.js` — Local HTTP API for reading profiles and editing user profile files
 
 ## License
 
