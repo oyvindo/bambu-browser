@@ -9,6 +9,8 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "vitest run",
+    "validate:bambu-schema": "vitest run lib/bambu/profile-schema.local.test.ts",
     "api": "node server.js"
   },
   "dependencies": {
@@ -34,6 +36,7 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "tailwindcss": "4.3.3",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "^4.1.11"
   }
 }

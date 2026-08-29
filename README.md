@@ -94,22 +94,51 @@ The app is split into **two processes**:
 
 ### Packages and tooling
 
-| Area                  | Package                                                              | Role                                                                    |
-| --------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Framework             | `next`                                                               | App Router, routing, build/start                                        |
-| UI                    | `react`, `react-dom`                                                 | Component library                                                       |
-| Components / headless | `@base-ui/react`                                                     | Unstyled primitives for building UI                                     |
-| Variants              | `tailwind-variants`                                                  | Variant-based Tailwind classes on components (with built-in twMerge)    |
-| Classes               | `tailwind-merge`                                                     | Merge and dedupe CSS class names                                        |
-| Icons                 | `lucide-react`                                                       | Icons in the UI                                                         |
-| Theme                 | `@wrksz/themes`                                                      | Light/dark/system via `class` on `<html>` (Next.js 16 / React 19 ready) |
-| CLI / scaffolding     | `shadcn`                                                             | shadcn/ui tooling for component setup (project conventions)             |
-| Animation             | `tw-animate-css`                                                     | Tailwind-oriented animation utilities                                   |
-| Styling               | `tailwindcss`, `@tailwindcss/postcss`                                | Tailwind CSS v4 with PostCSS                                            |
-| Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom`        | Type-checking                                                           |
-| Quality               | `eslint`, `eslint-config-next`, `eslint-config-prettier`, `prettier` | Lint and formatting                                                     |
+| Area                  | Package                                                                        | Role                                                                    |
+| --------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| Framework             | `next`                                                                         | App Router, routing, build/start                                        |
+| UI                    | `react`, `react-dom`                                                           | Component library                                                       |
+| Components / headless | `@base-ui/react`                                                               | Unstyled primitives for building UI                                     |
+| Variants              | `tailwind-variants`                                                            | Variant-based Tailwind classes on components (with built-in twMerge)    |
+| Classes               | `tailwind-merge`                                                               | Merge and dedupe CSS class names                                        |
+| Icons                 | `lucide-react`                                                                 | Icons in the UI                                                         |
+| Theme                 | `@wrksz/themes`                                                                | Light/dark/system via `class` on `<html>` (Next.js 16 / React 19 ready) |
+| CLI / scaffolding     | `shadcn`                                                                       | shadcn/ui tooling for component setup (project conventions)             |
+| Animation             | `tw-animate-css`                                                               | Tailwind-oriented animation utilities                                   |
+| Styling               | `tailwindcss`, `@tailwindcss/postcss`                                          | Tailwind CSS v4 with PostCSS                                            |
+| Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom`                  | Type-checking                                                           |
+| Quality               | `eslint`, `eslint-config-next`, `eslint-config-prettier`, `prettier`, `vitest` | Tests, lint and formatting                                              |
 
 Versions live in `package.json`; bump `next` and `eslint-config-next` together if you change the Next.js version.
+
+### Validate Bambu Studio schema coverage
+
+The profile grid has committed key manifests for
+`fdm_process_common.json` and `fdm_filament_common.json`. It also renders
+unknown keys found in inherited or future profiles under **Other settings**.
+
+Run the normal schema and localization tests with:
+
+```sh
+npm test
+```
+
+To compare the manifests with the Bambu Studio files installed on your
+computer:
+
+```sh
+npm run validate:bambu-schema
+```
+
+The validator uses the same default Bambu Studio location as `server.js`.
+Override it when necessary:
+
+```sh
+BAMBUSTUDIO_ROOT="/path/to/BambuStudio" npm run validate:bambu-schema
+```
+
+Only key names are committed; Bambu profile values are never copied into this
+repository.
 
 ### Directory map (short)
 

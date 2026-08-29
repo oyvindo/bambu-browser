@@ -26,6 +26,9 @@ const STUDIO_ROOT = path.resolve(process.env.BAMBUSTUDIO_ROOT || DEFAULT_ROOT);
 
 const SYSTEM_PROCESS_DIR = "system/BBL/process";
 const SYSTEM_FILAMENT_DIR = "system/BBL/filament";
+/** Same logical path as BambuStudio/system/BBL/process/fdm_process_common.json */
+const FDM_PROCESS_COMMON_RELATIVE =
+  "system/BBL/process/fdm_process_common.json";
 /** Same logical path as BambuStudio/system/BBL/filament/fdm_filament_common.json */
 const FDM_FILAMENT_COMMON_RELATIVE =
   "system/BBL/filament/fdm_filament_common.json";
@@ -190,19 +193,16 @@ async function resolveInheritanceRecursive(
 
   if (!inherits) {
     const leaf = { relativePath: p, data };
-    if (
-      kind === "filament" &&
-      normalizeRelativePath(p) !==
-        normalizeRelativePath(FDM_FILAMENT_COMMON_RELATIVE)
-    ) {
+    const commonPath =
+      kind === "filament"
+        ? FDM_FILAMENT_COMMON_RELATIVE
+        : FDM_PROCESS_COMMON_RELATIVE;
+    if (normalizeRelativePath(p) !== normalizeRelativePath(commonPath)) {
       let commonData = {};
-      if (await fileExists(rootAbs, FDM_FILAMENT_COMMON_RELATIVE)) {
-        commonData = await readJsonFile(rootAbs, FDM_FILAMENT_COMMON_RELATIVE);
+      if (await fileExists(rootAbs, commonPath)) {
+        commonData = await readJsonFile(rootAbs, commonPath);
       }
-      return [
-        { relativePath: FDM_FILAMENT_COMMON_RELATIVE, data: commonData },
-        leaf,
-      ];
+      return [{ relativePath: commonPath, data: commonData }, leaf];
     }
     return [leaf];
   }

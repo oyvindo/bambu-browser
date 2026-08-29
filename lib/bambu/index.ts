@@ -7,6 +7,7 @@ export * from "./chain-display";
 export * from "./list-user-profiles";
 export * from "./mapping";
 export * from "./persisted-root-handle";
+export * from "./profile-schema";
 export * from "./profile-fs-access";
 export * from "./resolver";
 export * from "./validate-studio-root";

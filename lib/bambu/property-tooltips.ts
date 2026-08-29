@@ -4,6 +4,7 @@
  */
 
 import type { AppLocale } from "@/localization/types";
+import type { ProfileKind } from "./resolver";
 import {
   PROCESS_TOOLTIP_DEFAULT_EN,
   PROCESS_TOOLTIPS_EN,
@@ -21,6 +22,17 @@ const DEFAULT_BY_LOCALE: Record<AppLocale, BambuPropertyTooltip> = {
   nb: PROCESS_TOOLTIP_DEFAULT_NB,
 };
 
+const FILAMENT_DEFAULT_BY_LOCALE: Record<AppLocale, BambuPropertyTooltip> = {
+  en: {
+    impact:
+      "This filament parameter is carried through the inheritance chain. A value in a derived profile replaces the parent value for this key.",
+  },
+  nb: {
+    impact:
+      "Denne filamentparameteren følger arvekjeden. En verdi i en avledet profil erstatter forelderens verdi for denne nøkkelen.",
+  },
+};
+
 const TABLE_BY_LOCALE: Record<
   AppLocale,
   Readonly<Partial<Record<string, BambuPropertyTooltip>>>
@@ -32,7 +44,9 @@ const TABLE_BY_LOCALE: Record<
 export function propertyTooltipForKey(
   key: string,
   locale: AppLocale,
+  kind: ProfileKind = "process",
 ): BambuPropertyTooltip {
+  if (kind === "filament") return FILAMENT_DEFAULT_BY_LOCALE[locale];
   const table = TABLE_BY_LOCALE[locale];
   if (!Object.prototype.hasOwnProperty.call(table, key)) {
     return DEFAULT_BY_LOCALE[locale];

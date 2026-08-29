@@ -10,6 +10,8 @@ import { STICKY_HEADER_SURFACE } from "@/components/profile-manager/profileTreeG
 import {
   BAMBU_FILAMENT_UI_TREE,
   BAMBU_PROCESS_UI_TREE,
+  type BambuMappedGroup,
+  buildCompleteUiTree,
   type ColumnRoleLabels,
   formatBambuMappedValue,
   getInheritanceColumns,
@@ -21,11 +23,19 @@ import {
 import * as React from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { PropertyHelpTooltipLazy } from "@/components/profile-manager/profileTreeGrid/PropertyHelpTooltipLazy";
-import { useTranslations } from "@/localization";
+import { useLocale, useTranslations } from "@/localization";
+import {
+  localizedGroupLabel,
+  localizedPropertyLabel,
+  localizedSubgroupLabel,
+} from "@/localization/profile-fields";
 import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
 import { ProfileColumnExportActions } from "@/components/profile-manager/profileTreeGrid/profileTable/ProfileColumnExportActions";
 
-type UiTree = typeof BAMBU_PROCESS_UI_TREE;
+type UiTree = readonly BambuMappedGroup[];
+
+/** Long values (g-code, notes) are truncated, so keep the full text in a tooltip. */
+const VALUE_TITLE_MIN_LENGTH = 24;
 
 type CollapsedState = {
   tree: UiTree;
@@ -52,6 +62,7 @@ export const ProfileTable = ({
   showOnlyChangedLeaf = false,
 }: ProfileTableProps) => {
   const t = useTranslations();
+  const { locale } = useLocale();
 
   const [propertySearch, setPropertySearch] = React.useState("");
   const propertySearchTrim = propertySearch.trim().toLowerCase();
@@ -81,9 +92,16 @@ export const ProfileTable = ({
   );
   const colCount = 1 + columns.length;
 
-  const uiTree = isFilamentProfile
-    ? BAMBU_FILAMENT_UI_TREE
-    : BAMBU_PROCESS_UI_TREE;
+  const profileKind = isFilamentProfile ? "filament" : "process";
+  const uiTree = React.useMemo(
+    () =>
+      buildCompleteUiTree(
+        profileKind,
+        chain,
+        isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
+      ),
+    [chain, isFilamentProfile, profileKind],
+  );
 
   // Everything starts expanded, so only the collapsed ones are tracked. The
   // tree is part of the state so switching profile kind expands everything again.
@@ -185,6 +203,7 @@ export const ProfileTable = ({
       </TableHeader>
       <TableBody className="[&_tr]:border-0">
         {uiTree.map((group, groupIndex) => {
+          const groupLabel = localizedGroupLabel(group.id, group.label, locale);
           const groupOpen = propertySearchActive
             ? true
             : !collapsedInTree.groups[group.id];
@@ -192,8 +211,19 @@ export const ProfileTable = ({
           const visibleSubgroups = group.subgroups
             .map((subgroup) => {
               const visibleProps = subgroup.properties.filter((p) => {
-                const title = propertyRowTitle(p).toLowerCase();
-                if (propertySearchTrim && !title.includes(propertySearchTrim)) {
+                const label = localizedPropertyLabel(p.key, p.label, locale);
+                const searchable = [
+                  propertyRowTitle({ ...p, label }),
+                  p.key,
+                  groupLabel,
+                  localizedSubgroupLabel(subgroup.id, subgroup.label, locale),
+                ]
+                  .join(" ")
+                  .toLowerCase();
+                if (
+                  propertySearchTrim &&
+                  !searchable.includes(propertySearchTrim)
+                ) {
                   return false;
                 }
                 if (!showOnlyChangedLeaf) return true;
@@ -229,13 +259,18 @@ export const ProfileTable = ({
                           aria-hidden
                         />
                       )}
-                      {group.label}
+                      {groupLabel}
                     </button>
                   </div>
                 </TableCell>
               </TableRow>
               {groupOpen &&
                 visibleSubgroups.map(({ subgroup, visibleProps }) => {
+                  const subgroupLabel = localizedSubgroupLabel(
+                    subgroup.id,
+                    subgroup.label,
+                    locale,
+                  );
                   const subOpen = propertySearchActive
                     ? true
                     : !collapsedInTree.subgroups[subgroup.id];
@@ -260,7 +295,7 @@ export const ProfileTable = ({
                                   aria-hidden
                                 />
                               )}
-                              {subgroup.label}
+                              {subgroupLabel}
                             </button>
                           </div>
                         </TableCell>
@@ -269,7 +304,15 @@ export const ProfileTable = ({
                         visibleProps.map((prop) => {
                           const key = prop.key;
                           const unit = prop.unit;
-                          const title = propertyRowTitle(prop);
+                          const propertyLabel = localizedPropertyLabel(
+                            key,
+                            prop.label,
+                            locale,
+                          );
+                          const title = propertyRowTitle({
+                            ...prop,
+                            label: propertyLabel,
+                          });
 
                           const effectiveValues = columns.map((col) =>
                             mergedValueAt(chain, col.index, key),
@@ -280,6 +323,7 @@ export const ProfileTable = ({
                               v,
                               unit,
                               activeExtruderIndex,
+                              locale,
                             ),
                           );
 
@@ -315,6 +359,7 @@ export const ProfileTable = ({
                                   <PropertyHelpTooltipLazy
                                     label={title}
                                     propertyKey={key}
+                                    profileKind={profileKind}
                                   />
                                 </div>
                                 <span
@@ -335,12 +380,22 @@ export const ProfileTable = ({
                                 >
                                   <span
                                     className={cn(
-                                      "inline-flex min-h-6.5 items-center font-mono text-sm tabular-nums text-slate-900 dark:text-slate-100",
+                                      "inline-flex min-h-6.5 max-w-full items-center font-mono text-sm tabular-nums text-slate-900 dark:text-slate-100",
                                       overridesParent[i] &&
                                         "rounded-[calc(var(--radius-md)/2)] bg-emerald-100/85 px-3 py-1 text-slate-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-100",
                                     )}
                                   >
-                                    {cellTexts[i]}
+                                    <span
+                                      className="block max-w-50 truncate"
+                                      title={
+                                        cellTexts[i].length >
+                                        VALUE_TITLE_MIN_LENGTH
+                                          ? cellTexts[i]
+                                          : undefined
+                                      }
+                                    >
+                                      {cellTexts[i]}
+                                    </span>
                                   </span>
                                 </TableCell>
                               ))}

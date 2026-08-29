@@ -29,6 +29,12 @@ export type InheritanceChainLevel = {
 const SYSTEM_PROCESS_DIR = "system/BBL/process";
 const SYSTEM_FILAMENT_DIR = "system/BBL/filament";
 
+/** System template process presets build on. */
+export const FDM_PROCESS_COMMON_RELATIVE = joinPath(
+  SYSTEM_PROCESS_DIR,
+  "fdm_process_common.json",
+);
+
 /** System template filament presets build on; prepended as ROOT for any filament with no `inherits`. */
 export const FDM_FILAMENT_COMMON_RELATIVE = joinPath(
   SYSTEM_FILAMENT_DIR,
@@ -122,19 +128,16 @@ async function resolveInheritanceRecursive(
 
   if (!inherits) {
     const leaf: InheritanceChainLevel = { relativePath: path, data };
-    if (
-      kind === "filament" &&
-      normalizeRelativePath(path) !==
-        normalizeRelativePath(FDM_FILAMENT_COMMON_RELATIVE)
-    ) {
+    const commonPath =
+      kind === "filament"
+        ? FDM_FILAMENT_COMMON_RELATIVE
+        : FDM_PROCESS_COMMON_RELATIVE;
+    if (normalizeRelativePath(path) !== normalizeRelativePath(commonPath)) {
       let commonData: Record<string, unknown> = {};
-      if (await access.exists(FDM_FILAMENT_COMMON_RELATIVE)) {
-        commonData = await access.readJson(FDM_FILAMENT_COMMON_RELATIVE);
+      if (await access.exists(commonPath)) {
+        commonData = await access.readJson(commonPath);
       }
-      return [
-        { relativePath: FDM_FILAMENT_COMMON_RELATIVE, data: commonData },
-        leaf,
-      ];
+      return [{ relativePath: commonPath, data: commonData }, leaf];
     }
     return [leaf];
   }

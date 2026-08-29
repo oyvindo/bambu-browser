@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import type { ProfileKind } from "@/lib/bambu";
 
 const LazyPropertyHelpTooltip = lazy(async () => {
   const mod = await import("./propertyHelpTooltipLazy/PropertyHelpTooltip");
@@ -8,6 +9,7 @@ const LazyPropertyHelpTooltip = lazy(async () => {
 export function PropertyHelpTooltipLazy(props: {
   label: string;
   propertyKey: string;
+  profileKind: ProfileKind;
 }) {
   return (
     <Suspense

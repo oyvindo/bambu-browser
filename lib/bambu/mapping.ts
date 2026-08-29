@@ -3,6 +3,12 @@
  * Row title: label + unit in parentheses when applicable.
  */
 
+import {
+  localizedBoolean,
+  localizedEnumValue,
+} from "@/localization/profile-fields";
+import type { AppLocale } from "@/localization/types";
+
 export type BambuValueUnit =
   | "mm"
   | "mm/s"
@@ -372,24 +378,33 @@ export function formatBambuMappedValue(
   value: unknown,
   unit: BambuValueUnit,
   extruderIndex: number,
+  locale: AppLocale = "en",
 ): string {
   const v = pickScalarValue(value, extruderIndex);
   if (v === undefined || v === null) return "—";
 
   if (unit === "boolean") {
-    if (v === true || v === "true" || v === 1 || v === "1") return "Yes";
-    if (v === false || v === "false" || v === 0 || v === "0") return "No";
+    if (v === true || v === "true" || v === 1 || v === "1") {
+      return localizedBoolean(true, locale);
+    }
+    if (v === false || v === "false" || v === 0 || v === "0") {
+      return localizedBoolean(false, locale);
+    }
     return String(v);
   }
   if (typeof v === "boolean") {
-    return v ? "Yes" : "No";
+    return localizedBoolean(v, locale);
   }
 
   const s =
     typeof v === "number" && Number.isFinite(v) ? String(v) : String(v).trim();
   if (s === "") return "—";
 
-  if (unit === "string" || unit === "enum") {
+  if (unit === "enum") {
+    return localizedEnumValue(s, locale);
+  }
+
+  if (unit === "string") {
     return s;
   }
 
