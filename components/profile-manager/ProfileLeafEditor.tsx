@@ -138,6 +138,9 @@ const EDITOR_TEXT_CLASS =
 /** Context kept above/below a highlighted key when it is scrolled into view. */
 const HIGHLIGHT_SCROLL_MARGIN = 32;
 
+/** Grace period for moving the pointer off the tag list after clicking a tag. */
+const TAG_HOVER_PAUSE_MS = 1500;
+
 type DiffLayout = "inline" | "side-by-side";
 
 function changeTone(kind: ProfileDiffSide["kind"]): string {
@@ -369,7 +372,29 @@ export function ProfileLeafEditor({
     layer.scrollTop = next;
   }, [highlightRange]);
 
+  // After a click the selection is what matters, so hovering the other tags on
+  // the way out of the list must not steal the highlight.
+  const hoverPausedRef = React.useRef(false);
+  const hoverPauseTimerRef = React.useRef<number | null>(null);
+  const hoverPaused = () => hoverPausedRef.current;
+  const resumeTagHover = () => {
+    hoverPausedRef.current = false;
+    if (hoverPauseTimerRef.current === null) return;
+    window.clearTimeout(hoverPauseTimerRef.current);
+    hoverPauseTimerRef.current = null;
+  };
+  React.useEffect(() => resumeTagHover, []);
+
   const revealKey = (key: string) => {
+    hoverPausedRef.current = true;
+    if (hoverPauseTimerRef.current !== null) {
+      window.clearTimeout(hoverPauseTimerRef.current);
+    }
+    hoverPauseTimerRef.current = window.setTimeout(
+      resumeTagHover,
+      TAG_HOVER_PAUSE_MS,
+    );
+    setHighlightedKey(key);
     const range = findProfileKeyRange(draft, key);
     const textarea = textareaRef.current;
     if (!range || !textarea) return;
@@ -627,6 +652,7 @@ export function ProfileLeafEditor({
           <section
             className="border-border bg-muted/40 flex shrink-0 flex-wrap gap-2 border-b px-4 py-3"
             aria-label={t("profileEditor.changedFields")}
+            onMouseLeave={resumeTagHover}
           >
             {changedFieldKeys.map((key) => (
               <button
@@ -638,18 +664,24 @@ export function ProfileLeafEditor({
                   "focus-visible:ring-ring cursor-pointer outline-none focus-visible:ring-2",
                   highlightedKey === key && "ring-ring ring-2",
                 )}
-                onMouseEnter={() => setHighlightedKey(key)}
-                onMouseLeave={() =>
+                onMouseEnter={() => {
+                  if (hoverPaused()) return;
+                  setHighlightedKey(key);
+                }}
+                onMouseLeave={() => {
+                  if (hoverPaused()) return;
                   setHighlightedKey((current) =>
                     current === key ? null : current,
-                  )
-                }
+                  );
+                }}
                 onFocus={() => setHighlightedKey(key)}
-                onBlur={() =>
+                onBlur={() => {
+                  // Clicking moves focus to the textarea; keep the tint there.
+                  if (hoverPaused()) return;
                   setHighlightedKey((current) =>
                     current === key ? null : current,
-                  )
-                }
+                  );
+                }}
                 onClick={() => revealKey(key)}
               >
                 {localizedPropertyLabel(key, key, locale)}
