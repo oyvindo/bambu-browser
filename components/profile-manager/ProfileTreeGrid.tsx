@@ -17,8 +17,11 @@ export type ProfileTreeGridProps = {
   className?: string;
   /** When true, hide rows where the leaf profile cell is not an override vs. parent. */
   showOnlyChangedLeaf?: boolean;
+  propertyFilter: string;
+  onPropertyFilterChange: (value: string) => void;
   /** Renders as the first row inside the sticky table header (e.g. compare-to-filament accordion). */
   compareAccordion?: React.ReactNode;
+  onEditLeaf?: () => void;
 };
 
 export function ProfileTreeGrid({
@@ -26,7 +29,10 @@ export function ProfileTreeGrid({
   activeExtruderIndex = 0,
   className,
   showOnlyChangedLeaf = false,
+  propertyFilter,
+  onPropertyFilterChange,
   compareAccordion,
+  onEditLeaf,
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
@@ -67,7 +73,10 @@ export function ProfileTreeGrid({
           activeExtruderIndex={activeExtruderIndex}
           chain={chain}
           hasCompareAccordion={compareAccordion !== undefined}
+          propertyFilter={propertyFilter}
+          onPropertyFilterChange={onPropertyFilterChange}
           showOnlyChangedLeaf={showOnlyChangedLeaf}
+          onEditLeaf={onEditLeaf}
         />
       )}
     </ProfileTreeGridWrapper>

@@ -31,6 +31,7 @@ import {
 } from "@/localization/profile-fields";
 import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
 import { ProfileColumnExportActions } from "@/components/profile-manager/profileTreeGrid/profileTable/ProfileColumnExportActions";
+import { ProfilePathTooltip } from "@/components/profile-manager/profileTreeGrid/profileTable/ProfilePathTooltip";
 
 type UiTree = readonly BambuMappedGroup[];
 
@@ -52,20 +53,25 @@ type ProfileTableProps = {
   activeExtruderIndex?: number;
   chain: readonly InheritanceChainLevel[];
   hasCompareAccordion: boolean;
+  propertyFilter?: string;
+  onPropertyFilterChange?: (value: string) => void;
   showOnlyChangedLeaf?: boolean;
+  onEditLeaf?: () => void;
 };
 
 export const ProfileTable = ({
   activeExtruderIndex = 0,
   chain,
   hasCompareAccordion,
+  propertyFilter = "",
+  onPropertyFilterChange = () => {},
   showOnlyChangedLeaf = false,
+  onEditLeaf,
 }: ProfileTableProps) => {
   const t = useTranslations();
   const { locale } = useLocale();
 
-  const [propertySearch, setPropertySearch] = React.useState("");
-  const propertySearchTrim = propertySearch.trim().toLowerCase();
+  const propertySearchTrim = propertyFilter.trim().toLowerCase();
   const propertySearchActive = propertySearchTrim.length > 0;
 
   const isFilamentProfile = React.useMemo(() => {
@@ -159,12 +165,12 @@ export const ProfileTable = ({
               </span>
               <div className="flex min-w-0 shrink flex-col items-start gap-1.5">
                 <span className="text-muted-foreground block text-xs font-medium">
-                  {t("treeGrid.searchLabel")}
+                  {t("treeGrid.filterLabel")}
                 </span>
                 <input
                   type="search"
-                  value={propertySearch}
-                  onChange={(e) => setPropertySearch(e.target.value)}
+                  value={propertyFilter}
+                  onChange={(e) => onPropertyFilterChange(e.target.value)}
                   placeholder={t("treeGrid.propertySearchPlaceholder")}
                   className="border-input bg-background placeholder:text-muted-foreground h-8 w-full min-w-40 max-w-56 rounded-md border px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-label={t("treeGrid.propertySearchPlaceholder")}
@@ -182,20 +188,29 @@ export const ProfileTable = ({
                   "min-w-30 max-w-50 border-b border-slate-100/50 bg-background py-5 align-bottom dark:border-slate-800/40",
                   isLastHead && "rounded-tr-lg",
                 )}
-                title={col.level.relativePath}
               >
                 <div className="mb-1 flex items-center gap-1.5">
                   <ProfileColumnExportActions
                     chain={chain}
                     columnIndex={col.index}
+                    onEdit={
+                      colIdx === columns.length - 1 &&
+                      onEditLeaf &&
+                      (col.level.relativePath.startsWith("user/") ||
+                        col.level.relativePath.startsWith("users/")) &&
+                      String(col.level.data.from).toLowerCase() !== "system"
+                        ? onEditLeaf
+                        : undefined
+                    }
                   />
                   <span className="text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
                     {col.roleLabel}
                   </span>
                 </div>
-                <span className="block truncate font-mono text-xs font-bold tabular-nums leading-snug text-slate-900 dark:text-slate-100">
-                  {name}
-                </span>
+                <ProfilePathTooltip
+                  filename={name}
+                  relativePath={col.level.relativePath}
+                />
               </TableHead>
             );
           })}

@@ -24,10 +24,10 @@ export const messagesNb = {
   dataSource: {
     modalTitle: "Slik laster du Bambu Studio-filene",
     modalIntro:
-      "Appen leser bare filer på din maskin. Velg én av metodene under – du kan bytte senere fra topplinjen.",
+      "Appen leser filer på maskinen og erstatter bare en brukerprofil når du uttrykkelig lagrer den i redigeringsprogrammet. Velg én av metodene under – du kan bytte senere fra topplinjen.",
     browserSectionTitle: "Mappe i nettleseren (uten Node hvis dette virker)",
     browserSectionBody:
-      "Gi lesetilgang til datamappen til Bambu Studio. Ingenting lastes opp; filene blir på enheten. Siden må kjøre over HTTPS (f.eks. Vercel) eller localhost for at nettleseren tillater mappevelger — vanlig http://192.168… fungerer ikke.",
+      "Gi tilgang til datamappen til Bambu Studio. Ingenting lastes opp; filene blir på enheten. Skrivetilgang blir bare forespurt når en redigert brukerprofil lagres. Siden må kjøre over HTTPS (f.eks. Vercel) eller localhost for at nettleseren tillater mappevelger — vanlig http://192.168… fungerer ikke.",
     browserMacLibraryWarning:
       "På macOS blokkerer Chrome ofte Library-stien («kan ikke åpne denne mappen … inneholder systemfiler»). Bruk Lokalt API under for å lese den ekte mappa med Node, eller kopier BambuStudio-mappa til Skrivebord eller Dokumenter og velg kopien her.",
     chooseFolder: "Velg Bambu Studio-mappe…",
@@ -92,10 +92,52 @@ export const messagesNb = {
     emptyHint:
       "Last et filament eller en prosess for å vise arvetreet (én kolonne per mal i kjeden).",
     columnProperty: "Parameter",
-    searchLabel: "Søk",
+    filterLabel: "Filter",
     propertySearchPlaceholder: "Filtrer på parameternavn…",
     copyToClipboard: "Kopier til utklippstavle",
     downloadProfile: "Last ned profil",
+    editProfile: "Rediger profil",
+    fileNameCopied: "Filnavnet {filename} er kopiert til utklippstavlen",
+    fileCopied: "Filen {filename} er kopiert til utklippstavlen",
+    fileDownloaded: "Filen {filename} er lastet ned",
+    customFileCopied:
+      "Den egendefinerte filen {filename} er kopiert til utklippstavlen",
+    customFileDownloaded: "Den egendefinerte filen {filename} er lastet ned",
+    copyFailed: "Kunne ikke kopiere til utklippstavlen",
+  },
+  profileEditor: {
+    title: "Rediger profilfil",
+    intro:
+      "Rediger den opprinnelige leaf-JSON-filen. Inherits, type og name kan ikke endres.",
+    format: "Formater",
+    validate: "Valider",
+    save: "Lagre",
+    showChanges: "Vis endringer",
+    backToEditing: "Tilbake til redigering",
+    noChanges: "Ingen endringer sammenlignet med filen på disk.",
+    diffLayout: "Diff-visning",
+    diffInline: "Innebygd diff",
+    diffSideBySide: "Side-om-side-diff",
+    discard: "Forkast endringer",
+    cancel: "Avbryt",
+    keepEditing: "Fortsett å redigere",
+    confirmDiscard: "Forkaste ulagrede endringer?",
+    confirmDiscardBody:
+      "Endringene er ikke lagret. Denne handlingen kan ikke angres.",
+    loading: "Laster profilfil…",
+    validationPassed: "Validering bestått",
+    validationWarnings: "Validering bestått med advarsler ({count})",
+    validationFailed: "Validering mislyktes",
+    noValidationFindings: "Ingen valideringsproblemer funnet.",
+    severityBlocker: "Blokkering",
+    severityError: "Feil",
+    severityWarning: "Advarsel",
+    formatFailed: "Kunne ikke formatere JSON",
+    saveFailed: "Kunne ikke lagre profilen",
+    saved: "Profilen er oppdatert og lastet på nytt",
+    savedDescription:
+      "Leaf-filen ble erstattet og profilen ble lastet på nytt.",
+    writePermissionDenied: "Skrivetilgang til Bambu Studio-mappen ble avslått.",
   },
   compareFilament: {
     materialsHeading: "Materiale",

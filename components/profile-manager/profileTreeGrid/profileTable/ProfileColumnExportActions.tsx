@@ -2,56 +2,122 @@
 
 import type { InheritanceChainLevel } from "@/lib/bambu/resolver";
 import { useTranslations } from "@/localization";
-import { Copy, Download } from "lucide-react";
+import { Tooltip } from "@base-ui/react/tooltip";
+import { Copy, Download, Pencil } from "lucide-react";
 import * as React from "react";
 import {
-  copyMergedProfileToClipboard,
-  downloadMergedProfileJson,
+  copyProfileColumnToClipboard,
+  downloadProfileColumnJson,
+  isCustomLeafColumn,
 } from "@/components/profile-manager/profileTreeGrid/profileTable/exportMergedProfile";
+import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
+import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
+
+const ICON_BUTTON_CLASS =
+  "cursor-pointer rounded p-0.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200";
+
+function ColumnActionButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger
+        type="button"
+        onClick={onClick}
+        className={ICON_BUTTON_CLASS}
+        aria-label={label}
+      >
+        {children}
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Positioner side="top" sideOffset={8} className="z-50">
+          <Tooltip.Popup
+            className={cn(
+              "bg-popover text-popover-foreground border-border rounded-md border px-2.5 py-1.5 text-xs shadow-md",
+              "leading-snug",
+            )}
+          >
+            {label}
+          </Tooltip.Popup>
+        </Tooltip.Positioner>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
 
 type ProfileColumnExportActionsProps = {
   chain: readonly InheritanceChainLevel[];
   /** Inheritance column index (root = 0 … selected profile = n − 1). */
   columnIndex: number;
+  onEdit?: () => void;
 };
 
 export const ProfileColumnExportActions = ({
   chain,
   columnIndex,
+  onEdit,
 }: ProfileColumnExportActionsProps) => {
   const t = useTranslations();
+  const level = chain[columnIndex];
+  const filename = level ? fileLabel(level.relativePath) : "";
+  const customLeaf = isCustomLeafColumn(chain, columnIndex);
 
   const onCopy = React.useCallback(() => {
-    void copyMergedProfileToClipboard(chain, columnIndex);
-  }, [chain, columnIndex]);
+    void (async () => {
+      try {
+        await copyProfileColumnToClipboard(chain, columnIndex);
+        toast.add({
+          type: "success",
+          title: customLeaf
+            ? t("treeGrid.customFileCopied", { filename })
+            : t("treeGrid.fileCopied", { filename }),
+        });
+      } catch (error) {
+        toast.add({
+          type: "error",
+          title: t("treeGrid.copyFailed"),
+          description: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
+  }, [chain, columnIndex, customLeaf, filename, t]);
 
   const onDownload = React.useCallback(() => {
-    downloadMergedProfileJson(chain, columnIndex);
-  }, [chain, columnIndex]);
-
-  const iconClass =
-    "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200";
+    downloadProfileColumnJson(chain, columnIndex);
+    toast.add({
+      type: "success",
+      title: customLeaf
+        ? t("treeGrid.customFileDownloaded", { filename })
+        : t("treeGrid.fileDownloaded", { filename }),
+    });
+  }, [chain, columnIndex, customLeaf, filename, t]);
 
   return (
     <span className="inline-flex shrink-0 items-center gap-0.5">
-      <button
-        type="button"
+      {onEdit ? (
+        <ColumnActionButton label={t("treeGrid.editProfile")} onClick={onEdit}>
+          <Pencil className="size-4" aria-hidden />
+        </ColumnActionButton>
+      ) : null}
+      <ColumnActionButton
+        label={t("treeGrid.copyToClipboard")}
         onClick={onCopy}
-        className={`cursor-pointer rounded p-0.5 ${iconClass}`}
-        title={t("treeGrid.copyToClipboard")}
-        aria-label={t("treeGrid.copyToClipboard")}
       >
         <Copy className="size-4" aria-hidden />
-      </button>
-      <button
-        type="button"
+      </ColumnActionButton>
+      <ColumnActionButton
+        label={t("treeGrid.downloadProfile")}
         onClick={onDownload}
-        className={`cursor-pointer rounded p-0.5 ${iconClass}`}
-        title={t("treeGrid.downloadProfile")}
-        aria-label={t("treeGrid.downloadProfile")}
       >
         <Download className="size-4" aria-hidden />
-      </button>
+      </ColumnActionButton>
     </span>
   );
 };

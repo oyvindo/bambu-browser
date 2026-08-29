@@ -11,11 +11,18 @@ import {
   fetchApiHealth,
   fetchApiMeta,
   fetchApiProfilesForAccount,
+  fetchApiProfileFile,
   fetchApiResolve,
   fetchApiSystemFilaments,
   getBambuApiBaseUrl,
+  replaceApiProfileFile,
   type SystemFilamentEntry,
 } from "@/lib/bambu/bambu-api-client";
+import { buildMergedProfileData } from "@/lib/bambu/chain-display";
+import {
+  readEditableProfileUnderRoot,
+  writeEditableProfileUnderRoot,
+} from "@/lib/bambu/fs-path-utils";
 import {
   detectStudioLayoutFromRoot,
   listSystemFilamentEntriesFromStudioRoot,
@@ -25,6 +32,7 @@ import type { UserProfileEntry } from "@/lib/bambu/list-user-profiles";
 import { listUserProfileEntriesFromStudioRoot } from "@/lib/bambu/list-user-profiles";
 import {
   ensureReadAccess,
+  ensureWriteAccess,
   loadBambuStudioRootHandle,
   saveBambuStudioRootHandle,
 } from "@/lib/bambu/persisted-root-handle";
@@ -50,14 +58,33 @@ import { useTranslations } from "@/localization/context";
 
 import { CompareFilamentToolbar } from "./CompareFilamentToolbar";
 import { DataSourceModal } from "./DataSourceModal";
+import { ProfileLeafEditor } from "./ProfileLeafEditor";
 import { ProfileTreeGrid } from "./ProfileTreeGrid";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { toast } from "@/components/ui/toast";
+import {
+  flattenSidebarRows,
+  type SidebarRow,
+  type SidebarSection,
+} from "./sidebarRows";
 
 const DATA_MODE_STORAGE_KEY = "bambu-browser-data-mode";
 
 type DataMode = "api" | "browser";
 
-type SidebarSection = "filament_custom" | "filament_standard" | "process";
+type EditSession = {
+  relativePath: string;
+  kind: "process" | "filament";
+  original: Record<string, unknown>;
+  inherited: Record<string, unknown>;
+};
 
 const SECTION_ORDER: Record<SidebarSection, number> = {
   filament_custom: 0,
@@ -99,10 +126,23 @@ export function BambuProfileWorkbench() {
     relativePath: string | null;
   }>({ profilePath: null, relativePath: null });
   const [showOnlyChanged, setShowOnlyChanged] = useState(true);
+  const [propertyFilter, setPropertyFilter] = useState("");
+  const [openSidebarSections, setOpenSidebarSections] = useState<
+    Record<SidebarSection, boolean>
+  >({
+    filament_custom: false,
+    filament_standard: true,
+    process: false,
+  });
+  const profileButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const sectionTriggerRefs = useRef(
+    new Map<SidebarSection, HTMLButtonElement>(),
+  );
   const [systemFilamentEntries, setSystemFilamentEntries] = useState<
     SystemFilamentEntry[]
   >([]);
   const [loadingSystemFilaments, setLoadingSystemFilaments] = useState(false);
+  const [editSession, setEditSession] = useState<EditSession | null>(null);
 
   const fsSupported = useIsHydrated() && isFileSystemAccessSupported();
 
@@ -383,6 +423,85 @@ export function BambuProfileWorkbench() {
     );
   }, [profiles]);
 
+  const sidebarRows = useMemo<SidebarRow[]>(
+    () => flattenSidebarRows(grouped, openSidebarSections),
+    [grouped, openSidebarSections],
+  );
+
+  const focusRow = useCallback((row: SidebarRow) => {
+    requestAnimationFrame(() => {
+      const button =
+        row.kind === "section"
+          ? sectionTriggerRefs.current.get(row.section)
+          : profileButtonRefs.current.get(row.relativePath);
+      button?.focus();
+    });
+  }, []);
+
+  /** Moving onto a profile selects it; headings only take focus. */
+  const moveFocus = useCallback(
+    (fromIndex: number, offset: number) => {
+      if (fromIndex < 0) return;
+      const next = sidebarRows[fromIndex + offset];
+      if (!next) return;
+      if (next.kind === "profile") setSelectedPath(next.relativePath);
+      focusRow(next);
+    },
+    [focusRow, sidebarRows],
+  );
+
+  const handleProfileKeyDown = useCallback(
+    (
+      event: KeyboardEvent<HTMLButtonElement>,
+      section: SidebarSection,
+      relativePath: string,
+    ) => {
+      const index = sidebarRows.findIndex(
+        (row) => row.kind === "profile" && row.relativePath === relativePath,
+      );
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setOpenSidebarSections((current) => ({ ...current, [section]: false }));
+        focusRow({ kind: "section", section });
+        return;
+      }
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        event.preventDefault();
+        moveFocus(index, event.key === "ArrowUp" ? -1 : 1);
+      }
+    },
+    [focusRow, moveFocus, sidebarRows],
+  );
+
+  const handleSectionKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>, section: SidebarSection) => {
+      const index = sidebarRows.findIndex(
+        (row) => row.kind === "section" && row.section === section,
+      );
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        // Finder: expand a collapsed group, otherwise step into its first child.
+        if (openSidebarSections[section]) moveFocus(index, 1);
+        else
+          setOpenSidebarSections((current) => ({
+            ...current,
+            [section]: true,
+          }));
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setOpenSidebarSections((current) => ({ ...current, [section]: false }));
+        return;
+      }
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        event.preventDefault();
+        moveFocus(index, event.key === "ArrowUp" ? -1 : 1);
+      }
+    },
+    [moveFocus, openSidebarSections, sidebarRows],
+  );
+
   const firstProcessGroupIndex = useMemo(
     () => grouped.findIndex(([key]) => key === "process"),
     [grouped],
@@ -486,6 +605,88 @@ export function BambuProfileWorkbench() {
     }
   }, [loadBrowserConnection, t]);
 
+  const handleOpenEditor = useCallback(async () => {
+    if (!selectedPath || !selectedProfile || chain.length === 0) return;
+    try {
+      const original =
+        dataMode === "api"
+          ? (await fetchApiProfileFile(selectedPath)).data
+          : studioRootHandle
+            ? await readEditableProfileUnderRoot(studioRootHandle, selectedPath)
+            : null;
+      if (!original) throw new Error(t("errors.loadProfilesFailed"));
+      setEditSession({
+        relativePath: selectedPath,
+        kind: selectedProfile.kind,
+        original,
+        inherited: buildMergedProfileData(chain, chain.length - 2),
+      });
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: t("errors.loadProfilesFailed"),
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }, [chain, dataMode, selectedPath, selectedProfile, studioRootHandle, t]);
+
+  const handleSaveEditedProfile = useCallback(
+    async (formattedJson: string) => {
+      if (!editSession) return;
+      if (dataMode === "api") {
+        await replaceApiProfileFile(editSession.relativePath, formattedJson);
+      } else {
+        if (!studioRootHandle) throw new Error(t("errors.browserNoLayout"));
+        if (!(await ensureWriteAccess(studioRootHandle))) {
+          throw new Error(t("profileEditor.writePermissionDenied"));
+        }
+        await writeEditableProfileUnderRoot(
+          studioRootHandle,
+          editSession.relativePath,
+          formattedJson,
+        );
+      }
+
+      const compareArg =
+        editSession.kind === "filament" &&
+        isCustomFilamentProfile &&
+        compareFilamentPath
+          ? compareFilamentPath
+          : null;
+      const refreshed =
+        dataMode === "api"
+          ? (await fetchApiResolve(editSession.relativePath, compareArg)).chain
+          : studioRootHandle
+            ? await resolveChainFromStudioRoot(
+                studioRootHandle,
+                editSession.relativePath,
+                compareArg,
+              )
+            : [];
+      setChain(refreshed);
+      setEditSession((current) =>
+        current
+          ? {
+              ...current,
+              original: JSON.parse(formattedJson) as Record<string, unknown>,
+              inherited: buildMergedProfileData(
+                refreshed,
+                refreshed.length - 2,
+              ),
+            }
+          : null,
+      );
+    },
+    [
+      compareFilamentPath,
+      dataMode,
+      editSession,
+      isCustomFilamentProfile,
+      studioRootHandle,
+      t,
+    ],
+  );
+
   return (
     <div className="bg-background flex min-h-0 flex-1 flex-col">
       <DataSourceModal
@@ -496,8 +697,22 @@ export function BambuProfileWorkbench() {
         onChooseBrowserFolder={() => void handleChooseBrowserFolder()}
         onSwitchToApi={handleSwitchToApi}
       />
+      {editSession ? (
+        <ProfileLeafEditor
+          key={editSession.relativePath}
+          relativePath={editSession.relativePath}
+          kind={editSession.kind}
+          original={editSession.original}
+          inherited={editSession.inherited}
+          onSave={handleSaveEditedProfile}
+          onClose={() => setEditSession(null)}
+        />
+      ) : null}
 
-      <header className="border-border bg-background sticky top-0 z-50 shrink-0 space-y-2 border-b px-4 py-3">
+      <header
+        data-app-header
+        className="border-border bg-background sticky top-0 z-50 shrink-0 space-y-2 border-b px-4 py-3"
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-foreground text-lg font-semibold tracking-tight">
@@ -691,8 +906,6 @@ export function BambuProfileWorkbench() {
               <ul className="flex flex-col">
                 {grouped.map(([mapKey, items], index) => {
                   const sidebarSection = mapKey;
-                  const filamentGroupDefaultOpen =
-                    sidebarSection === "filament_standard";
                   return (
                     <li
                       key={mapKey}
@@ -706,11 +919,30 @@ export function BambuProfileWorkbench() {
                         />
                       ) : null}
                       <Collapsible
-                        defaultOpen={filamentGroupDefaultOpen}
+                        open={openSidebarSections[sidebarSection]}
+                        onOpenChange={(open) =>
+                          setOpenSidebarSections((current) => ({
+                            ...current,
+                            [sidebarSection]: open,
+                          }))
+                        }
                         className="w-full"
                       >
                         <CollapsibleTrigger
+                          ref={(node) => {
+                            if (node) {
+                              sectionTriggerRefs.current.set(
+                                sidebarSection,
+                                node,
+                              );
+                            } else {
+                              sectionTriggerRefs.current.delete(sidebarSection);
+                            }
+                          }}
                           type="button"
+                          onKeyDown={(event) =>
+                            handleSectionKeyDown(event, sidebarSection)
+                          }
                           className={cn(
                             "text-foreground/80 bg-muted/80 dark:bg-muted/50 hover:bg-muted/90 dark:hover:bg-muted/90 flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11px] font-semibold tracking-wide uppercase",
                             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -730,9 +962,33 @@ export function BambuProfileWorkbench() {
                             {items.map((p) => (
                               <li key={p.relativePath}>
                                 <button
+                                  ref={(node) => {
+                                    if (node) {
+                                      profileButtonRefs.current.set(
+                                        p.relativePath,
+                                        node,
+                                      );
+                                    } else {
+                                      profileButtonRefs.current.delete(
+                                        p.relativePath,
+                                      );
+                                    }
+                                  }}
                                   type="button"
                                   onClick={() =>
                                     setSelectedPath(p.relativePath)
+                                  }
+                                  onKeyDown={(event) =>
+                                    handleProfileKeyDown(
+                                      event,
+                                      sidebarSection,
+                                      p.relativePath,
+                                    )
+                                  }
+                                  aria-current={
+                                    selectedPath === p.relativePath
+                                      ? "true"
+                                      : undefined
                                   }
                                   className={cn(
                                     "hover:bg-blue-300 hover:text-blue-50 w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
@@ -766,6 +1022,9 @@ export function BambuProfileWorkbench() {
               <ProfileTreeGrid
                 chain={chain}
                 activeExtruderIndex={activeExtruderIndex}
+                propertyFilter={propertyFilter}
+                onPropertyFilterChange={setPropertyFilter}
+                onEditLeaf={() => void handleOpenEditor()}
                 showOnlyChangedLeaf={
                   isProcessProfile || isFilamentProfile
                     ? showOnlyChanged

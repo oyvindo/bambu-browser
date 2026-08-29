@@ -33,7 +33,8 @@ export function PropertyHelpTooltip({
         <Info className="size-3.5 opacity-80" strokeWidth={2} aria-hidden />
       </Tooltip.Trigger>
       <Tooltip.Portal>
-        <Tooltip.Positioner side="top" sideOffset={8} className="z-50">
+        {/* Above the editor overlay and toasts, which the icon also appears in. */}
+        <Tooltip.Positioner side="top" sideOffset={8} className="z-500">
           <Tooltip.Popup
             className={cn(
               "bg-popover text-popover-foreground border-border max-w-[min(20rem,calc(100vw-1.5rem))] rounded-md border px-3 py-2 text-xs shadow-md",
