@@ -108,7 +108,7 @@ export const messagesNb = {
   profileEditor: {
     title: "Rediger profilfil",
     intro:
-      "Rediger den opprinnelige leaf-JSON-filen. Inherits, type og name kan ikke endres.",
+      "Rediger den opprinnelige leaf-JSON-filen. Inherits, type, name og from kan ikke endres.",
     format: "Formater",
     validate: "Valider",
     save: "Lagre",
@@ -118,6 +118,7 @@ export const messagesNb = {
     diffLayout: "Diff-visning",
     diffInline: "Innebygd diff",
     diffSideBySide: "Side-om-side-diff",
+    changedFields: "Endrede felt i denne leaf-profilen",
     discard: "Forkast endringer",
     cancel: "Avbryt",
     minimize: "Minimer",
@@ -130,6 +131,8 @@ export const messagesNb = {
     validationPassed: "Validering bestått",
     validationWarnings: "Validering bestått med advarsler ({count})",
     validationFailed: "Validering mislyktes",
+    revertLockedFields: "Tilbakestill",
+    revertLockedFailed: "Kunne ikke gjenopprette låste felt",
     noValidationFindings: "Ingen valideringsproblemer funnet.",
     severityBlocker: "Blokkering",
     severityError: "Feil",

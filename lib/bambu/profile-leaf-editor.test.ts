@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { formatProfileJson, validateProfileJson } from "./profile-leaf-editor";
+import {
+  findProfileKeyRange,
+  formatProfileJson,
+  hasLockedFieldFinding,
+  profileSettingKeys,
+  restoreLockedProfileFields,
+  validateProfileJson,
+} from "./profile-leaf-editor";
 
 const original = {
   type: "process",
@@ -15,6 +22,52 @@ describe("profile leaf formatting", () => {
       '{\n    "a": [\n        2,\n        1\n    ],\n    "z": {\n        "a": 2,\n        "b": 1\n    }\n}\n',
     );
   });
+
+  it("lists leaf setting keys without profile metadata", () => {
+    expect(
+      profileSettingKeys({
+        name: "My profile",
+        inherits: "Parent",
+        from: "User",
+        version: "1.0",
+        layer_height: "0.2",
+        sparse_infill_density: "15%",
+      }),
+    ).toEqual(["layer_height", "sparse_infill_density"]);
+  });
+});
+
+describe("locating a field in the editor buffer", () => {
+  const text = formatProfileJson({
+    filament_cost: ["249"],
+    layer_height: "0.2",
+    nested: { layer_height: "9" },
+  });
+
+  function slice(key: string): string | null {
+    const range = findProfileKeyRange(text, key);
+    return range ? text.slice(range.start, range.end) : null;
+  }
+
+  it("spans the key and a scalar value", () => {
+    expect(slice("layer_height")).toBe('"layer_height": "0.2"');
+  });
+
+  it("spans a multi-line array value", () => {
+    expect(slice("filament_cost")).toBe(
+      '"filament_cost": [\n        "249"\n    ]',
+    );
+  });
+
+  it("spans a nested object value rather than its inner key", () => {
+    expect(slice("nested")).toBe(
+      '"nested": {\n        "layer_height": "9"\n    }',
+    );
+  });
+
+  it("returns null for a key that is not present at the top level", () => {
+    expect(findProfileKeyRange(text, "missing")).toBeNull();
+  });
 });
 
 describe("profile leaf validation", () => {
@@ -27,7 +80,7 @@ describe("profile leaf validation", () => {
     ).toBe(false);
   });
 
-  it.each(["inherits", "name", "type"] as const)(
+  it.each(["inherits", "name", "type", "from"] as const)(
     "rejects changes to locked field %s",
     (key) => {
       const changed = { ...original, [key]: "changed" };
@@ -37,8 +90,27 @@ describe("profile leaf validation", () => {
       });
       expect(result.canSave).toBe(false);
       expect(result.findings.some((finding) => finding.key === key)).toBe(true);
+      expect(hasLockedFieldFinding(result.findings)).toBe(true);
     },
   );
+
+  it("restores every locked field from the original leaf", () => {
+    expect(
+      restoreLockedProfileFields(
+        {
+          ...original,
+          from: "system",
+          name: "Renamed",
+          layer_height: "0.3",
+        },
+        { ...original, from: "User" },
+      ),
+    ).toEqual({
+      ...original,
+      from: "User",
+      layer_height: "0.3",
+    });
+  });
 
   it("accepts a leaf that inherits type, and rejects a conflicting one", () => {
     const inheritsType = {

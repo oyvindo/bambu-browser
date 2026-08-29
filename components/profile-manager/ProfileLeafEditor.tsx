@@ -13,8 +13,12 @@ import {
   type ProfileDiffSide,
 } from "@/lib/bambu/profile-diff";
 import {
+  findProfileKeyRange,
   formatProfileJson,
+  hasLockedFieldFinding,
   parseProfileJson,
+  profileSettingKeys,
+  restoreLockedProfileFields,
   validateProfileJson,
   type ProfileValidationFinding,
   type ProfileValidationSeverity,
@@ -126,6 +130,13 @@ function FindingsList({
     </Tooltip.Provider>
   );
 }
+
+/** Shared by the textarea and its highlight mirror so the two stay aligned. */
+const EDITOR_TEXT_CLASS =
+  "w-full p-4 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap";
+
+/** Context kept above/below a highlighted key when it is scrolled into view. */
+const HIGHLIGHT_SCROLL_MARGIN = 32;
 
 type DiffLayout = "inline" | "side-by-side";
 
@@ -288,9 +299,14 @@ export function ProfileLeafEditor({
   onClose,
 }: ProfileLeafEditorProps) {
   const t = useTranslations();
+  const { locale } = useLocale();
   const initial = React.useMemo(() => formatProfileJson(original), [original]);
   const [baseline, setBaseline] = React.useState(initial);
   const [draft, setDraft] = React.useState(initial);
+  const draftRef = React.useRef(draft);
+  React.useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
   const [validatedDraft, setValidatedDraft] = React.useState<string | null>(
     null,
   );
@@ -307,6 +323,59 @@ export function ProfileLeafEditor({
     () => (showingChanges ? diffProfileLines(baseline, draft) : []),
     [baseline, draft, showingChanges],
   );
+  const changedFieldKeys = React.useMemo(() => {
+    try {
+      return profileSettingKeys(parseProfileJson(draft));
+    } catch {
+      return profileSettingKeys(original);
+    }
+  }, [draft, original]);
+  const [highlightedKey, setHighlightedKey] = React.useState<string | null>(
+    null,
+  );
+  const highlightRange = React.useMemo(
+    () => (highlightedKey ? findProfileKeyRange(draft, highlightedKey) : null),
+    [draft, highlightedKey],
+  );
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const highlightRef = React.useRef<HTMLDivElement>(null);
+  const markRef = React.useRef<HTMLElement>(null);
+
+  // A textarea cannot scroll to an arbitrary offset on its own, so the mirror
+  // layer's <mark> is measured instead and both boxes are scrolled together.
+  React.useEffect(() => {
+    if (!highlightRange) return;
+    const textarea = textareaRef.current;
+    const layer = highlightRef.current;
+    const mark = markRef.current;
+    if (!textarea || !layer || !mark) return;
+    const rects = mark.getClientRects();
+    if (rects.length === 0) return;
+    const layerTop = layer.getBoundingClientRect().top;
+    const top = rects[0].top - layerTop + layer.scrollTop;
+    const bottom = rects[rects.length - 1].bottom - layerTop + layer.scrollTop;
+    const view = textarea.clientHeight;
+    const margin = HIGHLIGHT_SCROLL_MARGIN;
+    const current = textarea.scrollTop;
+    let next = current;
+    if (top - margin < current || bottom - top > view) {
+      next = top - margin;
+    } else if (bottom + margin > current + view) {
+      next = bottom + margin - view;
+    }
+    next = Math.max(0, Math.min(next, textarea.scrollHeight - view));
+    if (next === current) return;
+    textarea.scrollTop = next;
+    layer.scrollTop = next;
+  }, [highlightRange]);
+
+  const revealKey = (key: string) => {
+    const range = findProfileKeyRange(draft, key);
+    const textarea = textareaRef.current;
+    if (!range || !textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(range.start, range.end);
+  };
 
   const requestClose = React.useCallback(() => {
     if (dirty) setConfirmingDiscard(true);
@@ -369,6 +438,26 @@ export function ProfileLeafEditor({
     setValidationCanSave(false);
   };
 
+  const revertLockedFields = (toastId: string | undefined) => {
+    try {
+      const source = textareaRef.current?.value ?? draftRef.current;
+      updateDraft(
+        formatProfileJson(
+          restoreLockedProfileFields(parseProfileJson(source), original),
+        ),
+      );
+    } catch (error) {
+      // Keep the validation toast open so the action stays reachable on retry.
+      toast.add({
+        type: "error",
+        title: t("profileEditor.revertLockedFailed"),
+        description: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+    if (toastId !== undefined) toast.close(toastId);
+  };
+
   const handleFormat = () => {
     try {
       updateDraft(formatProfileJson(parseProfileJson(draft)));
@@ -391,7 +480,7 @@ export function ProfileLeafEditor({
       ) : (
         t("profileEditor.noValidationFindings")
       );
-    toast.add({
+    const toastId: string = toast.add({
       type: result.canSave
         ? result.findings.length > 0
           ? "warning"
@@ -405,6 +494,15 @@ export function ProfileLeafEditor({
           : t("profileEditor.validationPassed")
         : t("profileEditor.validationFailed"),
       description,
+      ...(hasLockedFieldFinding(result.findings)
+        ? {
+            timeout: 0,
+            actionProps: {
+              children: t("profileEditor.revertLockedFields"),
+              onClick: () => revertLockedFields(toastId),
+            },
+          }
+        : {}),
     });
   };
 
@@ -525,6 +623,41 @@ export function ProfileLeafEditor({
           </div>
         </header>
 
+        {changedFieldKeys.length > 0 ? (
+          <section
+            className="border-border bg-muted/40 flex shrink-0 flex-wrap gap-2 border-b px-4 py-3"
+            aria-label={t("profileEditor.changedFields")}
+          >
+            {changedFieldKeys.map((key) => (
+              <button
+                key={key}
+                type="button"
+                title={key}
+                className={cn(
+                  "bg-secondary text-secondary-foreground rounded-md px-2.5 py-1 text-xs font-medium",
+                  "focus-visible:ring-ring cursor-pointer outline-none focus-visible:ring-2",
+                  highlightedKey === key && "ring-ring ring-2",
+                )}
+                onMouseEnter={() => setHighlightedKey(key)}
+                onMouseLeave={() =>
+                  setHighlightedKey((current) =>
+                    current === key ? null : current,
+                  )
+                }
+                onFocus={() => setHighlightedKey(key)}
+                onBlur={() =>
+                  setHighlightedKey((current) =>
+                    current === key ? null : current,
+                  )
+                }
+                onClick={() => revealKey(key)}
+              >
+                {localizedPropertyLabel(key, key, locale)}
+              </button>
+            ))}
+          </section>
+        ) : null}
+
         {showingChanges ? (
           <DiffView
             lines={diffLines}
@@ -536,14 +669,51 @@ export function ProfileLeafEditor({
             sideBySideLabel={t("profileEditor.diffSideBySide")}
           />
         ) : (
-          <textarea
-            className="bg-muted/20 focus-visible:ring-ring min-h-0 flex-1 resize-none overflow-auto p-4 font-mono text-xs leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-inset"
-            value={draft}
-            onChange={(event) => updateDraft(event.target.value)}
-            spellCheck={false}
-            aria-label={t("profileEditor.title")}
-            autoFocus
-          />
+          <div className="bg-muted/20 relative min-h-0 flex-1">
+            {/* Mirrors the textarea so a hovered tag can tint its lines. */}
+            <div
+              ref={highlightRef}
+              aria-hidden
+              className={cn(
+                EDITOR_TEXT_CLASS,
+                "pointer-events-none absolute inset-0 overflow-hidden text-transparent",
+              )}
+            >
+              {highlightRange ? (
+                <>
+                  {draft.slice(0, highlightRange.start)}
+                  <mark
+                    ref={markRef}
+                    className="bg-primary/25 rounded-xs text-transparent"
+                  >
+                    {draft.slice(highlightRange.start, highlightRange.end)}
+                  </mark>
+                  {draft.slice(highlightRange.end)}
+                </>
+              ) : (
+                draft
+              )}
+              {"\n"}
+            </div>
+            <textarea
+              ref={textareaRef}
+              className={cn(
+                EDITOR_TEXT_CLASS,
+                "focus-visible:ring-ring absolute inset-0 resize-none overflow-auto bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-inset",
+              )}
+              value={draft}
+              onChange={(event) => updateDraft(event.target.value)}
+              onScroll={(event) => {
+                const layer = highlightRef.current;
+                if (!layer) return;
+                layer.scrollTop = event.currentTarget.scrollTop;
+                layer.scrollLeft = event.currentTarget.scrollLeft;
+              }}
+              spellCheck={false}
+              aria-label={t("profileEditor.title")}
+              autoFocus
+            />
+          </div>
         )}
 
         <footer className="border-border flex shrink-0 flex-wrap items-center justify-between gap-2 border-t px-4 py-3">

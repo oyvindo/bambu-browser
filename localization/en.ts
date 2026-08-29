@@ -105,7 +105,7 @@ export const messagesEn = {
   profileEditor: {
     title: "Edit profile file",
     intro:
-      "Edit the original leaf JSON. Inherits, type, and name cannot be changed.",
+      "Edit the original leaf JSON. Inherits, type, name, and from cannot be changed.",
     format: "Format",
     validate: "Validate",
     save: "Save",
@@ -115,6 +115,7 @@ export const messagesEn = {
     diffLayout: "Diff layout",
     diffInline: "Inline diff",
     diffSideBySide: "Side-by-side diff",
+    changedFields: "Changed fields in this leaf profile",
     discard: "Discard changes",
     cancel: "Cancel",
     minimize: "Minimize",
@@ -127,6 +128,8 @@ export const messagesEn = {
     validationPassed: "Validation passed",
     validationWarnings: "Validation passed with warnings ({count})",
     validationFailed: "Validation failed",
+    revertLockedFields: "Revert",
+    revertLockedFailed: "Could not restore locked fields",
     noValidationFindings: "No validation issues found.",
     severityBlocker: "Blocker",
     severityError: "Error",

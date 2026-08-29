@@ -40,7 +40,7 @@ type GeneratedKindValidation = {
   valueShapes: Readonly<Record<string, "array" | "scalar" | "mixed">>;
 };
 
-const LOCKED_FIELDS = ["inherits", "type", "name"] as const;
+export const LOCKED_FIELDS = ["inherits", "type", "name", "from"] as const;
 const SKIPPED_VALUE_KEYS = new Set([
   "compatible_printers",
   "compatible_printers_condition",
@@ -79,6 +79,128 @@ export function parseProfileJson(text: string): Record<string, unknown> {
     throw new Error("Profile JSON must be an object.");
   }
   return parsed as Record<string, unknown>;
+}
+
+/** Copy identity fields from the on-disk leaf; omit them if they were inherited. */
+export function restoreLockedProfileFields(
+  draft: Record<string, unknown>,
+  original: Record<string, unknown>,
+): Record<string, unknown> {
+  const next = { ...draft };
+  for (const key of LOCKED_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(original, key)) {
+      next[key] = original[key];
+    } else {
+      delete next[key];
+    }
+  }
+  return next;
+}
+
+export function hasLockedFieldFinding(
+  findings: readonly { key?: string }[],
+): boolean {
+  return findings.some(
+    (finding) =>
+      finding.key !== undefined &&
+      (LOCKED_FIELDS as readonly string[]).includes(finding.key),
+  );
+}
+
+/** Profile-setting overrides stored in a leaf, excluding identity metadata. */
+export function profileSettingKeys(
+  value: Readonly<Record<string, unknown>>,
+): string[] {
+  return Object.keys(value)
+    .filter((key) => !PROFILE_METADATA_KEYS.has(key))
+    .sort((left, right) => left.localeCompare(right));
+}
+
+/** Index just past a JSON value that starts at or after `from`. */
+function endOfJsonValue(text: string, from: number): number {
+  let index = from;
+  while (index < text.length && /\s/.test(text[index]!)) index += 1;
+  const opening = text[index];
+  if (opening === "{" || opening === "[") {
+    let depth = 0;
+    let inString = false;
+    while (index < text.length) {
+      const char = text[index]!;
+      if (inString) {
+        if (char === "\\") index += 1;
+        else if (char === '"') inString = false;
+      } else if (char === '"') {
+        inString = true;
+      } else if (char === "{" || char === "[") {
+        depth += 1;
+      } else if (char === "}" || char === "]") {
+        depth -= 1;
+        if (depth === 0) return index + 1;
+      }
+      index += 1;
+    }
+    return text.length;
+  }
+  let inString = false;
+  while (index < text.length) {
+    const char = text[index]!;
+    if (inString) {
+      if (char === "\\") index += 1;
+      else if (char === '"') inString = false;
+    } else if (char === '"') {
+      inString = true;
+    } else if (char === "," || char === "}" || char === "]" || char === "\n") {
+      break;
+    }
+    index += 1;
+  }
+  while (index > from && /\s/.test(text[index - 1]!)) index -= 1;
+  return index;
+}
+
+/**
+ * Character range of a top-level `"key": value` pair, from the opening quote of
+ * the key through the end of its value. Nested keys of the same name are
+ * ignored so the editor highlights the entry the tag refers to.
+ */
+export function findProfileKeyRange(
+  text: string,
+  key: string,
+): { start: number; end: number } | null {
+  let depth = 0;
+  let index = 0;
+  while (index < text.length) {
+    const char = text[index]!;
+    if (char === '"') {
+      const quoteStart = index;
+      index += 1;
+      let name = "";
+      while (index < text.length) {
+        const inner = text[index]!;
+        if (inner === "\\") {
+          name += text[index + 1] ?? "";
+          index += 2;
+          continue;
+        }
+        if (inner === '"') break;
+        name += inner;
+        index += 1;
+      }
+      index += 1;
+      if (depth === 1 && name === key) {
+        let colon = index;
+        while (colon < text.length && /\s/.test(text[colon]!)) colon += 1;
+        if (text[colon] === ":") {
+          return { start: quoteStart, end: endOfJsonValue(text, colon + 1) };
+        }
+      }
+      continue;
+    }
+    if (char === "{" || char === "[") depth += 1;
+    else if (char === "}" || char === "]") depth -= 1;
+    index += 1;
+  }
+  return null;
 }
 
 function deepEqual(left: unknown, right: unknown): boolean {
