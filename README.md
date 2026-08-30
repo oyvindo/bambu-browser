@@ -1,21 +1,36 @@
 # Bambu browser
 
-A small **local** web app for exploring **Bambu Studio** user profiles: browse accounts, open profile trees, and inspect inheritance chains from the JSON and preset files Studio keeps on disk. The UI is a Next.js application. You can load data either with a companion **Node HTTP server** (`server.js`, normal filesystem access) or, where the browser allows it, by **choosing the Bambu Studio folder** in the page (see limitations below).
+A local profile browser for **Bambu Studio** and **OrcaSlicer**: browse process
+and filament profiles, inspect inheritance chains, compare values, and edit
+user profiles.
 
-The local API also supports **OrcaSlicer** profiles. Use the Bambu / Orca
-selector above the account control. OrcaSlicer currently uses API mode and its
-`user/default/` account; Bambu Studio also retains browser-folder mode.
+## Recommended: download the desktop app
+
+For most users, download the latest macOS or Windows build from
+**[GitHub Releases](https://github.com/oyvindo/bambu-browser/releases)**. The
+desktop app starts its local API automatically; no terminal or developer setup
+is required.
+
+The hosted [Vercel web app](https://bambu-browser.vercel.app/) **cannot read
+slicer profiles on its own**. On both macOS and Windows, `server.js` must be
+running locally on the same computer. Developers can either:
+
+1. run only `npm run api` locally and use the Vercel interface, or
+2. clone the repository and run both `npm run api` and `npm run dev`.
+
+The browser never uploads profile data. The API is bound to loopback and reads
+the slicer files directly from your computer.
 
 ## What it does
 
 Bambu Studio stores machine, process, and filament presets under an application-support folder (on macOS, typically `~/Library/Application Support/BambuStudio`). This project lists those profiles, resolves how profiles inherit from one another, and presents that structure in the browser. Nothing is uploaded to the cloud: all data stays on your machine and is served only through the local API you start yourself.
 
-## Requirements
+## Developer requirements
 
 - **Node.js** (current LTS is fine)
 - **Bambu Studio** installed and used at least once so its data directory exists (or point the API at a copy of that tree with `BAMBUSTUDIO_ROOT`)
 
-## Usage
+## Developer usage
 
 1. **Install dependencies**
 
@@ -120,15 +135,9 @@ macOS notarization (which would remove the Gatekeeper prompt entirely) and Windo
 
 - The helper server (`server.js`) reads files under your Bambu Studio directory and can replace existing user process/filament JSON files. System profiles and paths outside `user/` or `users/` are read-only. It is a **development-style local tool**, not a hardened production API.
 - Read endpoints enable broad CORS. Write requests are limited to localhost/127.0.0.1 browser origins unless explicitly added with `BAMBU_BROWSER_WRITE_ORIGINS`. **Do not** bind the server to `0.0.0.0` or deploy it where untrusted networks can reach it.
-- The Next.js app and browser features involved (secure context, optional file-picker flows) are **designed around local development** on `http://localhost` / `http://127.0.0.1`. Running the stack elsewhere may hit browser or mixed-content restrictions.
-
-### Browser folder (File System Access)
-
-The UI can read profiles **without** `npm run api` if you use **Choose Bambu Studio folder** in a supported browser. Be aware of the following:
-
-- **Secure context:** The folder picker only works on **`https://` origins** (e.g. a Vercel deploy) or **`http://localhost` / `127.0.0.1`**. Opening the app as **`http://192.168.x.x:3000`** is _not_ a secure context, so the picker is unavailable there.
-- **macOS + `~/Library/...`:** Browsers such as Chrome often **refuse** the real Bambu Studio path under **Library/Application Support** (“contains system files”). Use **Local API** (`server.js`) to read that location, or **copy** the `BambuStudio` folder to somewhere like Desktop or Documents and select the copy in the picker.
-- **Hosted UI + local API:** If you use a **public HTTPS** site (e.g. Vercel) together with **`http://127.0.0.1:3847`**, Chrome may prompt for permission to **access local network / device**; you typically need **Allow** for the API calls to succeed.
+- The web interface always requires `server.js` on the same computer. When the
+  hosted Vercel UI calls `http://127.0.0.1:3847`, the browser may ask for local
+  network/device permission; allow it for the API calls to succeed.
 
 Treat this repository as a **personal, localhost-only utility**. If you need remote access, use an explicit, reviewed approach (VPN, SSH tunnel, or a proper authenticated backend), not an open local API.
 
@@ -140,7 +149,7 @@ The app is split into **two processes** in the web workflow (an optional Electro
 
 1. **Next.js client** (`npm run dev` / `build` + `start`) — React 19 with the App Router (`app/`). The home page (`app/page.tsx`) renders the `BambuProfileWorkbench`, which loads Bambu Studio or OrcaSlicer data from the local API URL (`NEXT_PUBLIC_BAMBU_API_URL`, default `http://127.0.0.1:3847`).
 
-2. **Local HTTP API** (`server.js`, started with `npm run api`) — plain Node with `http` and `fs/promises`. A `slicer` request parameter selects the configured Bambu Studio or OrcaSlicer root. The API validates paths under that root, lists user profiles, and resolves vendor-specific system inheritance. Bambu data can alternatively be read through the browser **File System Access** picker; Orca browser-folder mode is planned but is not part of the initial support.
+2. **Local HTTP API** (`server.js`, started with `npm run api`) — plain Node with `http` and `fs/promises`. A `slicer` request parameter selects the configured Bambu Studio or OrcaSlicer root. The API validates paths under that root, lists user profiles, and resolves vendor-specific system inheritance. The Electron app starts this process automatically.
 
 The shared workbench, inheritance grid, and leaf editor are deliberately
 slicer-neutral. Bambu keeps its curated field descriptions and generated
@@ -148,8 +157,7 @@ PrintConfig validation. Orca fields use labels, categories, units, tooltips,
 types, bounds, and enums generated from OrcaSlicer v2.4.2's pinned
 `PrintConfig.cpp`; unknown future fields remain visible and editable. Machine
 profiles are intentionally omitted from the sidebar to keep it focused on
-editable process and filament profiles. Browser-folder support for Orca can be
-added later without changing the API contract.
+editable process and filament profiles.
 
 **`lib/bambu/`** holds client-side domain logic: API client (`bambu-api-client.ts`), profile and inheritance resolution (`resolver.ts`, `mapping.ts`), helpers for displaying inheritance chains (`chain-display.ts`), file-handling / validation helpers where needed, and related types. **`components/profile-manager/`** is the profile tree and toolbar UI (for example `ProfileTreeGrid`, `BambuProfileWorkbench`). **`components/ui/`** is reusable primitives (buttons, table, collapsible). **`localization/`** handles locales (context, strings, process-parameter tooltips). **`components/providers.tsx`** wires `@wrksz/themes` (light/dark) and the locale provider around the app. Fonts and global styles live in `app/layout.tsx` and `app/globals.css`.
 

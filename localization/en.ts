@@ -9,65 +9,49 @@ export const messagesEn = {
   },
   header: {
     title: "Slicer profile browser",
-    subtitlePrefix: "Data comes from the local Node API (",
-    subtitleMiddle: ") so macOS Library folders are read with ",
-    subtitleSuffix: ", not the browser picker.",
-    subtitleBrowser:
-      "Data comes from a Bambu Studio folder you selected in the browser (File System Access). No local server is required for this mode.",
+    subtitle:
+      "Profiles are read from this computer through the local API. Nothing is uploaded.",
     apiPrefix: "API:",
     sourceLabel: "Source:",
     layoutLabel: "layout:",
     connectionHelp: "How to connect",
   },
   dataSource: {
-    modalTitle: "How to load your Bambu Studio files",
-    modalTitleOrca: "How to load your OrcaSlicer files",
+    modalTitle: "Install or connect Slicer Profile Browser",
     modalIntro:
-      "This app reads files on your computer and only replaces a user profile when you explicitly save it in the editor. Pick one of the two ways below — you can switch later from the header.",
-    modalIntroOrca:
-      "This app reads OrcaSlicer files through the local API and only replaces a user profile when you explicitly save it in the editor.",
-    browserSectionTitle: "Browser folder (no Node if this works)",
-    browserSectionBody:
-      "Grant access to your Bambu Studio data folder. Nothing is uploaded; files stay on your device. Write permission is requested only when saving an edited user profile. The page must be served over HTTPS (e.g. Vercel) or localhost so the browser allows the folder picker — plain http://192.168… will not.",
-    browserMacLibraryWarning:
-      "On macOS, Chrome often blocks that Library path (“can’t open this folder … contains system files”). Use Local API below to read the real folder with Node, or copy your BambuStudio folder to Desktop or Documents and choose the copy here.",
-    chooseFolder: "Choose Bambu Studio folder…",
-    pickingFolder: "Opening picker…",
-    fsNotSupported:
-      "Your browser does not support choosing a folder this way (often because the site is not on HTTPS or localhost). Use the local API section instead, or open the app at https://… or http://localhost.",
-    apiSectionTitle: "Local API (Node)",
-    apiSectionBody:
-      "This mode uses a small HTTP server from the open-source bambu-browser project. Run it on the same computer that has your Bambu Studio files.",
-    apiSectionBodyOrca:
-      "This mode uses the same local HTTP server to read OrcaSlicer profiles. Run it on the computer that has your OrcaSlicer files.",
-    apiRepoCloneHint:
-      "Clone the repository or download the ZIP from the link below, then use a terminal in that project folder (where package.json and server.js live).",
-    apiReadmeHint:
-      "The README in that repository covers prerequisites (including Node.js), npm install, BAMBUSTUDIO_ROOT, ports, and security — read it when you set this up.",
-    apiReadmeHintOrca:
-      "The README covers prerequisites, npm install, ORCASLICER_ROOT, ports, and security.",
+      "The desktop app is the easiest option. The hosted website always requires the local API to be running on the same computer.",
+    desktopTitle: "Recommended: download the desktop app",
+    desktopBody:
+      "Available for macOS and Windows. It starts the local API automatically, so no terminal or developer setup is needed.",
+    downloadDesktop: "Download desktop app",
+    webTitle: "Using the web app",
+    webApiRequired:
+      "The web app cannot read slicer profiles by itself. The local API must be running on this computer on macOS and Windows.",
+    webBody:
+      "You can use the hosted Vercel interface with a locally running API, or clone the repository and run both the API and interface yourself.",
+    macPathTip:
+      "In Finder choose Go → Go to Folder… (⇧⌘G). The Library folder is normally hidden.",
+    windowsPathTip:
+      "Paste this path into the File Explorer address bar. It points to the usual Roaming AppData folder.",
+    developerTitle: "Developer setup",
+    developerBody:
+      "Run the commands below, then use the hosted web app. To run the interface locally as well, start npm run dev in a second terminal.",
     apiOptionalEnv: "Optional: custom folder or port:",
-    apiUrlLabel: "This page expects the API at",
-    useLocalApi: "Use local API (ping server)",
+    runUiLocally:
+      "For a completely local web setup, run npm run dev in a second terminal and open http://localhost:3000.",
+    checkApi: "Check local API",
     close: "Close",
-    orcaApiOnly:
-      "OrcaSlicer is currently supported through the local API. Browser folder access remains available for Bambu Studio.",
   },
   controls: {
     extruderIndex: "Extruder index",
     checkConnection: "Check connection",
-    refreshConnection: "Refresh connection",
     retryApi: "Retry API",
     checkConnectionTooltip:
       "Checks that the local API is reachable and that the selected slicer data folder is readable. Does not reload the profile list.",
     retryApiTooltip:
       "Tries to reconnect to the local API and read the selected slicer data folder.",
-    refreshConnectionTooltip:
-      "Re-reads the selected Bambu Studio folder. Does not reload the profile list.",
-    chooseFolderTooltip: "Choose a Bambu Studio data folder in this browser.",
     connectionOk: "Connected",
     connectionOkApiDescription: "Reached the {slicer} API at {root}.",
-    connectionOkBrowserDescription: "Folder is readable: {root}.",
     connectionFailed: "Connection check failed",
     refreshList: "Refresh list",
     bambuAccount: "Bambu Lab Account",
@@ -83,23 +67,21 @@ export const messagesEn = {
       "Server cannot read the selected slicer root: {root}. Check BAMBUSTUDIO_ROOT or ORCASLICER_ROOT.",
     cannotReachApi:
       "Cannot reach the local API. Run: node server.js (see terminal).",
-    browserNoLayout:
-      "The chosen folder does not look like a Bambu Studio root (missing users/ or user/). Pick the folder that contains those directories.",
-    folderPickCancelled: "Folder selection was cancelled.",
-    folderPermissionDenied:
-      "Read access to the folder was denied. Try again or use the local API.",
     loadProfilesFailed: "Failed to load profiles",
     refreshFailed: "Refresh failed",
     resolveInheritanceFailed: "Failed to resolve inheritance",
   },
   offline: {
-    title: "Start the local server in another terminal:",
-    optionalEnv: "Optional:",
-    optionalNextEnv: "Optional env for Next:",
+    webTitle: "The local API is not running",
+    webBody:
+      "The web app cannot load profiles without the local API. Open “How to connect” for the desktop download and developer instructions.",
+    desktopTitle: "The bundled local API is not responding",
+    desktopBody:
+      "Restart the desktop app. If the problem continues, close any other process using port 3847 and try again.",
   },
   sidebar: {
     connectFirst:
-      "Connect first: open “How to connect” in the header, or check the connection / choose a folder.",
+      "Connect first: open “How to connect” in the header, or check the connection.",
     loading: "Loading…",
     emptyProfiles:
       "No JSON profiles found. Check the selected slicer path and account folders.",

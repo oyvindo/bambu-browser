@@ -1,46 +1,44 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { getBambuStudioPathHints } from "@/lib/bambu/bambu-studio-path-hints";
-import { getBambuApiBaseUrl } from "@/lib/bambu/bambu-api-client";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { SlicerSource } from "@/lib/bambu/slicer-source";
 import { useTranslations } from "@/localization/context";
-import { FolderOpen, Loader2, Server } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { Download, Server } from "lucide-react";
+import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 
-/** Where users get server.js and run npm run api (clone or ZIP). */
-const BAMBU_BROWSER_REPO_MAIN =
-  "https://github.com/oyvindo/bambu-browser/tree/main";
+const RELEASES_URL = "https://github.com/oyvindo/bambu-browser/releases";
+const REPOSITORY_URL = "https://github.com/oyvindo/bambu-browser";
+const WEB_APP_URL = "https://bambu-browser.vercel.app/";
 
 export type DataSourceModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  fsSupported: boolean;
-  pickingFolder: boolean;
-  onChooseBrowserFolder: () => void;
-  onSwitchToApi: () => void;
+  onCheckApi: () => void;
   slicer: SlicerSource;
 };
 
 export function DataSourceModal({
   open,
   onOpenChange,
-  fsSupported,
-  pickingFolder,
-  onChooseBrowserFolder,
-  onSwitchToApi,
+  onCheckApi,
   slicer,
 }: DataSourceModalProps) {
   const t = useTranslations();
   const titleId = useId();
-  const [hints] = useState(() => getBambuStudioPathHints());
-  const apiBase = getBambuApiBaseUrl();
+  const isOrca = slicer === "orca";
+  const macPath = isOrca
+    ? "~/Library/Application Support/OrcaSlicer"
+    : "~/Library/Application Support/BambuStudio";
+  const windowsPath = isOrca
+    ? "%APPDATA%\\OrcaSlicer"
+    : "%APPDATA%\\BambuStudio";
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onOpenChange(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -50,7 +48,7 @@ export function DataSourceModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+      className="fixed inset-0 z-300 flex items-center justify-center p-4"
       role="presentation"
     >
       <button
@@ -63,138 +61,128 @@ export function DataSourceModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="border-border bg-background relative z-[1] flex max-h-[min(32rem,85vh)] w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border shadow-lg"
+        className="border-border bg-background relative z-1 flex max-h-[min(42rem,90vh)] w-[min(44rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border shadow-lg"
       >
-        <div className="border-border shrink-0 border-b px-4 py-3">
-          <h2 id={titleId} className="text-base font-semibold tracking-tight">
-            {t(
-              slicer === "orca"
-                ? "dataSource.modalTitleOrca"
-                : "dataSource.modalTitle",
-            )}
+        <div className="border-border shrink-0 border-b px-5 py-4">
+          <h2 id={titleId} className="text-lg font-semibold tracking-tight">
+            {t("dataSource.modalTitle")}
           </h2>
-          <p className="text-muted-foreground mt-1 text-xs leading-snug">
-            {t(
-              slicer === "orca"
-                ? "dataSource.modalIntroOrca"
-                : "dataSource.modalIntro",
-            )}
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            {t("dataSource.modalIntro")}
           </p>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 text-sm">
-          {slicer === "bambu" ? (
-            <section className="space-y-2">
-              <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
-                {t("dataSource.browserSectionTitle")}
-              </h3>
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                {t("dataSource.browserSectionBody")}
-              </p>
-              <div className="bg-muted/60 rounded-md border border-dashed px-3 py-2 text-xs">
-                <p className="text-foreground font-medium">
-                  {hints.platformLabel}
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4 text-sm">
+          <section className="border-primary/30 bg-primary/8 rounded-lg border p-4">
+            <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+              <div>
+                <h3 className="text-foreground font-semibold">
+                  {t("dataSource.desktopTitle")}
+                </h3>
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                  {t("dataSource.desktopBody")}
                 </p>
-                <p className="text-muted-foreground mt-1 font-mono break-all">
-                  {hints.typicalPath}
-                </p>
-                <p className="text-muted-foreground mt-1">{hints.tip}</p>
               </div>
-              {hints.platformLabel === "macOS" ? (
-                <p className="border-amber-500/40 bg-amber-500/10 text-foreground rounded-md border px-3 py-2 text-xs leading-relaxed">
-                  {t("dataSource.browserMacLibraryWarning")}
-                </p>
-              ) : null}
-              {!fsSupported ? (
-                <p className="text-destructive text-xs">
-                  {t("dataSource.fsNotSupported")}
-                </p>
-              ) : null}
-              <Button
-                type="button"
-                className="w-full sm:w-auto"
-                onClick={() => onChooseBrowserFolder()}
-                disabled={!fsSupported || pickingFolder}
-              >
-                {pickingFolder ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <FolderOpen className="size-4" />
-                )}
-                {pickingFolder
-                  ? t("dataSource.pickingFolder")
-                  : t("dataSource.chooseFolder")}
-              </Button>
-            </section>
-          ) : (
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {t("dataSource.orcaApiOnly")}
-            </p>
-          )}
-
-          <div className="border-border my-4 border-t" />
-
-          <section className="space-y-2">
-            <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
-              {t("dataSource.apiSectionTitle")}
-            </h3>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {t(
-                slicer === "orca"
-                  ? "dataSource.apiSectionBodyOrca"
-                  : "dataSource.apiSectionBody",
-              )}
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
               <a
-                href={BAMBU_BROWSER_REPO_MAIN}
+                href={RELEASES_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-foreground font-medium underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "shrink-0",
+                )}
               >
-                github.com/oyvindo/bambu-browser
+                <Download className="size-4" aria-hidden />
+                {t("dataSource.downloadDesktop")}
               </a>
-              {" — "}
-              {t("dataSource.apiRepoCloneHint")}
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {t(
-                slicer === "orca"
-                  ? "dataSource.apiReadmeHintOrca"
-                  : "dataSource.apiReadmeHint",
-              )}
-            </p>
-            <pre className="bg-muted overflow-x-auto rounded-md p-2 font-mono text-[11px]">
-              cd bambu-browser{"\n"}
-              npm install{"\n"}
-              npm run api
-            </pre>
-            <p className="text-muted-foreground text-xs">
-              {t("dataSource.apiOptionalEnv")}
-            </p>
-            <pre className="bg-muted overflow-x-auto rounded-md p-2 font-mono text-[11px]">
-              {slicer === "orca"
-                ? 'ORCASLICER_ROOT="/path/to/OrcaSlicer"'
-                : 'BAMBUSTUDIO_ROOT="/path/to/BambuStudio"'}{" "}
-              PORT=3847 npm run api
-            </pre>
-            <p className="text-muted-foreground mt-1 text-xs">
-              {t("dataSource.apiUrlLabel")}{" "}
-              <code className="text-foreground">{apiBase}</code>
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-2 w-full sm:w-auto"
-              onClick={() => onSwitchToApi()}
-            >
-              <Server className="size-4" />
-              {t("dataSource.useLocalApi")}
-            </Button>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
+                {t("dataSource.webTitle")}
+              </h3>
+              <p className="text-foreground mt-2 font-medium leading-relaxed">
+                {t("dataSource.webApiRequired")}
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                {t("dataSource.webBody")}
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="bg-muted/55 rounded-md border border-dashed p-3">
+                <p className="text-foreground font-medium">macOS</p>
+                <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
+                  {macPath}
+                </p>
+                <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+                  {t("dataSource.macPathTip")}
+                </p>
+              </div>
+              <div className="bg-muted/55 rounded-md border border-dashed p-3">
+                <p className="text-foreground font-medium">Windows</p>
+                <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
+                  {windowsPath}
+                </p>
+                <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+                  {t("dataSource.windowsPathTip")}
+                </p>
+              </div>
+            </div>
+
+            <div className="border-border rounded-md border p-3">
+              <h4 className="text-foreground text-xs font-semibold">
+                {t("dataSource.developerTitle")}
+              </h4>
+              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                {t("dataSource.developerBody")}{" "}
+                <a
+                  href={WEB_APP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground font-medium underline decoration-dotted underline-offset-2"
+                >
+                  bambu-browser.vercel.app
+                </a>
+                {" · "}
+                <a
+                  href={REPOSITORY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground font-medium underline decoration-dotted underline-offset-2"
+                >
+                  github.com/oyvindo/bambu-browser
+                </a>
+              </p>
+              <pre className="bg-muted mt-3 overflow-x-auto rounded-md p-2 font-mono text-[11px]">
+                git clone https://github.com/oyvindo/bambu-browser.git{"\n"}
+                cd bambu-browser{"\n"}
+                npm install{"\n"}
+                npm run api
+              </pre>
+              <p className="text-muted-foreground mt-2 text-xs">
+                {t("dataSource.apiOptionalEnv")}
+              </p>
+              <pre className="bg-muted mt-1 overflow-x-auto rounded-md p-2 font-mono text-[11px]">
+                {isOrca
+                  ? 'ORCASLICER_ROOT="/path/to/OrcaSlicer"'
+                  : 'BAMBUSTUDIO_ROOT="/path/to/BambuStudio"'}{" "}
+                PORT=3847 npm run api
+              </pre>
+              <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+                {t("dataSource.runUiLocally")}
+              </p>
+            </div>
           </section>
         </div>
 
-        <div className="border-border flex shrink-0 justify-end gap-2 border-t px-4 py-3">
+        <div className="border-border flex shrink-0 justify-end gap-2 border-t px-5 py-3">
+          <Button type="button" variant="secondary" onClick={onCheckApi}>
+            <Server className="size-4" aria-hidden />
+            {t("dataSource.checkApi")}
+          </Button>
           <Button
             type="button"
             variant="outline"

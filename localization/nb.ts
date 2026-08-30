@@ -11,65 +11,49 @@ export const messagesNb = {
   },
   header: {
     title: "Profilutforsker for slicere",
-    subtitlePrefix: "Data hentes fra det lokale Node-API-et (",
-    subtitleMiddle: "), slik at macOS Library-mapper leses med ",
-    subtitleSuffix: " – ikke nettleserens filvelger.",
-    subtitleBrowser:
-      "Data hentes fra en Bambu Studio-mappe du valgte i nettleseren (File System Access). Du trenger ikke lokal server i denne modusen.",
+    subtitle:
+      "Profiler leses fra denne maskinen gjennom det lokale API-et. Ingenting lastes opp.",
     apiPrefix: "API:",
     sourceLabel: "Kilde:",
     layoutLabel: "layout:",
     connectionHelp: "Slik kobler du til",
   },
   dataSource: {
-    modalTitle: "Slik laster du Bambu Studio-filene",
-    modalTitleOrca: "Slik laster du OrcaSlicer-filene",
+    modalTitle: "Installer eller koble til profilutforskeren",
     modalIntro:
-      "Appen leser filer på maskinen og erstatter bare en brukerprofil når du uttrykkelig lagrer den i redigeringsprogrammet. Velg én av metodene under – du kan bytte senere fra topplinjen.",
-    modalIntroOrca:
-      "Appen leser OrcaSlicer-filer gjennom det lokale API-et og erstatter bare en brukerprofil når du uttrykkelig lagrer den i redigeringsprogrammet.",
-    browserSectionTitle: "Mappe i nettleseren (uten Node hvis dette virker)",
-    browserSectionBody:
-      "Gi tilgang til datamappen til Bambu Studio. Ingenting lastes opp; filene blir på enheten. Skrivetilgang blir bare forespurt når en redigert brukerprofil lagres. Siden må kjøre over HTTPS (f.eks. Vercel) eller localhost for at nettleseren tillater mappevelger — vanlig http://192.168… fungerer ikke.",
-    browserMacLibraryWarning:
-      "På macOS blokkerer Chrome ofte Library-stien («kan ikke åpne denne mappen … inneholder systemfiler»). Bruk Lokalt API under for å lese den ekte mappa med Node, eller kopier BambuStudio-mappa til Skrivebord eller Dokumenter og velg kopien her.",
-    chooseFolder: "Velg Bambu Studio-mappe…",
-    pickingFolder: "Åpner filvelger…",
-    fsNotSupported:
-      "Nettleseren støtter ikke å velge mappe på denne måten (ofte fordi siden ikke er på HTTPS eller localhost). Bruk lokalt API, eller åpne appen på https://… eller http://localhost.",
-    apiSectionTitle: "Lokalt API (Node)",
-    apiSectionBody:
-      "Denne modusen bruker en liten HTTP-server fra det åpne prosjektet bambu-browser. Kjør den på samme maskin som Bambu Studio-dataene dine ligger på.",
-    apiSectionBodyOrca:
-      "Denne modusen bruker den samme lokale HTTP-serveren til å lese OrcaSlicer-profiler. Kjør den på maskinen der OrcaSlicer-filene ligger.",
-    apiRepoCloneHint:
-      "Klon repoet eller last ned ZIP fra lenken under, og bruk terminal i prosjektmappa (der package.json og server.js ligger).",
-    apiReadmeHint:
-      "README i repoet beskriver forutsetninger (inkl. Node.js), npm install, BAMBUSTUDIO_ROOT, porter og sikkerhet — les den når du setter opp.",
-    apiReadmeHintOrca:
-      "README beskriver forutsetninger, npm install, ORCASLICER_ROOT, porter og sikkerhet.",
+      "Skrivebordsappen er det enkleste alternativet. Nettstedet krever alltid at det lokale API-et kjører på samme maskin.",
+    desktopTitle: "Anbefalt: last ned skrivebordsappen",
+    desktopBody:
+      "Tilgjengelig for macOS og Windows. Den starter det lokale API-et automatisk, så terminal og utvikleroppsett er ikke nødvendig.",
+    downloadDesktop: "Last ned skrivebordsappen",
+    webTitle: "Bruk av nettstedet",
+    webApiRequired:
+      "Nettstedet kan ikke lese slicer-profiler på egen hånd. Det lokale API-et må kjøre på denne maskinen på både macOS og Windows.",
+    webBody:
+      "Du kan bruke Vercel-nettstedet med et lokalt API, eller klone repoet og kjøre både API-et og grensesnittet selv.",
+    macPathTip:
+      "Velg Gå → Gå til mappe… (⇧⌘G) i Finder. Library-mappen er vanligvis skjult.",
+    windowsPathTip:
+      "Lim inn stien i adressefeltet i Filutforsker. Den peker til den vanlige Roaming AppData-mappen.",
+    developerTitle: "Utvikleroppsett",
+    developerBody:
+      "Kjør kommandoene nedenfor, og bruk deretter nettstedet. Start npm run dev i en annen terminal for også å kjøre grensesnittet lokalt.",
     apiOptionalEnv: "Valgfritt: annen mappe eller port:",
-    apiUrlLabel: "Siden forventer API på",
-    useLocalApi: "Bruk lokalt API (ping server)",
+    runUiLocally:
+      "For et helt lokalt nettoppsett, kjør npm run dev i en annen terminal og åpne http://localhost:3000.",
+    checkApi: "Sjekk lokalt API",
     close: "Lukk",
-    orcaApiOnly:
-      "OrcaSlicer støttes foreløpig via det lokale API-et. Mappevalg i nettleseren er fortsatt tilgjengelig for Bambu Studio.",
   },
   controls: {
     extruderIndex: "Ekstruderindeks",
     checkConnection: "Sjekk tilkobling",
-    refreshConnection: "Oppdater tilkobling",
     retryApi: "Prøv API på nytt",
     checkConnectionTooltip:
       "Sjekker at det lokale API-et svarer og at datamappen til valgt slicer kan leses. Laster ikke profilisten på nytt.",
     retryApiTooltip:
       "Prøver å koble til det lokale API-et igjen og lese datamappen til valgt slicer.",
-    refreshConnectionTooltip:
-      "Leser den valgte Bambu Studio-mappen på nytt. Laster ikke profilisten på nytt.",
-    chooseFolderTooltip: "Velg en Bambu Studio-datamappe i denne nettleseren.",
     connectionOk: "Tilkoblet",
     connectionOkApiDescription: "Nådde {slicer}-API-et på {root}.",
-    connectionOkBrowserDescription: "Mappen kan leses: {root}.",
     connectionFailed: "Tilkoblingssjekk mislyktes",
     refreshList: "Oppdater liste",
     bambuAccount: "Bambu Lab-konto",
@@ -85,23 +69,21 @@ export const messagesNb = {
       "Serveren kan ikke lese roten til valgt slicer: {root}. Sjekk BAMBUSTUDIO_ROOT eller ORCASLICER_ROOT.",
     cannotReachApi:
       "Får ikke kontakt med det lokale API-et. Kjør: node server.js (se terminal).",
-    browserNoLayout:
-      "Den valgte mappen ser ikke ut som en Bambu Studio-rot (mangler users/ eller user/). Velg mappen som inneholder disse katalogene.",
-    folderPickCancelled: "Mappevalg ble avbrutt.",
-    folderPermissionDenied:
-      "Lesetilgang til mappen ble nektet. Prøv igjen, eller bruk lokalt API.",
     loadProfilesFailed: "Kunne ikke laste profiler",
     refreshFailed: "Oppdatering mislyktes",
     resolveInheritanceFailed: "Kunne ikke løse arv",
   },
   offline: {
-    title: "Start den lokale serveren i en annen terminal:",
-    optionalEnv: "Valgfritt:",
-    optionalNextEnv: "Valgfri miljøvariabel for Next:",
+    webTitle: "Det lokale API-et kjører ikke",
+    webBody:
+      "Nettstedet kan ikke laste profiler uten det lokale API-et. Åpne «Slik kobler du til» for nedlasting av skrivebordsappen og utviklerinstruksjoner.",
+    desktopTitle: "Det innebygde lokale API-et svarer ikke",
+    desktopBody:
+      "Start skrivebordsappen på nytt. Hvis problemet fortsetter, lukk andre prosesser som bruker port 3847, og prøv igjen.",
   },
   sidebar: {
     connectFirst:
-      "Koble til først: åpne «Slik kobler du til» i topplinjen, eller sjekk tilkoblingen / velg mappe.",
+      "Koble til først: åpne «Slik kobler du til» i topplinjen, eller sjekk tilkoblingen.",
     loading: "Laster…",
     emptyProfiles:
       "Ingen JSON-profiler funnet. Sjekk stien til valgt slicer og kontomappene.",
