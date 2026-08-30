@@ -9,6 +9,7 @@ import {
   PROFILE_METADATA_KEYS,
 } from "./profile-schema";
 import type { ProfileKind } from "./resolver";
+import type { SlicerSource } from "./slicer-source";
 
 export type ProfileValidationSeverity = "blocker" | "error" | "warning";
 
@@ -26,6 +27,7 @@ export type ProfileValidationResult = {
 
 type ValidationOptions = {
   kind: ProfileKind;
+  slicer?: SlicerSource;
   original: Record<string, unknown>;
   inherited?: Record<string, unknown>;
 };
@@ -320,6 +322,20 @@ export function validateProfileJson(
       `type must remain "${options.kind}".`,
       "type",
     );
+  }
+
+  // OrcaSlicer shares the JSON/inheritance model but has its own evolving
+  // PrintConfig schema and commonly uses scalar values where Bambu uses
+  // one-element arrays. Keep structural and locked-field checks above, but do
+  // not apply Bambu-generated bounds, enums, shapes, or unknown-key rules.
+  if (options.slicer === "orca") {
+    return {
+      data,
+      findings,
+      canSave: !findings.some(
+        ({ severity }) => severity === "blocker" || severity === "error",
+      ),
+    };
   }
 
   for (const [key, value] of Object.entries(data)) {

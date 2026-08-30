@@ -24,6 +24,7 @@ import {
   type ProfileValidationSeverity,
 } from "@/lib/bambu/profile-leaf-editor";
 import type { ProfileKind } from "@/lib/bambu/resolver";
+import type { SlicerSource } from "@/lib/bambu/slicer-source";
 import { useLocale, useTranslations } from "@/localization";
 import { localizedPropertyLabel } from "@/localization/profile-fields";
 import { cn } from "@/lib/utils/index";
@@ -34,6 +35,7 @@ import { createPortal } from "react-dom";
 type ProfileLeafEditorProps = {
   relativePath: string;
   kind: ProfileKind;
+  slicer: SlicerSource;
   original: Record<string, unknown>;
   inherited: Record<string, unknown>;
   onSave: (formattedJson: string) => Promise<void>;
@@ -296,6 +298,7 @@ function DiffView({
 export function ProfileLeafEditor({
   relativePath,
   kind,
+  slicer,
   original,
   inherited,
   onSave,
@@ -496,7 +499,12 @@ export function ProfileLeafEditor({
   };
 
   const handleValidate = () => {
-    const result = validateProfileJson(draft, { kind, original, inherited });
+    const result = validateProfileJson(draft, {
+      kind,
+      slicer,
+      original,
+      inherited,
+    });
     setValidatedDraft(draft);
     setValidationCanSave(result.canSave);
     const description =

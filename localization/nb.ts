@@ -5,12 +5,12 @@ import type { Messages } from "./en";
  */
 export const messagesNb = {
   meta: {
-    title: "Bambu-profilutforsker",
+    title: "Profilutforsker for slicere",
     description:
-      "Utforsk prosess- og filamentprofiler fra Bambu Studio og arvekeder",
+      "Utforsk arv i prosess- og filamentprofiler fra Bambu Studio og OrcaSlicer",
   },
   header: {
-    title: "Bambu-profilutforsker",
+    title: "Profilutforsker for slicere",
     subtitlePrefix: "Data hentes fra det lokale Node-API-et (",
     subtitleMiddle: "), slik at macOS Library-mapper leses med ",
     subtitleSuffix: " – ikke nettleserens filvelger.",
@@ -23,8 +23,11 @@ export const messagesNb = {
   },
   dataSource: {
     modalTitle: "Slik laster du Bambu Studio-filene",
+    modalTitleOrca: "Slik laster du OrcaSlicer-filene",
     modalIntro:
       "Appen leser filer på maskinen og erstatter bare en brukerprofil når du uttrykkelig lagrer den i redigeringsprogrammet. Velg én av metodene under – du kan bytte senere fra topplinjen.",
+    modalIntroOrca:
+      "Appen leser OrcaSlicer-filer gjennom det lokale API-et og erstatter bare en brukerprofil når du uttrykkelig lagrer den i redigeringsprogrammet.",
     browserSectionTitle: "Mappe i nettleseren (uten Node hvis dette virker)",
     browserSectionBody:
       "Gi tilgang til datamappen til Bambu Studio. Ingenting lastes opp; filene blir på enheten. Skrivetilgang blir bare forespurt når en redigert brukerprofil lagres. Siden må kjøre over HTTPS (f.eks. Vercel) eller localhost for at nettleseren tillater mappevelger — vanlig http://192.168… fungerer ikke.",
@@ -37,14 +40,20 @@ export const messagesNb = {
     apiSectionTitle: "Lokalt API (Node)",
     apiSectionBody:
       "Denne modusen bruker en liten HTTP-server fra det åpne prosjektet bambu-browser. Kjør den på samme maskin som Bambu Studio-dataene dine ligger på.",
+    apiSectionBodyOrca:
+      "Denne modusen bruker den samme lokale HTTP-serveren til å lese OrcaSlicer-profiler. Kjør den på maskinen der OrcaSlicer-filene ligger.",
     apiRepoCloneHint:
       "Klon repoet eller last ned ZIP fra lenken under, og bruk terminal i prosjektmappa (der package.json og server.js ligger).",
     apiReadmeHint:
       "README i repoet beskriver forutsetninger (inkl. Node.js), npm install, BAMBUSTUDIO_ROOT, porter og sikkerhet — les den når du setter opp.",
+    apiReadmeHintOrca:
+      "README beskriver forutsetninger, npm install, ORCASLICER_ROOT, porter og sikkerhet.",
     apiOptionalEnv: "Valgfritt: annen mappe eller port:",
     apiUrlLabel: "Siden forventer API på",
     useLocalApi: "Bruk lokalt API (ping server)",
     close: "Lukk",
+    orcaApiOnly:
+      "OrcaSlicer støttes foreløpig via det lokale API-et. Mappevalg i nettleseren er fortsatt tilgjengelig for Bambu Studio.",
   },
   controls: {
     extruderIndex: "Ekstruderindeks",
@@ -55,10 +64,14 @@ export const messagesNb = {
     bambuAccount: "Bambu Lab-konto",
     noAccounts: "Ingen kontoer",
     showOnlyChanged: "Vis bare endrede verdier",
+    slicer: "Slicer",
+    slicerBambu: "Bambu",
+    slicerOrca: "Orca",
+    orcaDefaultAccount: "OrcaSlicer-profiler bruker standardkontoen.",
   },
   errors: {
     serverCannotReadRoot:
-      "Serveren kan ikke lese BambuStudio-roten: {root}. Sett BAMBUSTUDIO_ROOT når du starter server.js.",
+      "Serveren kan ikke lese roten til valgt slicer: {root}. Sjekk BAMBUSTUDIO_ROOT eller ORCASLICER_ROOT.",
     cannotReachApi:
       "Får ikke kontakt med det lokale API-et. Kjør: node server.js (se terminal).",
     browserNoLayout:
@@ -80,7 +93,7 @@ export const messagesNb = {
       "Koble til først: åpne «Slik kobler du til» i topplinjen, eller bruk Ping API / velg mappe.",
     loading: "Laster…",
     emptyProfiles:
-      "Ingen JSON-profiler funnet. Sjekk BambuStudio-sti på serveren og kontomapper.",
+      "Ingen JSON-profiler funnet. Sjekk stien til valgt slicer og kontomappene.",
     groupCustomFilaments: "Egendefinerte filament",
     groupFilament: "Filamenter",
     groupProcess: "Prosess",

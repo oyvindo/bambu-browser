@@ -226,6 +226,29 @@ describe("profile leaf validation", () => {
     });
   });
 
+  it("keeps locked-field checks but skips Bambu schema checks for Orca", () => {
+    const orcaDraft = {
+      ...original,
+      orca_only_setting: "enabled",
+      outer_wall_speed: "45",
+    };
+    const result = validateProfileJson(JSON.stringify(orcaDraft), {
+      kind: "process",
+      slicer: "orca",
+      original,
+    });
+
+    expect(result.canSave).toBe(true);
+    expect(result.findings).toEqual([]);
+
+    const locked = validateProfileJson(
+      JSON.stringify({ ...orcaDraft, inherits: "another profile" }),
+      { kind: "process", slicer: "orca", original },
+    );
+    expect(locked.canSave).toBe(false);
+    expect(hasLockedFieldFinding(locked.findings)).toBe(true);
+  });
+
   it("allows saving with warnings", () => {
     const result = validateProfileJson(
       JSON.stringify({ ...original, layer_height: "9" }),

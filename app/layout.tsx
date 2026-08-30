@@ -10,9 +10,9 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Bambu profile browser",
+  title: "Slicer profile browser",
   description:
-    "Browse Bambu Studio process/filament profiles and inheritance chains",
+    "Browse Bambu Studio and OrcaSlicer process/filament profile inheritance",
 };
 
 export default function RootLayout({

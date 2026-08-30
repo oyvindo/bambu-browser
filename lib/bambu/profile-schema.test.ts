@@ -79,6 +79,24 @@ describe("complete profile tree", () => {
     ).toBe(true);
   });
 
+  it("uses actual chain keys instead of empty Bambu root keys for Orca", () => {
+    const tree = buildCompleteUiTree(
+      "process",
+      [
+        {
+          relativePath: "user/default/process/orca.json",
+          data: { orca_only_option: "42" },
+        },
+      ],
+      BAMBU_PROCESS_UI_TREE,
+      "orca",
+    );
+    const keys = flattenTreeKeys(tree);
+
+    expect(keys).toContain("orca_only_option");
+    expect(keys).not.toContain("bottom_color_penetration_layers");
+  });
+
   it("puts future structural keys in Metadata", () => {
     const tree = buildCompleteUiTree(
       "filament",

@@ -31,6 +31,11 @@ import {
 import type { UserProfileEntry } from "@/lib/bambu/list-user-profiles";
 import { listUserProfileEntriesFromStudioRoot } from "@/lib/bambu/list-user-profiles";
 import {
+  DEFAULT_SLICER_SOURCE,
+  isSlicerSource,
+  type SlicerSource,
+} from "@/lib/bambu/slicer-source";
+import {
   ensureReadAccess,
   ensureWriteAccess,
   loadBambuStudioRootHandle,
@@ -76,6 +81,7 @@ import {
 } from "./sidebarRows";
 
 const DATA_MODE_STORAGE_KEY = "bambu-browser-data-mode";
+const SLICER_STORAGE_KEY = "bambu-browser-slicer";
 
 type DataMode = "api" | "browser";
 
@@ -102,6 +108,7 @@ export function BambuProfileWorkbench() {
   const t = useTranslations();
   const [apiBase] = useState(() => getBambuApiBaseUrl());
   const [dataMode, setDataMode] = useState<DataMode>("api");
+  const [slicer, setSlicer] = useState<SlicerSource>(DEFAULT_SLICER_SOURCE);
   const [studioRootHandle, setStudioRootHandle] =
     useState<FileSystemDirectoryHandle | null>(null);
   const [dataSourceModalOpen, setDataSourceModalOpen] = useState(false);
@@ -167,38 +174,45 @@ export function BambuProfileWorkbench() {
   const isCustomFilamentProfile =
     isFilamentProfile && selectedProfile.filamentCategory === "custom";
 
-  const loadApiConnection = useCallback(async () => {
-    setError(null);
-    try {
-      const health = await fetchApiHealth();
-      if (!health.ok) {
+  const loadApiConnection = useCallback(
+    async (source: SlicerSource = slicer) => {
+      setError(null);
+      try {
+        const health = await fetchApiHealth(source);
+        if (!health.ok) {
+          setApiOk(false);
+          setAccountNames([]);
+          setStudioRootLabel(health.root);
+          setLayout(null);
+          setError(
+            health.error ||
+              t("errors.serverCannotReadRoot", { root: health.root }),
+          );
+          return;
+        }
+        setApiOk(true);
+        const meta = await fetchApiMeta(source);
+        setStudioRootLabel(meta.root);
+        setLayout(meta.layout);
+        const { accounts } = await fetchApiAccounts(source);
+        setAccountNames(accounts);
+        setSelectedUsername((prev) =>
+          source === "orca" && accounts.includes("default")
+            ? "default"
+            : prev && accounts.includes(prev)
+              ? prev
+              : (accounts[0] ?? null),
+        );
+      } catch (e) {
         setApiOk(false);
         setAccountNames([]);
-        setStudioRootLabel(health.root);
+        setStudioRootLabel("");
         setLayout(null);
-        setError(
-          health.error ||
-            t("errors.serverCannotReadRoot", { root: health.root }),
-        );
-        return;
+        setError(e instanceof Error ? e.message : t("errors.cannotReachApi"));
       }
-      setApiOk(true);
-      const meta = await fetchApiMeta();
-      setStudioRootLabel(meta.root);
-      setLayout(meta.layout);
-      const { accounts } = await fetchApiAccounts();
-      setAccountNames(accounts);
-      setSelectedUsername((prev) =>
-        prev && accounts.includes(prev) ? prev : (accounts[0] ?? null),
-      );
-    } catch (e) {
-      setApiOk(false);
-      setAccountNames([]);
-      setStudioRootLabel("");
-      setLayout(null);
-      setError(e instanceof Error ? e.message : t("errors.cannotReachApi"));
-    }
-  }, [t]);
+    },
+    [slicer, t],
+  );
 
   const loadBrowserConnection = useCallback(
     async (root: FileSystemDirectoryHandle) => {
@@ -237,7 +251,16 @@ export function BambuProfileWorkbench() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const storedSlicer =
+        typeof window !== "undefined"
+          ? localStorage.getItem(SLICER_STORAGE_KEY)
+          : null;
+      const initialSlicer = isSlicerSource(storedSlicer)
+        ? storedSlicer
+        : DEFAULT_SLICER_SOURCE;
+      setSlicer(initialSlicer);
       const browserPreferred =
+        initialSlicer === "bambu" &&
         typeof window !== "undefined" &&
         localStorage.getItem(DATA_MODE_STORAGE_KEY) === "browser";
       if (browserPreferred) {
@@ -253,7 +276,7 @@ export function BambuProfileWorkbench() {
         }
       } else {
         setDataMode("api");
-        if (!cancelled) await loadApiConnection();
+        if (!cancelled) await loadApiConnection(initialSlicer);
       }
     })();
     return () => {
@@ -302,8 +325,10 @@ export function BambuProfileWorkbench() {
           }
           return;
         }
-        const { profiles: list } =
-          await fetchApiProfilesForAccount(selectedUsername);
+        const { profiles: list } = await fetchApiProfilesForAccount(
+          selectedUsername,
+          slicer,
+        );
         if (!cancelled) {
           setProfiles(list);
           setSelectedPath(null);
@@ -323,7 +348,7 @@ export function BambuProfileWorkbench() {
     return () => {
       cancelled = true;
     };
-  }, [apiOk, dataMode, studioRootHandle, selectedUsername, t]);
+  }, [apiOk, dataMode, studioRootHandle, selectedUsername, slicer, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -339,7 +364,7 @@ export function BambuProfileWorkbench() {
             await listSystemFilamentEntriesFromStudioRoot(studioRootHandle);
           if (!cancelled) setSystemFilamentEntries(entries);
         } else if (dataMode === "api") {
-          const { entries } = await fetchApiSystemFilaments();
+          const { entries } = await fetchApiSystemFilaments(slicer);
           if (!cancelled) setSystemFilamentEntries(entries);
         } else if (!cancelled) {
           setSystemFilamentEntries([]);
@@ -354,7 +379,7 @@ export function BambuProfileWorkbench() {
     return () => {
       cancelled = true;
     };
-  }, [apiOk, isCustomFilamentProfile, dataMode, studioRootHandle]);
+  }, [apiOk, isCustomFilamentProfile, dataMode, studioRootHandle, slicer]);
 
   useEffect(() => {
     let cancelled = false;
@@ -378,7 +403,11 @@ export function BambuProfileWorkbench() {
           );
           if (!cancelled) setChain(c);
         } else if (dataMode === "api") {
-          const { chain: c } = await fetchApiResolve(selectedPath, compareArg);
+          const { chain: c } = await fetchApiResolve(
+            selectedPath,
+            slicer,
+            compareArg,
+          );
           if (!cancelled) setChain(c);
         } else if (!cancelled) {
           setChain([]);
@@ -408,6 +437,7 @@ export function BambuProfileWorkbench() {
     compareFilamentPath,
     dataMode,
     studioRootHandle,
+    slicer,
   ]);
 
   const grouped = useMemo(() => {
@@ -549,8 +579,10 @@ export function BambuProfileWorkbench() {
           setProfiles([]);
           return;
         }
-        const { profiles: list } =
-          await fetchApiProfilesForAccount(selectedUsername);
+        const { profiles: list } = await fetchApiProfilesForAccount(
+          selectedUsername,
+          slicer,
+        );
         setProfiles(list);
       } catch (e) {
         setError(e instanceof Error ? e.message : t("errors.refreshFailed"));
@@ -559,7 +591,7 @@ export function BambuProfileWorkbench() {
       }
     };
     void run();
-  }, [dataMode, studioRootHandle, selectedUsername, t]);
+  }, [dataMode, studioRootHandle, selectedUsername, slicer, t]);
 
   const handleSwitchToApi = useCallback(() => {
     localStorage.setItem(DATA_MODE_STORAGE_KEY, "api");
@@ -568,6 +600,27 @@ export function BambuProfileWorkbench() {
     setDataSourceModalOpen(false);
     void loadApiConnection();
   }, [loadApiConnection]);
+
+  const handleSlicerChange = useCallback(
+    (next: SlicerSource) => {
+      if (next === slicer) return;
+      localStorage.setItem(SLICER_STORAGE_KEY, next);
+      localStorage.setItem(DATA_MODE_STORAGE_KEY, "api");
+      setSlicer(next);
+      setDataMode("api");
+      setStudioRootHandle(null);
+      setApiOk(null);
+      setAccountNames([]);
+      setSelectedUsername(null);
+      setProfiles([]);
+      setSelectedPath(null);
+      setChain([]);
+      setCompareFilament({ profilePath: null, relativePath: null });
+      setEditSession(null);
+      void loadApiConnection(next);
+    },
+    [loadApiConnection, slicer],
+  );
 
   const handleChooseBrowserFolder = useCallback(async () => {
     setError(null);
@@ -610,7 +663,7 @@ export function BambuProfileWorkbench() {
     try {
       const original =
         dataMode === "api"
-          ? (await fetchApiProfileFile(selectedPath)).data
+          ? (await fetchApiProfileFile(selectedPath, slicer)).data
           : studioRootHandle
             ? await readEditableProfileUnderRoot(studioRootHandle, selectedPath)
             : null;
@@ -628,13 +681,25 @@ export function BambuProfileWorkbench() {
         description: error instanceof Error ? error.message : String(error),
       });
     }
-  }, [chain, dataMode, selectedPath, selectedProfile, studioRootHandle, t]);
+  }, [
+    chain,
+    dataMode,
+    selectedPath,
+    selectedProfile,
+    slicer,
+    studioRootHandle,
+    t,
+  ]);
 
   const handleSaveEditedProfile = useCallback(
     async (formattedJson: string) => {
       if (!editSession) return;
       if (dataMode === "api") {
-        await replaceApiProfileFile(editSession.relativePath, formattedJson);
+        await replaceApiProfileFile(
+          editSession.relativePath,
+          formattedJson,
+          slicer,
+        );
       } else {
         if (!studioRootHandle) throw new Error(t("errors.browserNoLayout"));
         if (!(await ensureWriteAccess(studioRootHandle))) {
@@ -655,7 +720,13 @@ export function BambuProfileWorkbench() {
           : null;
       const refreshed =
         dataMode === "api"
-          ? (await fetchApiResolve(editSession.relativePath, compareArg)).chain
+          ? (
+              await fetchApiResolve(
+                editSession.relativePath,
+                slicer,
+                compareArg,
+              )
+            ).chain
           : studioRootHandle
             ? await resolveChainFromStudioRoot(
                 studioRootHandle,
@@ -682,6 +753,7 @@ export function BambuProfileWorkbench() {
       dataMode,
       editSession,
       isCustomFilamentProfile,
+      slicer,
       studioRootHandle,
       t,
     ],
@@ -696,12 +768,14 @@ export function BambuProfileWorkbench() {
         pickingFolder={pickingFolder}
         onChooseBrowserFolder={() => void handleChooseBrowserFolder()}
         onSwitchToApi={handleSwitchToApi}
+        slicer={slicer}
       />
       {editSession ? (
         <ProfileLeafEditor
           key={editSession.relativePath}
           relativePath={editSession.relativePath}
           kind={editSession.kind}
+          slicer={slicer}
           original={editSession.original}
           inherited={editSession.inherited}
           onSave={handleSaveEditedProfile}
@@ -782,7 +856,11 @@ export function BambuProfileWorkbench() {
         <div className="text-muted-foreground mx-4 mt-3 shrink-0 rounded-md border border-dashed px-3 py-3 text-sm">
           <p className="font-medium text-foreground">{t("offline.title")}</p>
           <p className="mt-2 text-xs">
-            {t("dataSource.modalIntro")}{" "}
+            {t(
+              slicer === "orca"
+                ? "dataSource.modalIntroOrca"
+                : "dataSource.modalIntro",
+            )}{" "}
             <button
               type="button"
               className="text-foreground underline decoration-dotted underline-offset-2"
@@ -798,8 +876,10 @@ export function BambuProfileWorkbench() {
           <p className="mt-2 text-xs">
             {t("offline.optionalEnv")}{" "}
             <code className="text-foreground">
-              BAMBUSTUDIO_ROOT=&quot;/path/to/BambuStudio&quot; PORT=3847 npm
-              run api
+              {slicer === "orca"
+                ? 'ORCASLICER_ROOT="/path/to/OrcaSlicer"'
+                : 'BAMBUSTUDIO_ROOT="/path/to/BambuStudio"'}{" "}
+              PORT=3847 npm run api
             </code>
           </p>
           <p className="mt-1 text-xs">
@@ -855,28 +935,59 @@ export function BambuProfileWorkbench() {
               </Button>
             </div>
 
-            <div className="space-y-1.5">
-              <span className="text-muted-foreground block text-xs font-medium">
-                {t("controls.bambuAccount")}
-              </span>
-              <NativeSelectField className="w-full max-w-full">
-                <select
-                  className="border-input bg-background h-9 w-full max-w-full appearance-none rounded-md border px-2 pr-8 text-sm"
-                  value={selectedUsername ?? ""}
-                  onChange={(e) => setSelectedUsername(e.target.value || null)}
-                  disabled={apiOk !== true || accountNames.length === 0}
+            <div
+              className="border-input grid grid-cols-2 rounded-md border p-0.5"
+              role="group"
+              aria-label={t("controls.slicer")}
+            >
+              {(["bambu", "orca"] as const).map((source) => (
+                <Button
+                  key={source}
+                  type="button"
+                  variant={slicer === source ? "secondary" : "ghost"}
+                  size="sm"
+                  aria-pressed={slicer === source}
+                  onClick={() => handleSlicerChange(source)}
                 >
-                  {accountNames.length === 0 ? (
-                    <option value="">{t("controls.noAccounts")}</option>
-                  ) : (
-                    accountNames.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </NativeSelectField>
+                  {source === "bambu"
+                    ? t("controls.slicerBambu")
+                    : t("controls.slicerOrca")}
+                </Button>
+              ))}
+            </div>
+
+            <div className="space-y-1.5">
+              {slicer === "bambu" ? (
+                <>
+                  <span className="text-muted-foreground block text-xs font-medium">
+                    {t("controls.bambuAccount")}
+                  </span>
+                  <NativeSelectField className="w-full max-w-full">
+                    <select
+                      className="border-input bg-background h-9 w-full max-w-full appearance-none rounded-md border px-2 pr-8 text-sm"
+                      value={selectedUsername ?? ""}
+                      onChange={(e) =>
+                        setSelectedUsername(e.target.value || null)
+                      }
+                      disabled={apiOk !== true || accountNames.length === 0}
+                    >
+                      {accountNames.length === 0 ? (
+                        <option value="">{t("controls.noAccounts")}</option>
+                      ) : (
+                        accountNames.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </NativeSelectField>
+                </>
+              ) : (
+                <p className="text-muted-foreground text-xs">
+                  {t("controls.orcaDefaultAccount")}
+                </p>
+              )}
               <label className="text-muted-foreground flex cursor-pointer items-center gap-2 pt-1 text-xs">
                 <input
                   type="checkbox"
@@ -1021,6 +1132,7 @@ export function BambuProfileWorkbench() {
             ) : (
               <ProfileTreeGrid
                 chain={chain}
+                slicer={slicer}
                 activeExtruderIndex={activeExtruderIndex}
                 propertyFilter={propertyFilter}
                 onPropertyFilterChange={setPropertyFilter}

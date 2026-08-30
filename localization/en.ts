@@ -3,12 +3,12 @@
  */
 export const messagesEn = {
   meta: {
-    title: "Bambu profile browser",
+    title: "Slicer profile browser",
     description:
-      "Browse Bambu Studio process/filament profiles and inheritance chains",
+      "Browse Bambu Studio and OrcaSlicer process/filament profile inheritance",
   },
   header: {
-    title: "Bambu profile browser",
+    title: "Slicer profile browser",
     subtitlePrefix: "Data comes from the local Node API (",
     subtitleMiddle: ") so macOS Library folders are read with ",
     subtitleSuffix: ", not the browser picker.",
@@ -21,8 +21,11 @@ export const messagesEn = {
   },
   dataSource: {
     modalTitle: "How to load your Bambu Studio files",
+    modalTitleOrca: "How to load your OrcaSlicer files",
     modalIntro:
       "This app reads files on your computer and only replaces a user profile when you explicitly save it in the editor. Pick one of the two ways below — you can switch later from the header.",
+    modalIntroOrca:
+      "This app reads OrcaSlicer files through the local API and only replaces a user profile when you explicitly save it in the editor.",
     browserSectionTitle: "Browser folder (no Node if this works)",
     browserSectionBody:
       "Grant access to your Bambu Studio data folder. Nothing is uploaded; files stay on your device. Write permission is requested only when saving an edited user profile. The page must be served over HTTPS (e.g. Vercel) or localhost so the browser allows the folder picker — plain http://192.168… will not.",
@@ -35,14 +38,20 @@ export const messagesEn = {
     apiSectionTitle: "Local API (Node)",
     apiSectionBody:
       "This mode uses a small HTTP server from the open-source bambu-browser project. Run it on the same computer that has your Bambu Studio files.",
+    apiSectionBodyOrca:
+      "This mode uses the same local HTTP server to read OrcaSlicer profiles. Run it on the computer that has your OrcaSlicer files.",
     apiRepoCloneHint:
       "Clone the repository or download the ZIP from the link below, then use a terminal in that project folder (where package.json and server.js live).",
     apiReadmeHint:
       "The README in that repository covers prerequisites (including Node.js), npm install, BAMBUSTUDIO_ROOT, ports, and security — read it when you set this up.",
+    apiReadmeHintOrca:
+      "The README covers prerequisites, npm install, ORCASLICER_ROOT, ports, and security.",
     apiOptionalEnv: "Optional: custom folder or port:",
     apiUrlLabel: "This page expects the API at",
     useLocalApi: "Use local API (ping server)",
     close: "Close",
+    orcaApiOnly:
+      "OrcaSlicer is currently supported through the local API. Browser folder access remains available for Bambu Studio.",
   },
   controls: {
     extruderIndex: "Extruder index",
@@ -53,10 +62,14 @@ export const messagesEn = {
     bambuAccount: "Bambu Lab Account",
     noAccounts: "No accounts",
     showOnlyChanged: "Show only changed values",
+    slicer: "Slicer",
+    slicerBambu: "Bambu",
+    slicerOrca: "Orca",
+    orcaDefaultAccount: "OrcaSlicer profiles use the default account.",
   },
   errors: {
     serverCannotReadRoot:
-      "Server cannot read BambuStudio root: {root}. Set BAMBUSTUDIO_ROOT when starting server.js.",
+      "Server cannot read the selected slicer root: {root}. Check BAMBUSTUDIO_ROOT or ORCASLICER_ROOT.",
     cannotReachApi:
       "Cannot reach the local API. Run: node server.js (see terminal).",
     browserNoLayout:
@@ -78,7 +91,7 @@ export const messagesEn = {
       "Connect first: open “How to connect” in the header, or use Ping API / choose a folder.",
     loading: "Loading…",
     emptyProfiles:
-      "No JSON profiles found. Check BambuStudio path on the server and account folders.",
+      "No JSON profiles found. Check the selected slicer path and account folders.",
     groupCustomFilaments: "Custom filaments",
     groupFilament: "Filaments",
     groupProcess: "Process",

@@ -10,4 +10,5 @@ export * from "./persisted-root-handle";
 export * from "./profile-schema";
 export * from "./profile-fs-access";
 export * from "./resolver";
+export * from "./slicer-source";
 export * from "./validate-studio-root";

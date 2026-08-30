@@ -16,6 +16,7 @@ import {
   formatBambuMappedValue,
   getInheritanceColumns,
   type InheritanceChainLevel,
+  type SlicerSource,
   isLeafInheritanceOverride,
   mergedValueAt,
   propertyRowTitle,
@@ -57,6 +58,7 @@ type ProfileTableProps = {
   onPropertyFilterChange?: (value: string) => void;
   showOnlyChangedLeaf?: boolean;
   onEditLeaf?: () => void;
+  slicer?: SlicerSource;
 };
 
 export const ProfileTable = ({
@@ -67,6 +69,7 @@ export const ProfileTable = ({
   onPropertyFilterChange = () => {},
   showOnlyChangedLeaf = false,
   onEditLeaf,
+  slicer = "bambu",
 }: ProfileTableProps) => {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -105,8 +108,9 @@ export const ProfileTable = ({
         profileKind,
         chain,
         isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
+        slicer,
       ),
-    [chain, isFilamentProfile, profileKind],
+    [chain, isFilamentProfile, profileKind, slicer],
   );
 
   // Everything starts expanded, so only the collapsed ones are tracked. The
