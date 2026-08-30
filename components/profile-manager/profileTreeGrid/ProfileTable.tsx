@@ -12,10 +12,12 @@ import {
   BAMBU_PROCESS_UI_TREE,
   type BambuMappedGroup,
   buildCompleteUiTree,
+  buildOrcaUiTree,
   type ColumnRoleLabels,
   formatBambuMappedValue,
   getInheritanceColumns,
   type InheritanceChainLevel,
+  type SlicerSource,
   isLeafInheritanceOverride,
   mergedValueAt,
   propertyRowTitle,
@@ -57,6 +59,7 @@ type ProfileTableProps = {
   onPropertyFilterChange?: (value: string) => void;
   showOnlyChangedLeaf?: boolean;
   onEditLeaf?: () => void;
+  slicer?: SlicerSource;
 };
 
 export const ProfileTable = ({
@@ -67,6 +70,7 @@ export const ProfileTable = ({
   onPropertyFilterChange = () => {},
   showOnlyChangedLeaf = false,
   onEditLeaf,
+  slicer = "bambu",
 }: ProfileTableProps) => {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -101,12 +105,15 @@ export const ProfileTable = ({
   const profileKind = isFilamentProfile ? "filament" : "process";
   const uiTree = React.useMemo(
     () =>
-      buildCompleteUiTree(
-        profileKind,
-        chain,
-        isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
-      ),
-    [chain, isFilamentProfile, profileKind],
+      slicer === "orca"
+        ? buildOrcaUiTree(profileKind, chain)
+        : buildCompleteUiTree(
+            profileKind,
+            chain,
+            isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
+            slicer,
+          ),
+    [chain, isFilamentProfile, profileKind, slicer],
   );
 
   // Everything starts expanded, so only the collapsed ones are tracked. The
@@ -155,12 +162,12 @@ export const ProfileTable = ({
         <TableRow className="border-0 bg-background hover:bg-transparent">
           <TableHead
             className={cn(
-              "min-w-0 border-b border-slate-100/50 bg-background p-4 align-bottom dark:border-slate-800/40",
+              "border-border min-w-0 border-b bg-background p-4 align-bottom",
               hasCompareAccordion ? "" : "rounded-tl-lg",
             )}
           >
             <div className="flex w-full min-w-0 items-end justify-between gap-4">
-              <span className="shrink-0 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              <span className="text-foreground shrink-0 text-lg font-bold tracking-tight">
                 {t("treeGrid.columnProperty")}
               </span>
               <div className="flex min-w-0 shrink flex-col items-start gap-1.5">
@@ -185,7 +192,7 @@ export const ProfileTable = ({
               <TableHead
                 key={col.index}
                 className={cn(
-                  "min-w-30 max-w-50 border-b border-slate-100/50 bg-background py-5 align-bottom dark:border-slate-800/40",
+                  "border-border min-w-30 max-w-50 border-b bg-background py-5 align-bottom",
                   isLastHead && "rounded-tr-lg",
                 )}
               >
@@ -203,7 +210,7 @@ export const ProfileTable = ({
                         : undefined
                     }
                   />
-                  <span className="text-xl font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                  <span className="text-muted-foreground text-xl font-semibold tracking-wide uppercase">
                     {col.roleLabel}
                   </span>
                 </div>
@@ -257,11 +264,11 @@ export const ProfileTable = ({
             <React.Fragment key={group.id}>
               <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">
                 <TableCell colSpan={colCount} className="p-0">
-                  <div className="mx-2 rounded-md bg-slate-100/90 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/65">
+                  <div className="bg-muted/80 hover:bg-muted mx-2 rounded-md">
                     <button
                       type="button"
                       onClick={() => toggleGroup(group.id)}
-                      className="flex w-full items-center gap-2 px-2 py-3 text-left text-sm font-semibold tracking-tight text-slate-900 uppercase dark:text-slate-100"
+                      className="text-foreground flex w-full items-center gap-2 px-2 py-3 text-left text-sm font-semibold tracking-tight uppercase"
                     >
                       {groupOpen ? (
                         <ChevronDown
@@ -293,11 +300,11 @@ export const ProfileTable = ({
                     <React.Fragment key={subgroup.id}>
                       <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">
                         <TableCell colSpan={colCount} className="p-0">
-                          <div className="mx-2 rounded-md bg-slate-50/90 hover:bg-slate-100/70 dark:bg-slate-900/35 dark:hover:bg-slate-900/50">
+                          <div className="bg-muted/35 hover:bg-muted/60 mx-2 rounded-md">
                             <button
                               type="button"
                               onClick={() => toggleSubgroup(subgroup.id)}
-                              className="flex w-full items-center gap-2 py-2.5 pl-10 pr-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400"
+                              className="text-muted-foreground flex w-full items-center gap-2 py-2.5 pl-10 pr-2 text-left text-xs font-medium"
                             >
                               {subOpen ? (
                                 <ChevronDown
@@ -349,36 +356,37 @@ export const ProfileTable = ({
                           const isOddStripe = zebraDataRow % 2 === 1;
                           zebraDataRow += 1;
                           const rowStripe = isOddStripe
-                            ? "bg-slate-50/50 dark:bg-slate-900/15"
+                            ? "bg-muted/20"
                             : "bg-background";
 
                           return (
                             <TableRow
                               key={key}
                               className={cn(
-                                "border-0 border-slate-100/60 transition-colors dark:border-slate-800/50",
+                                "border-border border-0 transition-colors",
                                 rowStripe,
-                                "hover:bg-slate-100/35 dark:hover:bg-slate-800/25",
+                                "hover:bg-accent/40",
                               )}
                             >
                               <TableCell
                                 className={cn(
-                                  "w-px max-w-fit whitespace-nowrap border-b border-slate-100/50 py-3 pl-28 align-middle dark:border-slate-800/40",
+                                  "border-border w-px max-w-fit border-b py-3 pl-28 align-middle whitespace-nowrap",
                                   rowStripe,
                                 )}
                               >
                                 <div className="flex max-w-max flex-nowrap items-baseline gap-x-1.5">
-                                  <span className="text-sm font-normal whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                  <span className="text-foreground/80 text-sm font-normal whitespace-nowrap">
                                     {title}
                                   </span>
                                   <PropertyHelpTooltipLazy
                                     label={title}
                                     propertyKey={key}
                                     profileKind={profileKind}
+                                    slicer={slicer}
                                   />
                                 </div>
                                 <span
-                                  className="mt-0.5 block max-w-max font-mono text-[10px] whitespace-nowrap text-slate-400 dark:text-slate-500"
+                                  className="text-muted-foreground mt-0.5 block max-w-max font-mono text-[10px] whitespace-nowrap"
                                   title={key}
                                 >
                                   {key}
@@ -388,16 +396,16 @@ export const ProfileTable = ({
                                 <TableCell
                                   key={col.index}
                                   className={cn(
-                                    "border-b border-slate-100/50 py-3 align-middle dark:border-slate-800/40",
+                                    "border-border border-b py-3 align-middle",
                                     rowStripe,
                                   )}
                                   title={col.level.relativePath}
                                 >
                                   <span
                                     className={cn(
-                                      "inline-flex min-h-6.5 max-w-full items-center font-mono text-sm tabular-nums text-slate-900 dark:text-slate-100",
+                                      "text-foreground inline-flex min-h-6.5 max-w-full items-center font-mono text-sm tabular-nums",
                                       overridesParent[i] &&
-                                        "rounded-[calc(var(--radius-md)/2)] bg-emerald-100/85 px-3 py-1 text-slate-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-100",
+                                        "bg-profile-changed text-profile-changed-foreground rounded-[calc(var(--radius-md)/2)] px-3 py-1 shadow-sm",
                                     )}
                                   >
                                     <span

@@ -24,6 +24,7 @@ import {
   type ProfileValidationSeverity,
 } from "@/lib/bambu/profile-leaf-editor";
 import type { ProfileKind } from "@/lib/bambu/resolver";
+import type { SlicerSource } from "@/lib/bambu/slicer-source";
 import { useLocale, useTranslations } from "@/localization";
 import { localizedPropertyLabel } from "@/localization/profile-fields";
 import { cn } from "@/lib/utils/index";
@@ -34,6 +35,7 @@ import { createPortal } from "react-dom";
 type ProfileLeafEditorProps = {
   relativePath: string;
   kind: ProfileKind;
+  slicer: SlicerSource;
   original: Record<string, unknown>;
   inherited: Record<string, unknown>;
   onSave: (formattedJson: string) => Promise<void>;
@@ -60,11 +62,13 @@ type Translate = (
 function Finding({
   finding,
   kind,
+  slicer,
   ordinal,
   t,
 }: {
   finding: ProfileValidationFinding;
   kind: ProfileKind;
+  slicer: SlicerSource;
   ordinal?: number;
   t: Translate;
 }) {
@@ -87,6 +91,7 @@ function Finding({
             label={localizedPropertyLabel(finding.key, finding.key, locale)}
             propertyKey={finding.key}
             profileKind={kind}
+            slicer={slicer}
           />
           <span className="font-mono">{finding.key}:</span>
         </div>
@@ -100,16 +105,18 @@ function Finding({
 function FindingsList({
   findings,
   kind,
+  slicer,
   t,
 }: {
   findings: ProfileValidationFinding[];
   kind: ProfileKind;
+  slicer: SlicerSource;
   t: Translate;
 }) {
   return (
     <Tooltip.Provider delay={200}>
       {findings.length === 1 ? (
-        <Finding finding={findings[0]!} kind={kind} t={t} />
+        <Finding finding={findings[0]!} kind={kind} slicer={slicer} t={t} />
       ) : (
         <ol className="divide-border divide-y">
           {findings.map((finding, index) => (
@@ -120,6 +127,7 @@ function FindingsList({
               <Finding
                 finding={finding}
                 kind={kind}
+                slicer={slicer}
                 ordinal={index + 1}
                 t={t}
               />
@@ -296,6 +304,7 @@ function DiffView({
 export function ProfileLeafEditor({
   relativePath,
   kind,
+  slicer,
   original,
   inherited,
   onSave,
@@ -496,12 +505,22 @@ export function ProfileLeafEditor({
   };
 
   const handleValidate = () => {
-    const result = validateProfileJson(draft, { kind, original, inherited });
+    const result = validateProfileJson(draft, {
+      kind,
+      slicer,
+      original,
+      inherited,
+    });
     setValidatedDraft(draft);
     setValidationCanSave(result.canSave);
     const description =
       result.findings.length > 0 ? (
-        <FindingsList findings={result.findings} kind={kind} t={t} />
+        <FindingsList
+          findings={result.findings}
+          kind={kind}
+          slicer={slicer}
+          t={t}
+        />
       ) : (
         t("profileEditor.noValidationFindings")
       );

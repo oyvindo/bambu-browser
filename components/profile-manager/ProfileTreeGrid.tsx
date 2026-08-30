@@ -6,6 +6,7 @@ import {
 } from "@/lib/bambu/chain-display";
 import { useTranslations } from "@/localization/context";
 import type { InheritanceChainLevel } from "@/lib/bambu/resolver";
+import type { SlicerSource } from "@/lib/bambu/slicer-source";
 import { ProfileTreeGridWrapper } from "@/components/profile-manager/profileTreeGrid/ProfileTreeGridWrapper";
 import { ProfileTable } from "@/components/profile-manager/profileTreeGrid/ProfileTable";
 import { useMemo } from "react";
@@ -22,6 +23,7 @@ export type ProfileTreeGridProps = {
   /** Renders as the first row inside the sticky table header (e.g. compare-to-filament accordion). */
   compareAccordion?: React.ReactNode;
   onEditLeaf?: () => void;
+  slicer?: SlicerSource;
 };
 
 export function ProfileTreeGrid({
@@ -33,6 +35,7 @@ export function ProfileTreeGrid({
   onPropertyFilterChange,
   compareAccordion,
   onEditLeaf,
+  slicer = "bambu",
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
@@ -77,6 +80,7 @@ export function ProfileTreeGrid({
           onPropertyFilterChange={onPropertyFilterChange}
           showOnlyChangedLeaf={showOnlyChangedLeaf}
           onEditLeaf={onEditLeaf}
+          slicer={slicer}
         />
       )}
     </ProfileTreeGridWrapper>

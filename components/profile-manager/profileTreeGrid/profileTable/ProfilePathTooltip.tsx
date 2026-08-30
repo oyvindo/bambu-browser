@@ -36,7 +36,7 @@ export function ProfilePathTooltip({
     <Tooltip.Root>
       <Tooltip.Trigger
         type="button"
-        className="block max-w-full truncate text-left font-mono text-xs font-bold tabular-nums leading-snug text-slate-900 dark:text-slate-100"
+        className="text-foreground block max-w-full truncate text-left font-mono text-xs font-bold tabular-nums leading-snug"
         aria-label={`${filename}: ${relativePath}`}
       >
         {filename}

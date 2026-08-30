@@ -8,6 +8,11 @@ import {
 } from "@/localization/profile-fields";
 import { BAMBU_FILAMENT_UI_TREE } from "./mapping-filament";
 import { BAMBU_PROCESS_UI_TREE } from "./mapping";
+import { buildOrcaUiTree } from "./mapping-orca";
+import {
+  ORCA_PROFILE_CONFIG_DEFS,
+  ORCA_PROFILE_CONFIG_SOURCE,
+} from "./orca-profile-config.generated";
 import {
   buildCompleteUiTree,
   FILAMENT_ROOT_KEYS,
@@ -77,6 +82,71 @@ describe("complete profile tree", () => {
         ?.subgroups.find((subgroup) => subgroup.id === "other-settings")
         ?.properties.some((property) => property.key === "future_bambu_option"),
     ).toBe(true);
+  });
+
+  it("uses actual chain keys instead of empty Bambu root keys for Orca", () => {
+    const tree = buildCompleteUiTree(
+      "process",
+      [
+        {
+          relativePath: "user/default/process/orca.json",
+          data: { orca_only_option: "42" },
+        },
+      ],
+      BAMBU_PROCESS_UI_TREE,
+      "orca",
+    );
+    const keys = flattenTreeKeys(tree);
+
+    expect(keys).toContain("orca_only_option");
+    expect(keys).not.toContain("bottom_color_penetration_layers");
+  });
+
+  it("maps Orca fields using its pinned PrintConfig metadata", () => {
+    const tree = buildOrcaUiTree("process", [
+      {
+        relativePath: "user/default/process/orca.json",
+        data: {
+          layer_height: "0.2",
+          seam_slope_type: "external",
+          future_orca_option: "42",
+        },
+      },
+    ]);
+    const layerHeight = tree
+      .flatMap((group) => group.subgroups)
+      .flatMap((subgroup) => subgroup.properties)
+      .find((property) => property.key === "layer_height");
+
+    expect(ORCA_PROFILE_CONFIG_SOURCE.version).toBe("v2.4.2");
+    expect(ORCA_PROFILE_CONFIG_DEFS).toHaveProperty("seam_slope_type");
+    expect(
+      ORCA_PROFILE_CONFIG_DEFS.bottom_surface_pattern?.enumValues,
+    ).toContain("rectilinear");
+    expect(ORCA_PROFILE_CONFIG_DEFS.input_shaping_type?.enumValues).toContain(
+      "Disable",
+    );
+    expect(ORCA_PROFILE_CONFIG_DEFS.filament_retraction_length).toEqual(
+      expect.objectContaining({
+        type: "coFloats",
+        label: "Length",
+      }),
+    );
+    expect(layerHeight).toEqual(
+      expect.objectContaining({
+        label: "Layer height",
+        unit: "mm",
+      }),
+    );
+    expect(
+      tree.find((group) => group.id === "quality")?.subgroups[0]?.properties,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: "layer_height" }),
+        expect.objectContaining({ key: "seam_slope_type" }),
+      ]),
+    );
+    expect(flattenTreeKeys(tree)).toContain("future_orca_option");
   });
 
   it("puts future structural keys in Metadata", () => {

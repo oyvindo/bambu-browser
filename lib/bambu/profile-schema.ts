@@ -4,6 +4,7 @@ import type {
   BambuValueUnit,
 } from "./mapping";
 import type { InheritanceChainLevel, ProfileKind } from "./resolver";
+import type { SlicerSource } from "./slicer-source";
 
 export const PROCESS_ROOT_KEYS = [
   "adaptive_layer_height",
@@ -435,16 +436,38 @@ export function buildCompleteUiTree(
   kind: ProfileKind,
   chain: readonly InheritanceChainLevel[],
   curatedTree: readonly BambuMappedGroup[],
+  slicer: SlicerSource = "bambu",
 ): readonly BambuMappedGroup[] {
+  const rootKeys =
+    slicer === "bambu"
+      ? kind === "filament"
+        ? FILAMENT_ROOT_KEYS
+        : PROCESS_ROOT_KEYS
+      : [];
+  const allKeys = new Set<string>([...rootKeys, ...collectChainKeys(chain)]);
+  const visibleCuratedTree =
+    slicer === "bambu"
+      ? curatedTree
+      : curatedTree
+          .map((group) => ({
+            ...group,
+            subgroups: group.subgroups
+              .map((subgroup) => ({
+                ...subgroup,
+                properties: subgroup.properties.filter((property) =>
+                  allKeys.has(property.key),
+                ),
+              }))
+              .filter((subgroup) => subgroup.properties.length > 0),
+          }))
+          .filter((group) => group.subgroups.length > 0);
   const mapped = new Set(
-    curatedTree.flatMap((group) =>
+    visibleCuratedTree.flatMap((group) =>
       group.subgroups.flatMap((subgroup) =>
         subgroup.properties.map((property) => property.key),
       ),
     ),
   );
-  const rootKeys = kind === "filament" ? FILAMENT_ROOT_KEYS : PROCESS_ROOT_KEYS;
-  const allKeys = new Set<string>([...rootKeys, ...collectChainKeys(chain)]);
   const extras = [...allKeys].filter((key) => !mapped.has(key));
   const bySection = new Map<string, BambuPropertyRowDef[]>();
 
@@ -470,7 +493,7 @@ export function buildCompleteUiTree(
   const metadata = bySection.get("metadata");
 
   return [
-    ...curatedTree,
+    ...visibleCuratedTree,
     ...(settingsSubgroups.length
       ? [
           {

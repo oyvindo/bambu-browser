@@ -5,21 +5,28 @@ import { Info } from "lucide-react";
 
 import { useLocale, useTranslations } from "@/localization/context";
 import { propertyTooltipForKey } from "@/lib/bambu/property-tooltips";
-import type { ProfileKind } from "@/lib/bambu";
+import type { ProfileKind, SlicerSource } from "@/lib/bambu";
 import { cn } from "@/lib/utils";
 
 export function PropertyHelpTooltip({
   label,
   propertyKey,
   profileKind,
+  slicer,
 }: {
   label: string;
   propertyKey: string;
   profileKind: ProfileKind;
+  slicer: SlicerSource;
 }) {
   const { locale } = useLocale();
   const t = useTranslations();
-  const tooltip = propertyTooltipForKey(propertyKey, locale, profileKind);
+  const tooltip = propertyTooltipForKey(
+    propertyKey,
+    locale,
+    profileKind,
+    slicer,
+  );
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
