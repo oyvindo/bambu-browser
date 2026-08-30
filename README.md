@@ -144,12 +144,12 @@ The app is split into **two processes** in the web workflow (an optional Electro
 
 The shared workbench, inheritance grid, and leaf editor are deliberately
 slicer-neutral. Bambu keeps its curated field descriptions and generated
-PrintConfig validation. Orca files receive structural and locked-identity
-validation, while Bambu-specific bounds, enums, and array-shape rules are
-skipped. Orca-only keys remain visible in the grid's additional settings
-groups. Future work can add native Orca field descriptions, generated Orca
-PrintConfig bounds, machine profiles, and browser-folder support without
-changing the API contract.
+PrintConfig validation. Orca fields use labels, categories, units, tooltips,
+types, bounds, and enums generated from OrcaSlicer v2.4.2's pinned
+`PrintConfig.cpp`; unknown future fields remain visible and editable. Machine
+profiles are intentionally omitted from the sidebar to keep it focused on
+editable process and filament profiles. Browser-folder support for Orca can be
+added later without changing the API contract.
 
 **`lib/bambu/`** holds client-side domain logic: API client (`bambu-api-client.ts`), profile and inheritance resolution (`resolver.ts`, `mapping.ts`), helpers for displaying inheritance chains (`chain-display.ts`), file-handling / validation helpers where needed, and related types. **`components/profile-manager/`** is the profile tree and toolbar UI (for example `ProfileTreeGrid`, `BambuProfileWorkbench`). **`components/ui/`** is reusable primitives (buttons, table, collapsible). **`localization/`** handles locales (context, strings, process-parameter tooltips). **`components/providers.tsx`** wires `@wrksz/themes` (light/dark) and the locale provider around the app. Fonts and global styles live in `app/layout.tsx` and `app/globals.css`.
 
@@ -216,6 +216,15 @@ local checkout instead when you prefer:
 
 ```sh
 BAMBUSTUDIO_PRINTCONFIG="/path/to/BambuStudio/src/libslic3r/PrintConfig.cpp" npm run generate:config-bounds
+```
+
+OrcaSlicer's separate field metadata and validation definitions are pinned to
+the release and commit recorded in
+`lib/bambu/orca-profile-config.generated.ts`. Refresh the committed artifact
+after intentionally updating that pin:
+
+```sh
+npm run generate:orca-config
 ```
 
 ### Directory map (short)

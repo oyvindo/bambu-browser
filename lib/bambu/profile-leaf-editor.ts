@@ -2,6 +2,7 @@ import {
   PROFILE_CONFIG_DEFS,
   type ProfileConfigDef,
 } from "./profile-config-bounds.generated";
+import { ORCA_PROFILE_CONFIG_DEFS } from "./orca-profile-config.generated";
 import { PROFILE_VALUE_VALIDATION } from "./profile-value-validation.generated";
 import {
   FILAMENT_ROOT_KEYS,
@@ -234,8 +235,24 @@ function comparableNumeric(value: unknown): number | null {
   return values.length === 1 ? values[0]! : null;
 }
 
-function configDef(key: string): ProfileConfigDef | undefined {
-  return PROFILE_CONFIG_DEFS[key];
+function configDef(
+  key: string,
+  slicer: SlicerSource,
+): ProfileConfigDef | undefined {
+  return slicer === "orca"
+    ? ORCA_PROFILE_CONFIG_DEFS[key]
+    : PROFILE_CONFIG_DEFS[key];
+}
+
+function configShape(
+  def: ProfileConfigDef | undefined,
+): "array" | "scalar" | undefined {
+  if (!def) return undefined;
+  return /^(?:coBools|coEnums|coFloats|coInts|coPercents|coPoints|coPointsGroups|coStrings)$/.test(
+    def.type,
+  )
+    ? "array"
+    : "scalar";
 }
 
 /** Only continuous options; counts, bitfields and flags jump by design. */
@@ -285,6 +302,8 @@ export function validateProfileJson(
   }
 
   const findings: ProfileValidationFinding[] = [];
+  const slicer = options.slicer ?? "bambu";
+  const isOrca = slicer === "orca";
   const generated = PROFILE_VALUE_VALIDATION[
     options.kind
   ] as GeneratedKindValidation;
@@ -324,22 +343,9 @@ export function validateProfileJson(
     );
   }
 
-  // OrcaSlicer shares the JSON/inheritance model but has its own evolving
-  // PrintConfig schema and commonly uses scalar values where Bambu uses
-  // one-element arrays. Keep structural and locked-field checks above, but do
-  // not apply Bambu-generated bounds, enums, shapes, or unknown-key rules.
-  if (options.slicer === "orca") {
-    return {
-      data,
-      findings,
-      canSave: !findings.some(
-        ({ severity }) => severity === "blocker" || severity === "error",
-      ),
-    };
-  }
-
   for (const [key, value] of Object.entries(data)) {
     if (
+      !isOrca &&
       !knownKeys.has(key) &&
       !Object.prototype.hasOwnProperty.call(options.original, key)
     ) {
@@ -354,7 +360,10 @@ export function validateProfileJson(
       continue;
     }
 
-    const expectedShape = generated.valueShapes[key];
+    const def = configDef(key, slicer);
+    const expectedShape = isOrca
+      ? configShape(def)
+      : generated.valueShapes[key];
     if (
       expectedShape &&
       expectedShape !== "mixed" &&
@@ -363,14 +372,15 @@ export function validateProfileJson(
       addFinding(
         findings,
         "warning",
-        `Expected a ${expectedShape} value.`,
+        `Expected ${expectedShape === "array" ? "an" : "a"} ${expectedShape} value.`,
         key,
       );
     }
 
-    const def = configDef(key);
-
-    if (isBoolean(def) || (def === undefined && booleanKeys.has(key))) {
+    if (
+      isBoolean(def) ||
+      (!isOrca && def === undefined && booleanKeys.has(key))
+    ) {
       const valid = scalarValues(value).every((entry) =>
         [0, 1, "0", "1", true, false, "true", "false"].includes(entry as never),
       );
@@ -388,7 +398,9 @@ export function validateProfileJson(
     // only stand in where Studio does not declare the option at all.
     const categories =
       def?.enumValues ??
-      (def === undefined ? generated.categoricalValues[key] : undefined);
+      (!isOrca && def === undefined
+        ? generated.categoricalValues[key]
+        : undefined);
     if (categories && !isFreeText(def)) {
       for (const entry of scalarValues(value)) {
         if (

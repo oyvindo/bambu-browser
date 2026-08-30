@@ -12,6 +12,7 @@ import {
   BAMBU_PROCESS_UI_TREE,
   type BambuMappedGroup,
   buildCompleteUiTree,
+  buildOrcaUiTree,
   type ColumnRoleLabels,
   formatBambuMappedValue,
   getInheritanceColumns,
@@ -104,12 +105,14 @@ export const ProfileTable = ({
   const profileKind = isFilamentProfile ? "filament" : "process";
   const uiTree = React.useMemo(
     () =>
-      buildCompleteUiTree(
-        profileKind,
-        chain,
-        isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
-        slicer,
-      ),
+      slicer === "orca"
+        ? buildOrcaUiTree(profileKind, chain)
+        : buildCompleteUiTree(
+            profileKind,
+            chain,
+            isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
+            slicer,
+          ),
     [chain, isFilamentProfile, profileKind, slicer],
   );
 
@@ -379,6 +382,7 @@ export const ProfileTable = ({
                                     label={title}
                                     propertyKey={key}
                                     profileKind={profileKind}
+                                    slicer={slicer}
                                   />
                                 </div>
                                 <span

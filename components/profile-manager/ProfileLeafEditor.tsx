@@ -62,11 +62,13 @@ type Translate = (
 function Finding({
   finding,
   kind,
+  slicer,
   ordinal,
   t,
 }: {
   finding: ProfileValidationFinding;
   kind: ProfileKind;
+  slicer: SlicerSource;
   ordinal?: number;
   t: Translate;
 }) {
@@ -89,6 +91,7 @@ function Finding({
             label={localizedPropertyLabel(finding.key, finding.key, locale)}
             propertyKey={finding.key}
             profileKind={kind}
+            slicer={slicer}
           />
           <span className="font-mono">{finding.key}:</span>
         </div>
@@ -102,16 +105,18 @@ function Finding({
 function FindingsList({
   findings,
   kind,
+  slicer,
   t,
 }: {
   findings: ProfileValidationFinding[];
   kind: ProfileKind;
+  slicer: SlicerSource;
   t: Translate;
 }) {
   return (
     <Tooltip.Provider delay={200}>
       {findings.length === 1 ? (
-        <Finding finding={findings[0]!} kind={kind} t={t} />
+        <Finding finding={findings[0]!} kind={kind} slicer={slicer} t={t} />
       ) : (
         <ol className="divide-border divide-y">
           {findings.map((finding, index) => (
@@ -122,6 +127,7 @@ function FindingsList({
               <Finding
                 finding={finding}
                 kind={kind}
+                slicer={slicer}
                 ordinal={index + 1}
                 t={t}
               />
@@ -509,7 +515,12 @@ export function ProfileLeafEditor({
     setValidationCanSave(result.canSave);
     const description =
       result.findings.length > 0 ? (
-        <FindingsList findings={result.findings} kind={kind} t={t} />
+        <FindingsList
+          findings={result.findings}
+          kind={kind}
+          slicer={slicer}
+          t={t}
+        />
       ) : (
         t("profileEditor.noValidationFindings")
       );

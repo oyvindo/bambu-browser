@@ -226,7 +226,7 @@ describe("profile leaf validation", () => {
     });
   });
 
-  it("keeps locked-field checks but skips Bambu schema checks for Orca", () => {
+  it("uses Orca schema checks without applying Bambu-only unknown-key rules", () => {
     const orcaDraft = {
       ...original,
       orca_only_setting: "enabled",
@@ -247,6 +247,49 @@ describe("profile leaf validation", () => {
     );
     expect(locked.canSave).toBe(false);
     expect(hasLockedFieldFinding(locked.findings)).toBe(true);
+  });
+
+  it("validates Orca bounds, enums, booleans, and value shapes", () => {
+    const orcaDraft = {
+      ...original,
+      accel_to_decel_factor: "101",
+      adaptive_pressure_advance: "yes",
+      layer_height: "-0.1",
+      seam_slope_type: "not-an-orca-mode",
+    };
+    const result = validateProfileJson(JSON.stringify(orcaDraft), {
+      kind: "process",
+      slicer: "orca",
+      original,
+    });
+
+    expect(result.canSave).toBe(true);
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "accel_to_decel_factor",
+          message: "Value 101 is above the supported maximum 100.",
+        }),
+        expect.objectContaining({
+          key: "adaptive_pressure_advance",
+          message: "Expected an array value.",
+        }),
+        expect.objectContaining({
+          key: "adaptive_pressure_advance",
+          message: "Expected a boolean value (0/1 or true/false).",
+        }),
+        expect.objectContaining({
+          key: "layer_height",
+          message: "Value -0.1 is below the supported minimum 0.",
+        }),
+        expect.objectContaining({
+          key: "seam_slope_type",
+          message: expect.stringContaining(
+            'Unrecognized value "not-an-orca-mode"',
+          ),
+        }),
+      ]),
+    );
   });
 
   it("allows saving with warnings", () => {
