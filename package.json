@@ -17,9 +17,9 @@
     "build:electron": "cross-env ELECTRON_STATIC_EXPORT=1 next build",
     "electron:dev": "concurrently -k -n next,electron -c blue,magenta \"next dev\" \"wait-on http://127.0.0.1:3000 && cross-env ELECTRON_DEV=1 electron .\"",
     "electron:preview": "npm run build:electron && electron .",
-    "dist": "npm run build:electron && electron-builder --mac",
+    "dist": "npm run build:electron && electron-builder --mac --publish never",
     "dist:mac": "npm run dist",
-    "dist:win": "npm run build:electron && electron-builder --win"
+    "dist:win": "npm run build:electron && electron-builder --win --publish never"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
