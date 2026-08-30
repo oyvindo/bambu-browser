@@ -4,12 +4,25 @@ import { ThemeProvider } from "@wrksz/themes/next";
 import { LocaleProvider } from "@/localization/context";
 import { Toaster } from "@/components/ui/toast";
 
+const THEMES = [
+  "light",
+  "dark",
+  "frosted-aura",
+  "inked",
+  "slate",
+  "frozen-mist",
+  "sapphire-nightfall",
+  "amethyst-dawn-haze",
+] as const;
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      themes={THEMES}
+      defaultTheme="inked"
       enableSystem
+      enableColorScheme
       disableTransitionOnChange
     >
       <LocaleProvider>

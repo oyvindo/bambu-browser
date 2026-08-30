@@ -15,7 +15,7 @@ import { toast } from "@/components/ui/toast";
 import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
 
 const ICON_BUTTON_CLASS =
-  "cursor-pointer rounded p-0.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200";
+  "text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5";
 
 function ColumnActionButton({
   label,

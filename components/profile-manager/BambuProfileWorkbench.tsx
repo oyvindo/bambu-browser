@@ -1102,9 +1102,9 @@ export function BambuProfileWorkbench() {
                                       : undefined
                                   }
                                   className={cn(
-                                    "hover:bg-blue-300 hover:text-blue-50 w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
+                                    "hover:bg-profile-selected/85 hover:text-profile-selected-foreground w-full rounded-[calc(var(--radius-md)/2)] px-1.5 py-1.5 text-left text-sm",
                                     selectedPath === p.relativePath &&
-                                      "bg-blue-400 text-blue-50",
+                                      "bg-profile-selected text-profile-selected-foreground",
                                   )}
                                 >
                                   {p.fileName}

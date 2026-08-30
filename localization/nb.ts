@@ -186,6 +186,12 @@ export const messagesNb = {
     light: "Lyst",
     dark: "Mørkt",
     system: "System",
+    frostedAura: "Frostet aura",
+    inked: "Blekk",
+    slate: "Skifer",
+    frozenMist: "Frossen tåke",
+    sapphireNightfall: "Safir-nattfall",
+    amethystDawnHaze: "Ametyst-daggry",
     aria: "Fargetema",
   },
   language: {

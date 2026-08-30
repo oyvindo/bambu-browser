@@ -184,6 +184,12 @@ export const messagesEn = {
     light: "Light",
     dark: "Dark",
     system: "System",
+    frostedAura: "Frosted Aura",
+    inked: "Inked",
+    slate: "Slate",
+    frozenMist: "Frozen Mist",
+    sapphireNightfall: "Sapphire Nightfall",
+    amethystDawnHaze: "Amethyst Dawn Haze",
     aria: "Color theme",
   },
   language: {
