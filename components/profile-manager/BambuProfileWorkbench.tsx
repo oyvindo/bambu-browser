@@ -33,6 +33,7 @@ import { listUserProfileEntriesFromStudioRoot } from "@/lib/bambu/list-user-prof
 import {
   DEFAULT_SLICER_SOURCE,
   isSlicerSource,
+  slicerDisplayName,
   type SlicerSource,
 } from "@/lib/bambu/slicer-source";
 import {
@@ -56,6 +57,7 @@ import {
   Server,
 } from "lucide-react";
 
+import { Tooltip } from "@base-ui/react/tooltip";
 import { LanguageSelect } from "@/components/language-select";
 import { NativeSelectField } from "@/components/native-select-field";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -122,6 +124,7 @@ export function BambuProfileWorkbench() {
 
   const [profiles, setProfiles] = useState<UserProfileEntry[]>([]);
   const [scanning, setScanning] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [chain, setChain] = useState<InheritanceChainLevel[]>([]);
   const [resolving, setResolving] = useState(false);
@@ -174,21 +177,24 @@ export function BambuProfileWorkbench() {
   const isCustomFilamentProfile =
     isFilamentProfile && selectedProfile.filamentCategory === "custom";
 
+  type ConnectionCheckResult =
+    { ok: true; root: string } | { ok: false; error: string };
+
   const loadApiConnection = useCallback(
-    async (source: SlicerSource = slicer) => {
+    async (source: SlicerSource = slicer): Promise<ConnectionCheckResult> => {
       setError(null);
       try {
         const health = await fetchApiHealth(source);
         if (!health.ok) {
+          const error =
+            health.error ||
+            t("errors.serverCannotReadRoot", { root: health.root });
           setApiOk(false);
           setAccountNames([]);
           setStudioRootLabel(health.root);
           setLayout(null);
-          setError(
-            health.error ||
-              t("errors.serverCannotReadRoot", { root: health.root }),
-          );
-          return;
+          setError(error);
+          return { ok: false, error };
         }
         setApiOk(true);
         const meta = await fetchApiMeta(source);
@@ -203,30 +209,35 @@ export function BambuProfileWorkbench() {
               ? prev
               : (accounts[0] ?? null),
         );
+        return { ok: true, root: meta.root };
       } catch (e) {
+        const error =
+          e instanceof Error ? e.message : t("errors.cannotReachApi");
         setApiOk(false);
         setAccountNames([]);
         setStudioRootLabel("");
         setLayout(null);
-        setError(e instanceof Error ? e.message : t("errors.cannotReachApi"));
+        setError(error);
+        return { ok: false, error };
       }
     },
     [slicer, t],
   );
 
   const loadBrowserConnection = useCallback(
-    async (root: FileSystemDirectoryHandle) => {
+    async (root: FileSystemDirectoryHandle): Promise<ConnectionCheckResult> => {
       setError(null);
       try {
         const { layout: detected, accounts } =
           await detectStudioLayoutFromRoot(root);
         if (!detected || accounts.length === 0) {
+          const error = t("errors.browserNoLayout");
           setApiOk(false);
           setStudioRootLabel(root.name);
           setLayout(null);
           setAccountNames([]);
-          setError(t("errors.browserNoLayout"));
-          return;
+          setError(error);
+          return { ok: false, error };
         }
         setApiOk(true);
         setStudioRootLabel(root.name);
@@ -235,14 +246,16 @@ export function BambuProfileWorkbench() {
         setSelectedUsername((prev) =>
           prev && accounts.includes(prev) ? prev : (accounts[0] ?? null),
         );
+        return { ok: true, root: root.name };
       } catch (e) {
+        const error =
+          e instanceof Error ? e.message : t("errors.loadProfilesFailed");
         setApiOk(false);
         setAccountNames([]);
         setStudioRootLabel(root.name);
         setLayout(null);
-        setError(
-          e instanceof Error ? e.message : t("errors.loadProfilesFailed"),
-        );
+        setError(error);
+        return { ok: false, error };
       }
     },
     [t],
@@ -548,14 +561,50 @@ export function BambuProfileWorkbench() {
     [t],
   );
 
-  const handlePingOrRefresh = useCallback(() => {
-    if (dataMode === "browser") {
-      if (studioRootHandle) void loadBrowserConnection(studioRootHandle);
-      else setDataSourceModalOpen(true);
+  const handlePingOrRefresh = useCallback(async () => {
+    if (dataMode === "browser" && !studioRootHandle) {
+      setDataSourceModalOpen(true);
       return;
     }
-    void loadApiConnection();
-  }, [dataMode, studioRootHandle, loadApiConnection, loadBrowserConnection]);
+
+    setCheckingConnection(true);
+    try {
+      const result =
+        dataMode === "browser" && studioRootHandle
+          ? await loadBrowserConnection(studioRootHandle)
+          : await loadApiConnection();
+      if (result.ok) {
+        toast.add({
+          type: "success",
+          title: t("controls.connectionOk"),
+          description:
+            dataMode === "browser"
+              ? t("controls.connectionOkBrowserDescription", {
+                  root: result.root,
+                })
+              : t("controls.connectionOkApiDescription", {
+                  slicer: slicerDisplayName(slicer),
+                  root: result.root,
+                }),
+        });
+      } else {
+        toast.add({
+          type: "error",
+          title: t("controls.connectionFailed"),
+          description: result.error,
+        });
+      }
+    } finally {
+      setCheckingConnection(false);
+    }
+  }, [
+    dataMode,
+    loadApiConnection,
+    loadBrowserConnection,
+    slicer,
+    studioRootHandle,
+    t,
+  ]);
 
   const handleRefreshProfileList = useCallback(() => {
     setScanning(true);
@@ -901,30 +950,64 @@ export function BambuProfileWorkbench() {
         >
           <div className="space-y-3 px-2 py-3">
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="min-w-26 flex-1"
-                onClick={() => void handlePingOrRefresh()}
-                disabled={scanning}
-              >
-                <Server className="size-4" />
-                {dataMode === "browser"
-                  ? studioRootHandle
-                    ? t("controls.refreshConnection")
-                    : t("dataSource.chooseFolder")
-                  : apiOk === false
-                    ? t("controls.retryApi")
-                    : t("controls.pingApi")}
-              </Button>
+              <Tooltip.Provider delay={400}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-w-26 flex-1"
+                        disabled={scanning || checkingConnection}
+                        onClick={() => void handlePingOrRefresh()}
+                      />
+                    }
+                  >
+                    {checkingConnection ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Server className="size-4" />
+                    )}
+                    {dataMode === "browser"
+                      ? studioRootHandle
+                        ? t("controls.refreshConnection")
+                        : t("dataSource.chooseFolder")
+                      : apiOk === false
+                        ? t("controls.retryApi")
+                        : t("controls.checkConnection")}
+                  </Tooltip.Trigger>
+                  <Tooltip.Portal>
+                    <Tooltip.Positioner
+                      side="bottom"
+                      sideOffset={8}
+                      className="z-50"
+                    >
+                      <Tooltip.Popup
+                        className={cn(
+                          "bg-popover text-popover-foreground border-border max-w-64 rounded-md border px-2.5 py-1.5 text-xs shadow-md",
+                          "leading-snug",
+                        )}
+                      >
+                        {dataMode === "browser"
+                          ? studioRootHandle
+                            ? t("controls.refreshConnectionTooltip")
+                            : t("controls.chooseFolderTooltip")
+                          : apiOk === false
+                            ? t("controls.retryApiTooltip")
+                            : t("controls.checkConnectionTooltip")}
+                      </Tooltip.Popup>
+                    </Tooltip.Positioner>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </Tooltip.Provider>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="min-w-26 flex-1"
                 onClick={() => void handleRefreshProfileList()}
-                disabled={scanning || apiOk !== true}
+                disabled={scanning || checkingConnection || apiOk !== true}
               >
                 {scanning ? (
                   <Loader2 className="size-4 animate-spin" />

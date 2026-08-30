@@ -57,9 +57,20 @@ export const messagesNb = {
   },
   controls: {
     extruderIndex: "Ekstruderindeks",
-    pingApi: "Ping API",
+    checkConnection: "Sjekk tilkobling",
     refreshConnection: "Oppdater tilkobling",
     retryApi: "Prøv API på nytt",
+    checkConnectionTooltip:
+      "Sjekker at det lokale API-et svarer og at datamappen til valgt slicer kan leses. Laster ikke profilisten på nytt.",
+    retryApiTooltip:
+      "Prøver å koble til det lokale API-et igjen og lese datamappen til valgt slicer.",
+    refreshConnectionTooltip:
+      "Leser den valgte Bambu Studio-mappen på nytt. Laster ikke profilisten på nytt.",
+    chooseFolderTooltip: "Velg en Bambu Studio-datamappe i denne nettleseren.",
+    connectionOk: "Tilkoblet",
+    connectionOkApiDescription: "Nådde {slicer}-API-et på {root}.",
+    connectionOkBrowserDescription: "Mappen kan leses: {root}.",
+    connectionFailed: "Tilkoblingssjekk mislyktes",
     refreshList: "Oppdater liste",
     bambuAccount: "Bambu Lab-konto",
     noAccounts: "Ingen kontoer",
@@ -90,7 +101,7 @@ export const messagesNb = {
   },
   sidebar: {
     connectFirst:
-      "Koble til først: åpne «Slik kobler du til» i topplinjen, eller bruk Ping API / velg mappe.",
+      "Koble til først: åpne «Slik kobler du til» i topplinjen, eller sjekk tilkoblingen / velg mappe.",
     loading: "Laster…",
     emptyProfiles:
       "Ingen JSON-profiler funnet. Sjekk stien til valgt slicer og kontomappene.",

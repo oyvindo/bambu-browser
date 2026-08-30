@@ -55,9 +55,20 @@ export const messagesEn = {
   },
   controls: {
     extruderIndex: "Extruder index",
-    pingApi: "Ping API",
+    checkConnection: "Check connection",
     refreshConnection: "Refresh connection",
     retryApi: "Retry API",
+    checkConnectionTooltip:
+      "Checks that the local API is reachable and that the selected slicer data folder is readable. Does not reload the profile list.",
+    retryApiTooltip:
+      "Tries to reconnect to the local API and read the selected slicer data folder.",
+    refreshConnectionTooltip:
+      "Re-reads the selected Bambu Studio folder. Does not reload the profile list.",
+    chooseFolderTooltip: "Choose a Bambu Studio data folder in this browser.",
+    connectionOk: "Connected",
+    connectionOkApiDescription: "Reached the {slicer} API at {root}.",
+    connectionOkBrowserDescription: "Folder is readable: {root}.",
+    connectionFailed: "Connection check failed",
     refreshList: "Refresh list",
     bambuAccount: "Bambu Lab Account",
     noAccounts: "No accounts",
@@ -88,7 +99,7 @@ export const messagesEn = {
   },
   sidebar: {
     connectFirst:
-      "Connect first: open “How to connect” in the header, or use Ping API / choose a folder.",
+      "Connect first: open “How to connect” in the header, or check the connection / choose a folder.",
     loading: "Loading…",
     emptyProfiles:
       "No JSON profiles found. Check the selected slicer path and account folders.",
