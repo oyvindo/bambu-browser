@@ -2,6 +2,7 @@
   "name": "bambu_browser",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +13,13 @@
     "test": "vitest run",
     "validate:bambu-schema": "vitest run lib/bambu/profile-schema.local.test.ts",
     "generate:config-bounds": "node scripts/generate-profile-config-bounds.mjs",
-    "api": "node server.js"
+    "api": "node server.js",
+    "build:electron": "cross-env ELECTRON_STATIC_EXPORT=1 next build",
+    "electron:dev": "concurrently -k -n next,electron -c blue,magenta \"next dev\" \"wait-on http://127.0.0.1:3000 && cross-env ELECTRON_DEV=1 electron .\"",
+    "electron:preview": "npm run build:electron && electron .",
+    "dist": "npm run build:electron && electron-builder --mac",
+    "dist:mac": "npm run dist",
+    "dist:win": "npm run build:electron && electron-builder --win"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -32,12 +39,17 @@
     "@types/node": "26.4.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.3",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wait-on": "^9.1.0"
   }
 }

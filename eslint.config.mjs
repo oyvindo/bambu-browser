@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Standalone Node script (CommonJS require)
     "server.js",
+    "electron/main.js",
+    "dist/**",
   ]),
   eslintConfigPrettier,
 ]);

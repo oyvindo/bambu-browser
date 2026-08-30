@@ -8,6 +8,7 @@
  *   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" PORT=3847 node server.js
  *
  * Defaults (macOS): ~/Library/Application Support/BambuStudio
+ * Defaults (Windows): %APPDATA%\\BambuStudio
  * Frontend: set NEXT_PUBLIC_BAMBU_API_URL=http://127.0.0.1:3847
  */
 
@@ -17,10 +18,24 @@ const path = require("path");
 const os = require("os");
 
 const PORT = Number(process.env.PORT || 3847);
-const DEFAULT_ROOT =
-  process.platform === "darwin"
-    ? path.join(os.homedir(), "Library", "Application Support", "BambuStudio")
-    : path.join(os.homedir(), "BambuStudio");
+function defaultStudioRoot() {
+  if (process.platform === "darwin") {
+    return path.join(
+      os.homedir(),
+      "Library",
+      "Application Support",
+      "BambuStudio",
+    );
+  }
+  if (process.platform === "win32") {
+    const roaming =
+      process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
+    return path.join(roaming, "BambuStudio");
+  }
+  return path.join(os.homedir(), "BambuStudio");
+}
+
+const DEFAULT_ROOT = defaultStudioRoot();
 
 const STUDIO_ROOT = path.resolve(process.env.BAMBUSTUDIO_ROOT || DEFAULT_ROOT);
 const WRITE_ORIGINS = new Set(

@@ -30,8 +30,8 @@ export function getBambuStudioPathHints(): BambuStudioPathHints {
   if (isLikelyWindows()) {
     return {
       platformLabel: "Windows",
-      typicalPath: "%USERPROFILE%\\BambuStudio",
-      tip: "Paste into File Explorer address bar after replacing %USERPROFILE% with your user folder, or check AppData\\Roaming if you use a custom install.",
+      typicalPath: "%APPDATA%\\BambuStudio",
+      tip: "Paste into File Explorer address bar. This is the usual Roaming AppData folder for Bambu Studio.",
     };
   }
   return {

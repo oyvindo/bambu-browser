@@ -9,11 +9,20 @@ const envDevOrigins =
     .map((s) => s.trim())
     .filter(Boolean) ?? [];
 
+const electronStaticExport = process.env.ELECTRON_STATIC_EXPORT === "1";
+
 const nextConfig: NextConfig = {
   // Next.js 16+ blocks cross-origin dev resources (HMR, etc.) from non-localhost origins
   // unless listed here. Match the "Network:" URL from `next dev` or set ALLOWED_DEV_ORIGINS.
   // https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
-  allowedDevOrigins: ["192.168.68.58", ...envDevOrigins],
+  allowedDevOrigins: ["127.0.0.1", "192.168.68.58", ...envDevOrigins],
+  // Only for `npm run build:electron`. Leave unset so `npm run build` / `npm start` stay a Node server.
+  ...(electronStaticExport
+    ? {
+        output: "export" as const,
+        images: { unoptimized: true },
+      }
+    : {}),
 };
 
 export default nextConfig;

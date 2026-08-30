@@ -13,7 +13,12 @@ const studioRoot =
   process.env.BAMBUSTUDIO_ROOT ??
   (process.platform === "darwin"
     ? path.join(homedir(), "Library", "Application Support", "BambuStudio")
-    : path.join(homedir(), "BambuStudio"));
+    : process.platform === "win32"
+      ? path.join(
+          process.env.APPDATA || path.join(homedir(), "AppData", "Roaming"),
+          "BambuStudio",
+        )
+      : path.join(homedir(), "BambuStudio"));
 
 function readRootKeys(relativePath: string): string[] | null {
   const filePath = path.join(studioRoot, relativePath);

@@ -26,7 +26,7 @@ Bambu Studio stores machine, process, and filament presets under an application-
    ```
 
    Optional environment variables:
-   - **`BAMBUSTUDIO_ROOT`** — absolute path to the Bambu Studio data folder. If omitted, the server uses the default for your OS (on macOS: `~/Library/Application Support/BambuStudio`).
+   - **`BAMBUSTUDIO_ROOT`** — absolute path to the Bambu Studio data folder. If omitted, the server uses the default for your OS (on macOS: `~/Library/Application Support/BambuStudio`; on Windows: `%APPDATA%\BambuStudio`).
    - **`PORT`** — API port (default **3847**).
    - **`BAMBU_BROWSER_WRITE_ORIGINS`** — optional comma-separated non-localhost browser origins that may use the profile write endpoint. Localhost and 127.0.0.1 origins are allowed automatically.
 
@@ -57,11 +57,36 @@ Bambu Studio stores machine, process, and filament presets under an application-
    npm start
    ```
 
+### Desktop app (Electron)
+
+The same UI and `server.js` API can run inside a desktop window so you do not need two terminals. The web commands above are unchanged: Electron is only an extra packaging layer.
+
+- **`npm run electron:dev`** — starts Next.js (`next dev` on port 3000) and opens Electron. The app starts `server.js` on port **3847** itself. Do not run `npm run api` at the same time unless you intend to reuse that process (the app will attach if 3847 already serves `/api/health`).
+- **`npm run electron:preview`** — static-export the UI and open Electron without building a `.dmg`.
+- **`npm run dist`** (or `npm run dist:mac`) — static-export the UI and build an unsigned macOS `.dmg` under `dist/`.
+- **`npm run dist:win`** — same export, then a Windows NSIS installer (x64) under `dist/`. Prefer running this **on Windows**. From macOS, NSIS often needs [Wine](https://www.electron.build/multi-platform-build); otherwise build on a Windows machine or CI runner.
+
+**GitHub Releases:** pushing a version tag (`v0.1.0`, `v1.2.3`, …) runs [`.github/workflows/desktop-release.yml`](.github/workflows/desktop-release.yml). It builds the unsigned arm64 `.dmg` on `macos-latest` and the NSIS installer on `windows-latest`, then attaches those files to a GitHub Release for that tag. Ordinary pushes (for example to `main`) do not run this workflow; **Vercel still publishes the web app** independently.
+
+Bump `version` in `package.json` so it matches the tag (installer filenames use that version), commit, then:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The builds are unsigned: on macOS, first launch may require Open from the context menu; on Windows, SmartScreen may warn.
+
+Closing the window quits the app and stops the API process it started. If it reused an API you started with `npm run api`, that process is left running.
+
+macOS notarization and Windows code signing are not part of this setup yet.
+
 ### Other scripts
 
 - **`npm run lint`** — ESLint
 - **`npm run format`** — Prettier write
 - **`npm run format:check`** — Prettier check (e.g. for CI)
+- **`npm run electron:dev`** / **`electron:preview`** / **`dist`** / **`dist:win`** — desktop wrapper (see above)
 
 ## Limitations and security
 
@@ -85,7 +110,7 @@ Treat this repository as a **personal, localhost-only utility**. If you need rem
 
 ### Architecture
 
-The app is split into **two processes**:
+The app is split into **two processes** in the web workflow (an optional Electron process wraps both for the desktop app):
 
 1. **Next.js client** (`npm run dev` / `build` + `start`) — React 19 with the App Router (`app/`). The home page (`app/page.tsx`) renders the `BambuProfileWorkbench`, which loads data from the local API URL (`NEXT_PUBLIC_BAMBU_API_URL`, default `http://127.0.0.1:3847`).
 
@@ -109,6 +134,7 @@ The app is split into **two processes**:
 | Styling               | `tailwindcss`, `@tailwindcss/postcss`                                          | Tailwind CSS v4 with PostCSS                                            |
 | Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom`                  | Type-checking                                                           |
 | Quality               | `eslint`, `eslint-config-next`, `eslint-config-prettier`, `prettier`, `vitest` | Tests, lint and formatting                                              |
+| Desktop               | `electron`, `electron-builder`, `concurrently`, `wait-on`                      | Optional wrapper and macOS `.dmg` (`npm run electron:dev` / `dist`)     |
 
 Versions live in `package.json`; bump `next` and `eslint-config-next` together if you change the Next.js version.
 
@@ -166,6 +192,8 @@ BAMBUSTUDIO_PRINTCONFIG="/path/to/BambuStudio/src/libslic3r/PrintConfig.cpp" npm
 - `localization/` — Translations and `LocaleProvider`
 - `types/` — Shared types where needed
 - `server.js` — Local HTTP API for reading profiles and editing user profile files
+- `electron/` — Desktop shell (`main.js`) that starts `server.js` and loads the UI
+- `electron-builder.yml` — macOS `.dmg` packaging
 
 ## License
 
