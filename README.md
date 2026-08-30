@@ -63,10 +63,10 @@ The same UI and `server.js` API can run inside a desktop window so you do not ne
 
 - **`npm run electron:dev`** — starts Next.js (`next dev` on port 3000) and opens Electron. The app starts `server.js` on port **3847** itself. Do not run `npm run api` at the same time unless you intend to reuse that process (the app will attach if 3847 already serves `/api/health`).
 - **`npm run electron:preview`** — static-export the UI and open Electron without building a `.dmg`.
-- **`npm run dist`** (or `npm run dist:mac`) — static-export the UI and build an unsigned macOS `.dmg` under `dist/`.
+- **`npm run dist`** (or `npm run dist:mac`) — static-export the UI and build an ad-hoc signed macOS `.dmg` under `dist/`.
 - **`npm run dist:win`** — same export, then a Windows NSIS installer (x64) under `dist/`. Prefer running this **on Windows**. From macOS, NSIS often needs [Wine](https://www.electron.build/multi-platform-build); otherwise build on a Windows machine or CI runner.
 
-**GitHub Releases:** pushing a version tag (`v0.1.0`, `v1.2.3`, …) runs [`.github/workflows/desktop-release.yml`](.github/workflows/desktop-release.yml). It builds the unsigned arm64 `.dmg` on `macos-latest` and the NSIS installer on `windows-latest`, then attaches those files to a GitHub Release for that tag. Ordinary pushes (for example to `main`) do not run this workflow; **Vercel still publishes the web app** independently.
+**GitHub Releases:** pushing a version tag (`v0.1.0`, `v1.2.3`, …) runs [`.github/workflows/desktop-release.yml`](.github/workflows/desktop-release.yml). It builds the arm64 `.dmg` on `macos-latest` and the NSIS installer on `windows-latest`, then attaches those files to a GitHub Release for that tag. Ordinary pushes (for example to `main`) do not run this workflow; **Vercel still publishes the web app** independently.
 
 Bump `version` in `package.json` so it matches the tag (installer filenames use that version), commit, then:
 
@@ -75,7 +75,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The builds are unsigned: on macOS, first launch may require Open from the context menu; on Windows, SmartScreen may warn.
+Neither build carries a paid developer certificate. The macOS app is ad-hoc signed (`identity: "-"` in [electron-builder.yml](electron-builder.yml)) so Gatekeeper does not call it damaged, but it is not notarized: the first launch is blocked until you allow it under System Settings → Privacy & Security → Open Anyway. On Windows, SmartScreen may warn.
 
 Closing the window quits the app and stops the API process it started. If it reused an API you started with `npm run api`, that process is left running.
 
