@@ -75,11 +75,29 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Neither build carries a paid developer certificate. The macOS app is ad-hoc signed (`identity: "-"` in [electron-builder.yml](electron-builder.yml)) so Gatekeeper does not call it damaged, but it is not notarized: the first launch is blocked until you allow it under System Settings → Privacy & Security → Open Anyway. On Windows, SmartScreen may warn.
-
 Closing the window quits the app and stops the API process it started. If it reused an API you started with `npm run api`, that process is left running.
 
-macOS notarization and Windows code signing are not part of this setup yet.
+#### First launch of a downloaded build
+
+Neither build carries a paid developer certificate, so both operating systems may block the first launch. Later launches are usually normal after you allow the app once.
+
+**Windows.** The NSIS installer (`Bambu Browser Setup … .exe`) is unsigned. Microsoft Defender SmartScreen often shows **Windows protected your PC** / **unrecognized app** with no **Run** on the first screen. Click **More info**, then **Run anyway**. User Account Control may still ask whether to allow the installer to make changes. SmartScreen is not guaranteed on every PC (it depends on Windows version, SmartScreen settings, and group policy). An unsigned Windows installer is an “unknown publisher” warning, not a “file is corrupt” error.
+
+**macOS.** The app is ad-hoc signed (`identity: "-"` in [electron-builder.yml](electron-builder.yml)) but **not notarized**, so Gatekeeper shows _“Apple could not verify … is free of malware”_ with only **Done** and **Move to Bin**. This is expected. To open it:
+
+1. Click **Done** (not _Move to Bin_).
+2. Open **System Settings → Privacy & Security** and scroll to the Security section.
+3. Next to the note that Bambu Browser was blocked, click **Open Anyway** and confirm with Touch ID or your password.
+
+The equivalent from a terminal is to drop the download flag:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Bambu Browser.app"
+```
+
+A message saying the app is **“damaged and can’t be opened”** means something different: that build has an invalid signature. Ad-hoc signing was added after `v0.1.0`, so use a `.dmg` from a later tag.
+
+macOS notarization (which would remove the Gatekeeper prompt entirely) and Windows Authenticode signing (which would remove or reduce SmartScreen) are not part of this setup yet; both require a paid certificate.
 
 ### Other scripts
 
