@@ -22,7 +22,7 @@
     "dist": "npm run build:electron && electron-builder --mac --publish never",
     "dist:mac": "npm run dist",
     "dist:win": "npm run build:electron && electron-builder --win --publish never",
-    "prepare": "vp config"
+    "prepare": "node scripts/vp-config.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

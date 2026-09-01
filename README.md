@@ -133,6 +133,8 @@ macOS notarization (which would remove the Gatekeeper prompt entirely) and Windo
 
 `package.json` scripts still work with `npm run …` if you already have Node installed.
 
+Git hooks (installed locally by `vp config` after `vp install`): **pre-commit** runs `vp staged` (`vp check --fix` on staged files); **pre-push** runs `vp check` and `vp run test`. Skip once with `git commit --no-verify` / `git push --no-verify`, or disable Vite+ hooks in a clone with `VP_GIT_HOOKS=0`. CI skips hook install because `prepare` no-ops when `CI` is set.
+
 ## Limitations and security
 
 **Intended use is on your own machine, bound to localhost (or loopback), not as a service on the open internet.**
