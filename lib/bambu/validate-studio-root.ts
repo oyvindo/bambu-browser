@@ -5,8 +5,8 @@ export async function isBambuStudioRootDirectory(
   handle: FileSystemDirectoryHandle,
 ): Promise<boolean> {
   try {
-    await handle.getDirectoryHandle("user");
-    await handle.getDirectoryHandle("system");
+    await handle.getDirectoryHandle('user');
+    await handle.getDirectoryHandle('system');
     return true;
   } catch {
     return false;

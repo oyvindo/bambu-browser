@@ -1,7 +1,7 @@
-import { mergedProfileJsonString } from "@/lib/bambu/chain-display";
-import { formatProfileJson } from "@/lib/bambu/profile-leaf-editor";
-import type { InheritanceChainLevel } from "@/lib/bambu/resolver";
-import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
+import { fileLabel } from '@/components/profile-manager/profileTreeGrid/profileTable/fileLabel';
+import { mergedProfileJsonString } from '@/lib/bambu/chain-display';
+import { formatProfileJson } from '@/lib/bambu/profile-leaf-editor';
+import type { InheritanceChainLevel } from '@/lib/bambu/resolver';
 
 export function isCustomLeafColumn(
   chain: readonly InheritanceChainLevel[],
@@ -11,9 +11,8 @@ export function isCustomLeafColumn(
   return Boolean(
     level &&
     columnIndex === chain.length - 1 &&
-    (level.relativePath.startsWith("user/") ||
-      level.relativePath.startsWith("users/")) &&
-    String(level.data.from).toLowerCase() !== "system",
+    (level.relativePath.startsWith('user/') || level.relativePath.startsWith('users/')) &&
+    String(level.data.from).toLowerCase() !== 'system',
   );
 }
 
@@ -22,7 +21,7 @@ export function profileColumnJson(
   columnIndex: number,
 ): string {
   const level = chain[columnIndex];
-  if (!level) return "";
+  if (!level) return '';
   return isCustomLeafColumn(chain, columnIndex)
     ? formatProfileJson(level.data)
     : mergedProfileJsonString(chain, columnIndex);
@@ -44,9 +43,9 @@ export const downloadProfileColumnJson = (
   if (!level) return;
   const json = profileColumnJson(chain, columnIndex);
   const filename = fileLabel(level.relativePath);
-  const blob = new Blob([json], { type: "application/json" });
+  const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
+  const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
   anchor.click();

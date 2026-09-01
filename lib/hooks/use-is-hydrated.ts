@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;

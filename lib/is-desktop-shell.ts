@@ -1,6 +1,3 @@
 export function isDesktopShell(): boolean {
-  return (
-    typeof navigator !== "undefined" &&
-    /\bElectron\b/i.test(navigator.userAgent ?? "")
-  );
+  return typeof navigator !== 'undefined' && /\bElectron\b/i.test(navigator.userAgent ?? '');
 }

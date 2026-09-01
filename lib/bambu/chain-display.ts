@@ -1,5 +1,5 @@
-import { formatBambuMappedValue, type BambuValueUnit } from "./mapping";
-import type { InheritanceChainLevel } from "./resolver";
+import { formatBambuMappedValue, type BambuValueUnit } from './mapping';
+import type { InheritanceChainLevel } from './resolver';
 
 /** One column in the TreeGrid: merged state up this inheritance step (root → … → profile). */
 export type InheritanceColumnMeta = {
@@ -19,18 +19,14 @@ export type ColumnRoleLabels = {
 
 function defaultColumnRoleLabels(): ColumnRoleLabels {
   return {
-    profile: "Profile",
-    root: "Root",
-    parent: "Parent",
+    profile: 'Profile',
+    root: 'Root',
+    parent: 'Parent',
     level: (levelIndex: number) => `Level ${levelIndex}`,
   };
 }
 
-function columnRoleLabel(
-  index: number,
-  n: number,
-  labels: ColumnRoleLabels,
-): string {
+function columnRoleLabel(index: number, n: number, labels: ColumnRoleLabels): string {
   if (n === 1) return labels.profile;
   if (index === 0) return labels.root;
   if (index === n - 1) return labels.profile;
@@ -67,9 +63,7 @@ export type ThreeColumnSlice = {
  * @deprecated Prefer {@link getInheritanceColumns} for full-chain columns.
  * Collapses chain to Root / System / User only.
  */
-export function getThreeColumnSlice(
-  chain: readonly InheritanceChainLevel[],
-): ThreeColumnSlice {
+export function getThreeColumnSlice(chain: readonly InheritanceChainLevel[]): ThreeColumnSlice {
   const n = chain.length;
   if (n === 0) {
     return {
@@ -132,34 +126,44 @@ export function mergedValueAt(
 /**
  * Display for grid cells: strings like "25%" as-is; arrays use the active extruder slot (default 0), then first element.
  */
-export function formatProfileCellValue(
-  value: unknown,
-  activeExtruderIndex: number,
-): string {
-  if (value === undefined || value === null) return "—";
+function stringifyUnknown(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return String(value);
+  }
+  if (value == null) return '';
+  try {
+    const json = JSON.stringify(value);
+    return json === undefined ? '' : json;
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
+}
+
+export function formatProfileCellValue(value: unknown, activeExtruderIndex: number): string {
+  if (value === undefined || value === null) return '—';
   if (Array.isArray(value)) {
-    if (value.length === 0) return "—";
+    if (value.length === 0) return '—';
     const i = Math.min(Math.max(0, activeExtruderIndex), value.length - 1);
     const picked = value[i] ?? value[0];
-    if (picked === undefined || picked === null) return "—";
-    return String(picked);
+    if (picked === undefined || picked === null) return '—';
+    return stringifyUnknown(picked);
   }
-  if (typeof value === "object") {
+  if (typeof value === 'object') {
     try {
       return JSON.stringify(value);
     } catch {
-      return String(value);
+      return Object.prototype.toString.call(value);
     }
   }
-  return String(value);
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return stringifyUnknown(value);
 }
 
 /** True if displayed values differ (used for override highlighting). */
-export function displayValuesDiffer(
-  a: unknown,
-  b: unknown,
-  activeExtruderIndex: number,
-): boolean {
+export function displayValuesDiffer(a: unknown, b: unknown, activeExtruderIndex: number): boolean {
   return (
     formatProfileCellValue(a, activeExtruderIndex) !==
     formatProfileCellValue(b, activeExtruderIndex)
@@ -234,5 +238,4 @@ export const buildMergedProfileData = (
 export const mergedProfileJsonString = (
   chain: readonly InheritanceChainLevel[],
   uptoInclusive?: number,
-): string =>
-  JSON.stringify(buildMergedProfileData(chain, uptoInclusive), null, 2);
+): string => JSON.stringify(buildMergedProfileData(chain, uptoInclusive), null, 2);

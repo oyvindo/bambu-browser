@@ -30,23 +30,23 @@ export function isFdmFilamentInternalPreset(fileName: string): boolean {
 
 /** Support / soluble interface filaments — excluded from compare picker. */
 export function isSupportPresetFileName(fileName: string): boolean {
-  return fileName.toLowerCase().includes("support");
+  return fileName.toLowerCase().includes('support');
 }
 
 /** Any `'_'` in the filename — excluded from compare picker. */
 export function isUnderscorePresetFileName(fileName: string): boolean {
-  return fileName.includes("_");
+  return fileName.includes('_');
 }
 
 function basenameNoJson(fileName: string): string {
-  return fileName.replace(/\.json$/i, "");
+  return fileName.replace(/\.json$/i, '');
 }
 
 /** First whitespace-delimited token (brand / line prefix in Bambu filenames). */
 export function firstFilenameToken(fileName: string): string {
   const base = basenameNoJson(fileName).trim();
-  if (!base) return "";
-  return (base.split(/\s+/)[0] ?? "").trim();
+  if (!base) return '';
+  return (base.split(/\s+/)[0] ?? '').trim();
 }
 
 /**
@@ -65,13 +65,11 @@ export function extractPresetMaterialLine(fileName: string): string | null {
   const tokens = beforeAt.split(/\s+/).filter(Boolean);
   if (tokens.length < 2) return null;
 
-  const material = tokens.slice(1).join(" ").trim();
+  const material = tokens.slice(1).join(' ').trim();
   return material.length > 0 ? material : null;
 }
 
-export function discoverMaterialsFromFileNames(
-  fileNames: readonly string[],
-): string[] {
+export function discoverMaterialsFromFileNames(fileNames: readonly string[]): string[] {
   const byLower = new Map<string, string>();
   for (const fn of fileNames) {
     const line = extractPresetMaterialLine(fn);
@@ -80,7 +78,7 @@ export function discoverMaterialsFromFileNames(
     if (!byLower.has(key)) byLower.set(key, line);
   }
   return [...byLower.values()].sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: "base" }),
+    a.localeCompare(b, undefined, { sensitivity: 'base' }),
   );
 }
 
@@ -89,9 +87,7 @@ export function discoverMaterialsForLocation(
   entries: readonly SystemFilamentEntry[],
   folder: string,
 ): string[] {
-  const names = entries
-    .filter((e) => e.folder === folder)
-    .map((e) => e.fileName);
+  const names = entries.filter((e) => e.folder === folder).map((e) => e.fileName);
   return discoverMaterialsFromFileNames(names);
 }
 
@@ -109,9 +105,7 @@ export function entryMatchesMaterialSelection(
   return false;
 }
 
-export function buildBrandOptions(
-  entries: readonly SystemFilamentEntry[],
-): BrandOption[] {
+export function buildBrandOptions(entries: readonly SystemFilamentEntry[]): BrandOption[] {
   const map = new Map<string, BrandOption>();
   for (const e of entries) {
     const base = basenameNoJson(e.fileName);
@@ -126,7 +120,7 @@ export function buildBrandOptions(
     }
   }
   return [...map.values()].sort((a, b) =>
-    a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
+    a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }),
   );
 }
 
@@ -152,7 +146,7 @@ export function entryMatchesBrandSelection(
  * Which locations are included in the picker. Use `SYSTEM_FILAMENT_ROOT_KEY` ("") for
  * root-level JSON; subfolder name for nested presets.
  */
-export const SYSTEM_FILAMENT_ROOT_KEY = "";
+export const SYSTEM_FILAMENT_ROOT_KEY = '';
 
 /** Root presets: require root key + brand checkboxes. Subfolder presets: folder name in set. */
 export function entryMatchesRootBrandOrFolderSelection(
@@ -160,7 +154,7 @@ export function entryMatchesRootBrandOrFolderSelection(
   selectedRootBrandIds: ReadonlySet<string>,
   includedLocationKeys: ReadonlySet<string>,
 ): boolean {
-  if (entry.folder === "") {
+  if (entry.folder === '') {
     if (!includedLocationKeys.has(SYSTEM_FILAMENT_ROOT_KEY)) return false;
     return entryMatchesBrandSelection(entry, selectedRootBrandIds);
   }
@@ -168,14 +162,12 @@ export function entryMatchesRootBrandOrFolderSelection(
 }
 
 /** Exact material-line labels checked by default (`defaultMaterialSelectionForDiscoveredList`). */
-export const DEFAULT_MATERIAL_SELECTION = new Set<string>(["PLA", "PETG"]);
+export const DEFAULT_MATERIAL_SELECTION = new Set<string>(['PLA', 'PETG']);
 
 export function defaultMaterialSelectionForDiscoveredList(
   discoveredMaterialIds: readonly string[],
 ): Set<string> {
-  const allowed = new Set(
-    [...DEFAULT_MATERIAL_SELECTION].map((s) => s.toLowerCase()),
-  );
+  const allowed = new Set([...DEFAULT_MATERIAL_SELECTION].map((s) => s.toLowerCase()));
   const sel = new Set<string>();
   for (const d of discoveredMaterialIds) {
     if (allowed.has(d.trim().toLowerCase())) sel.add(d);
@@ -183,12 +175,10 @@ export function defaultMaterialSelectionForDiscoveredList(
   return sel;
 }
 
-export function defaultBrandIds(
-  brandOptions: readonly BrandOption[],
-): Set<string> {
+export function defaultBrandIds(brandOptions: readonly BrandOption[]): Set<string> {
   const out = new Set<string>();
   for (const b of brandOptions) {
-    if (b.brandKey === "esun" || b.brandKey === "generic") {
+    if (b.brandKey === 'esun' || b.brandKey === 'generic') {
       out.add(b.id);
     }
   }
@@ -217,13 +207,7 @@ export function filterSystemFilamentEntries(
     if (!entryMatchesLocationMaterialSelection(e, materialSelByFolder)) {
       return false;
     }
-    if (
-      !entryMatchesRootBrandOrFolderSelection(
-        e,
-        selectedRootBrandIds,
-        includedLocationKeys,
-      )
-    ) {
+    if (!entryMatchesRootBrandOrFolderSelection(e, selectedRootBrandIds, includedLocationKeys)) {
       return false;
     }
     if (!q) return true;
@@ -232,24 +216,18 @@ export function filterSystemFilamentEntries(
   });
 }
 
-export function uniqueFilamentSubfolderNames(
-  entries: readonly SystemFilamentEntry[],
-): string[] {
+export function uniqueFilamentSubfolderNames(entries: readonly SystemFilamentEntry[]): string[] {
   const s = new Set<string>();
   for (const e of entries) {
     if (e.folder) s.add(e.folder);
   }
-  return [...s].sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: "base" }),
-  );
+  return [...s].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 }
 
 /** Root (`""`) first, then subfolder names alphabetically — only keys that have entries. */
-export function orderedMaterialLocationKeys(
-  entries: readonly SystemFilamentEntry[],
-): string[] {
+export function orderedMaterialLocationKeys(entries: readonly SystemFilamentEntry[]): string[] {
   const out: string[] = [];
-  if (entries.some((e) => e.folder === "")) {
+  if (entries.some((e) => e.folder === '')) {
     out.push(SYSTEM_FILAMENT_ROOT_KEY);
   }
   out.push(...uniqueFilamentSubfolderNames(entries));
@@ -261,9 +239,7 @@ export type FolderGroup = {
   entries: SystemFilamentEntry[];
 };
 
-export function groupEntriesByFolder(
-  entries: readonly SystemFilamentEntry[],
-): FolderGroup[] {
+export function groupEntriesByFolder(entries: readonly SystemFilamentEntry[]): FolderGroup[] {
   const m = new Map<string, SystemFilamentEntry[]>();
   for (const e of entries) {
     const key = e.folder;
@@ -272,14 +248,14 @@ export function groupEntriesByFolder(
     m.set(key, arr);
   }
   const folders = [...m.keys()].sort((a, b) => {
-    if (a === "") return -1;
-    if (b === "") return 1;
-    return a.localeCompare(b, undefined, { sensitivity: "base" });
+    if (a === '') return -1;
+    if (b === '') return 1;
+    return a.localeCompare(b, undefined, { sensitivity: 'base' });
   });
   return folders.map((folder) => ({
     folder,
     entries: (m.get(folder) ?? []).sort((x, y) =>
-      x.fileName.localeCompare(y.fileName, undefined, { sensitivity: "base" }),
+      x.fileName.localeCompare(y.fileName, undefined, { sensitivity: 'base' }),
     ),
   }));
 }

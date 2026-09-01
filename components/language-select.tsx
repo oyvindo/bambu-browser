@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { useLocale, useTranslations } from "@/localization/context";
-import type { AppLocale } from "@/localization/types";
-import { APP_LOCALES, DEFAULT_LOCALE } from "@/localization/types";
-import { NativeSelectField } from "@/components/native-select-field";
-import { useIsHydrated } from "@/lib/hooks/use-is-hydrated";
-import { messagesEn } from "@/localization/en";
-import { messagesNb } from "@/localization/nb";
+import { NativeSelectField } from '@/components/native-select-field';
+import { useIsHydrated } from '@/lib/hooks/use-is-hydrated';
+import { useLocale, useTranslations } from '@/localization/context';
+import { messagesEn } from '@/localization/en';
+import { messagesNb } from '@/localization/nb';
+import type { AppLocale } from '@/localization/types';
+import { APP_LOCALES, DEFAULT_LOCALE } from '@/localization/types';
 
 /** Native names so each option stays recognizable in any UI language. */
 const OPTION_LABEL: Record<AppLocale, string> = {
@@ -22,15 +22,15 @@ export function LanguageSelect() {
   const mounted = useIsHydrated();
 
   return (
-    <label className="text-muted-foreground flex flex-col items-start gap-1 text-xs whitespace-nowrap">
-      {t("language.label")}
-      <NativeSelectField className="min-w-32">
+    <label className='text-muted-foreground flex flex-col items-start gap-1 text-xs whitespace-nowrap'>
+      {t('language.label')}
+      <NativeSelectField className='min-w-32'>
         <select
-          className="border-input bg-background h-8 w-full min-w-32 appearance-none rounded-md border px-2 pr-8 text-sm"
+          className='border-input bg-background h-8 w-full min-w-32 appearance-none rounded-md border px-2 pr-8 text-sm'
           value={mounted ? locale : DEFAULT_LOCALE}
           onChange={(e) => setLocale(e.target.value as AppLocale)}
           disabled={!mounted}
-          aria-label={t("language.aria")}
+          aria-label={t('language.aria')}
         >
           {APP_LOCALES.map((code) => (
             <option key={code} value={code}>

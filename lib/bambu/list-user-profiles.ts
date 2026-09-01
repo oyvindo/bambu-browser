@@ -1,9 +1,9 @@
-import { directoryEntries } from "./fs-dir-entries";
-import { listUserAccountFolderNames } from "./profile-fs-access";
-import type { ProfileKind } from "./resolver";
+import { directoryEntries } from './fs-dir-entries';
+import { listUserAccountFolderNames } from './profile-fs-access';
+import type { ProfileKind } from './resolver';
 
 /** User filament presets in `filament/` vs full copies in `filament/base/`. Null for process profiles. */
-export type FilamentCategory = "standard" | "custom";
+export type FilamentCategory = 'standard' | 'custom';
 
 export type UserProfileEntry = {
   userId: string;
@@ -30,35 +30,33 @@ export async function listProfileEntriesForUser(
     return out;
   }
 
-  for (const sub of ["process", "filament"] as const) {
+  for (const sub of ['process', 'filament'] as const) {
     try {
       const subDir = await userDir.getDirectoryHandle(sub);
-      const kind: ProfileKind = sub === "filament" ? "filament" : "process";
+      const kind: ProfileKind = sub === 'filament' ? 'filament' : 'process';
       for await (const [fileName, fh] of directoryEntries(subDir)) {
-        if (fh.kind !== "file") continue;
-        if (!fileName.toLowerCase().endsWith(".json")) continue;
+        if (fh.kind !== 'file') continue;
+        if (!fileName.toLowerCase().endsWith('.json')) continue;
         out.push({
           userId: username,
           kind,
           relativePath: `users/${username}/${sub}/${fileName}`,
           fileName,
-          ...(kind === "filament"
-            ? { filamentCategory: "standard" as const }
-            : {}),
+          ...(kind === 'filament' ? { filamentCategory: 'standard' as const } : {}),
         });
       }
-      if (sub === "filament") {
+      if (sub === 'filament') {
         try {
-          const baseDir = await subDir.getDirectoryHandle("base");
+          const baseDir = await subDir.getDirectoryHandle('base');
           for await (const [fileName, fh] of directoryEntries(baseDir)) {
-            if (fh.kind !== "file") continue;
-            if (!fileName.toLowerCase().endsWith(".json")) continue;
+            if (fh.kind !== 'file') continue;
+            if (!fileName.toLowerCase().endsWith('.json')) continue;
             out.push({
               userId: username,
-              kind: "filament",
+              kind: 'filament',
               relativePath: `users/${username}/filament/base/${fileName}`,
               fileName,
-              filamentCategory: "custom",
+              filamentCategory: 'custom',
             });
           }
         } catch {
@@ -80,14 +78,13 @@ export async function listUserProfileEntriesFromStudioRoot(
   root: FileSystemDirectoryHandle,
 ): Promise<UserProfileEntry[]> {
   try {
-    const users = await root.getDirectoryHandle("users");
+    const users = await root.getDirectoryHandle('users');
     const names = await listUserAccountFolderNames(users);
     const out: UserProfileEntry[] = [];
     for (const name of names) {
       out.push(...(await listProfileEntriesForUser(users, name)));
     }
-    if (out.length > 0)
-      return out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+    if (out.length > 0) return out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
   } catch {
     // no users/
   }
@@ -101,44 +98,42 @@ async function listLegacyUserFolderProfiles(
   const out: UserProfileEntry[] = [];
   let userRoot: FileSystemDirectoryHandle;
   try {
-    userRoot = await root.getDirectoryHandle("user");
+    userRoot = await root.getDirectoryHandle('user');
   } catch {
     return out;
   }
 
   for await (const [userId, handle] of directoryEntries(userRoot)) {
-    if (handle.kind !== "directory") continue;
+    if (handle.kind !== 'directory') continue;
     const userDir = handle as FileSystemDirectoryHandle;
 
-    for (const sub of ["process", "filament"] as const) {
+    for (const sub of ['process', 'filament'] as const) {
       try {
         const subDir = await userDir.getDirectoryHandle(sub);
-        const kind: ProfileKind = sub === "filament" ? "filament" : "process";
+        const kind: ProfileKind = sub === 'filament' ? 'filament' : 'process';
         for await (const [fileName, fh] of directoryEntries(subDir)) {
-          if (fh.kind !== "file") continue;
-          if (!fileName.toLowerCase().endsWith(".json")) continue;
+          if (fh.kind !== 'file') continue;
+          if (!fileName.toLowerCase().endsWith('.json')) continue;
           out.push({
             userId,
             kind,
             relativePath: `user/${userId}/${sub}/${fileName}`,
             fileName,
-            ...(kind === "filament"
-              ? { filamentCategory: "standard" as const }
-              : {}),
+            ...(kind === 'filament' ? { filamentCategory: 'standard' as const } : {}),
           });
         }
-        if (sub === "filament") {
+        if (sub === 'filament') {
           try {
-            const baseDir = await subDir.getDirectoryHandle("base");
+            const baseDir = await subDir.getDirectoryHandle('base');
             for await (const [fileName, fh] of directoryEntries(baseDir)) {
-              if (fh.kind !== "file") continue;
-              if (!fileName.toLowerCase().endsWith(".json")) continue;
+              if (fh.kind !== 'file') continue;
+              if (!fileName.toLowerCase().endsWith('.json')) continue;
               out.push({
                 userId,
-                kind: "filament",
+                kind: 'filament',
                 relativePath: `user/${userId}/filament/base/${fileName}`,
                 fileName,
-                filamentCategory: "custom",
+                filamentCategory: 'custom',
               });
             }
           } catch {

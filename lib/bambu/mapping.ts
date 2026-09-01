@@ -3,31 +3,28 @@
  * Row title: label + unit in parentheses when applicable.
  */
 
-import {
-  localizedBoolean,
-  localizedEnumValue,
-} from "@/localization/profile-fields";
-import type { AppLocale } from "@/localization/types";
+import { localizedBoolean, localizedEnumValue } from '@/localization/profile-fields';
+import type { AppLocale } from '@/localization/types';
 
 export type BambuValueUnit =
-  | "mm"
-  | "mm/s"
-  | "mm/s²"
-  | "g/s²"
-  | "%"
-  | "°"
-  | "°C"
-  | "count"
-  | "string"
-  | "enum"
-  | "boolean"
-  | "g/cm³"
-  | "money/kg"
-  | "mm³"
-  | "mm³/s"
-  | "s"
-  | "layers"
-  | "mm/%";
+  | 'mm'
+  | 'mm/s'
+  | 'mm/s²'
+  | 'g/s²'
+  | '%'
+  | '°'
+  | '°C'
+  | 'count'
+  | 'string'
+  | 'enum'
+  | 'boolean'
+  | 'g/cm³'
+  | 'money/kg'
+  | 'mm³'
+  | 'mm³/s'
+  | 's'
+  | 'layers'
+  | 'mm/%';
 
 export type BambuPropertyRowDef = {
   key: string;
@@ -56,87 +53,87 @@ export type BambuMappedGroup = {
  */
 export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
   {
-    id: "quality",
-    label: "Quality",
+    id: 'quality',
+    label: 'Quality',
     subgroups: [
       {
-        id: "quality-layer-height",
-        label: "Layer height",
+        id: 'quality-layer-height',
+        label: 'Layer height',
         properties: [
-          { key: "layer_height", label: "Layer height", unit: "mm" },
+          { key: 'layer_height', label: 'Layer height', unit: 'mm' },
           {
-            key: "initial_layer_print_height",
-            label: "First layer height",
-            unit: "mm",
+            key: 'initial_layer_print_height',
+            label: 'First layer height',
+            unit: 'mm',
           },
         ],
       },
       {
-        id: "quality-line-width",
-        label: "Line width",
+        id: 'quality-line-width',
+        label: 'Line width',
         properties: [
-          { key: "line_width", label: "Default line width", unit: "mm" },
+          { key: 'line_width', label: 'Default line width', unit: 'mm' },
           {
-            key: "initial_layer_line_width",
-            label: "First layer",
-            unit: "mm",
+            key: 'initial_layer_line_width',
+            label: 'First layer',
+            unit: 'mm',
             advanced: true,
           },
-          { key: "outer_wall_line_width", label: "Outer wall", unit: "mm" },
-          { key: "inner_wall_line_width", label: "Inner wall", unit: "mm" },
+          { key: 'outer_wall_line_width', label: 'Outer wall', unit: 'mm' },
+          { key: 'inner_wall_line_width', label: 'Inner wall', unit: 'mm' },
           {
-            key: "sparse_infill_line_width",
-            label: "Sparse infill",
-            unit: "mm",
+            key: 'sparse_infill_line_width',
+            label: 'Sparse infill',
+            unit: 'mm',
           },
           {
-            key: "internal_solid_infill_line_width",
-            label: "Internal solid infill",
-            unit: "mm",
+            key: 'internal_solid_infill_line_width',
+            label: 'Internal solid infill',
+            unit: 'mm',
             advanced: true,
           },
-          { key: "top_surface_line_width", label: "Top surface", unit: "mm" },
+          { key: 'top_surface_line_width', label: 'Top surface', unit: 'mm' },
         ],
       },
       {
-        id: "quality-wall-seam",
-        label: "Wall & seam",
+        id: 'quality-wall-seam',
+        label: 'Wall & seam',
         properties: [
           {
-            key: "wall_generator",
-            label: "Wall generator",
-            unit: "enum",
+            key: 'wall_generator',
+            label: 'Wall generator',
+            unit: 'enum',
             advanced: true,
           },
-          { key: "seam_position", label: "Seam position", unit: "enum" },
+          { key: 'seam_position', label: 'Seam position', unit: 'enum' },
           {
-            key: "detect_thin_wall",
-            label: "Detect thin wall",
-            unit: "boolean",
+            key: 'detect_thin_wall',
+            label: 'Detect thin wall',
+            unit: 'boolean',
             advanced: true,
           },
         ],
       },
       {
-        id: "quality-precision",
-        label: "Precision",
+        id: 'quality-precision',
+        label: 'Precision',
         properties: [
           {
-            key: "elefant_foot_compensation",
-            label: "Elephant foot compensation",
-            unit: "mm",
+            key: 'elefant_foot_compensation',
+            label: 'Elephant foot compensation',
+            unit: 'mm',
             advanced: true,
           },
           {
-            key: "enable_arc_fitting",
-            label: "Enable arc fitting",
-            unit: "boolean",
+            key: 'enable_arc_fitting',
+            label: 'Enable arc fitting',
+            unit: 'boolean',
             advanced: true,
           },
           {
-            key: "bridge_flow",
-            label: "Bridge flow",
-            unit: "count",
+            key: 'bridge_flow',
+            label: 'Bridge flow',
+            unit: 'count',
             advanced: true,
           },
         ],
@@ -144,52 +141,52 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
     ],
   },
   {
-    id: "strength",
-    label: "Strength",
+    id: 'strength',
+    label: 'Strength',
     subgroups: [
       {
-        id: "strength-walls",
-        label: "Walls",
+        id: 'strength-walls',
+        label: 'Walls',
         properties: [
-          { key: "wall_loops", label: "Wall loops", unit: "count" },
-          { key: "top_shell_layers", label: "Top shell layers", unit: "count" },
+          { key: 'wall_loops', label: 'Wall loops', unit: 'count' },
+          { key: 'top_shell_layers', label: 'Top shell layers', unit: 'count' },
           {
-            key: "bottom_shell_layers",
-            label: "Bottom shell layers",
-            unit: "count",
+            key: 'bottom_shell_layers',
+            label: 'Bottom shell layers',
+            unit: 'count',
           },
           {
-            key: "wall_infill_order",
-            label: "Wall in-fill order",
-            unit: "enum",
+            key: 'wall_infill_order',
+            label: 'Wall in-fill order',
+            unit: 'enum',
             advanced: true,
           },
         ],
       },
       {
-        id: "strength-infill",
-        label: "Infill",
+        id: 'strength-infill',
+        label: 'Infill',
         properties: [
           {
-            key: "sparse_infill_density",
-            label: "Sparse infill density",
-            unit: "%",
+            key: 'sparse_infill_density',
+            label: 'Sparse infill density',
+            unit: '%',
           },
           {
-            key: "sparse_infill_pattern",
-            label: "Sparse infill pattern",
-            unit: "enum",
+            key: 'sparse_infill_pattern',
+            label: 'Sparse infill pattern',
+            unit: 'enum',
           },
           {
-            key: "infill_direction",
-            label: "Infill direction",
-            unit: "°",
+            key: 'infill_direction',
+            label: 'Infill direction',
+            unit: '°',
             advanced: true,
           },
           {
-            key: "infill_wall_overlap",
-            label: "Infill/wall overlap",
-            unit: "%",
+            key: 'infill_wall_overlap',
+            label: 'Infill/wall overlap',
+            unit: '%',
             advanced: true,
           },
         ],
@@ -197,77 +194,77 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
     ],
   },
   {
-    id: "speed",
-    label: "Speed",
+    id: 'speed',
+    label: 'Speed',
     subgroups: [
       {
-        id: "speed-print",
-        label: "Print speed",
+        id: 'speed-print',
+        label: 'Print speed',
         properties: [
-          { key: "initial_layer_speed", label: "First layer", unit: "mm/s" },
-          { key: "outer_wall_speed", label: "Outer wall", unit: "mm/s" },
-          { key: "inner_wall_speed", label: "Inner wall", unit: "mm/s" },
-          { key: "sparse_infill_speed", label: "Sparse infill", unit: "mm/s" },
-          { key: "travel_speed", label: "Travel", unit: "mm/s" },
+          { key: 'initial_layer_speed', label: 'First layer', unit: 'mm/s' },
+          { key: 'outer_wall_speed', label: 'Outer wall', unit: 'mm/s' },
+          { key: 'inner_wall_speed', label: 'Inner wall', unit: 'mm/s' },
+          { key: 'sparse_infill_speed', label: 'Sparse infill', unit: 'mm/s' },
+          { key: 'travel_speed', label: 'Travel', unit: 'mm/s' },
         ],
       },
       {
-        id: "speed-acceleration",
-        label: "Acceleration",
+        id: 'speed-acceleration',
+        label: 'Acceleration',
         properties: [
           {
-            key: "default_acceleration",
-            label: "Normal printing",
-            unit: "mm/s²",
+            key: 'default_acceleration',
+            label: 'Normal printing',
+            unit: 'mm/s²',
           },
-          { key: "travel_acceleration", label: "Travel", unit: "mm/s²" },
+          { key: 'travel_acceleration', label: 'Travel', unit: 'mm/s²' },
         ],
       },
     ],
   },
   {
-    id: "support",
-    label: "Support",
+    id: 'support',
+    label: 'Support',
     subgroups: [
       {
-        id: "support-basic",
-        label: "Support",
+        id: 'support-basic',
+        label: 'Support',
         properties: [
-          { key: "enable_support", label: "Enable support", unit: "boolean" },
-          { key: "support_type", label: "Type", unit: "enum" },
-          { key: "support_style", label: "Style", unit: "enum" },
+          { key: 'enable_support', label: 'Enable support', unit: 'boolean' },
+          { key: 'support_type', label: 'Type', unit: 'enum' },
+          { key: 'support_style', label: 'Style', unit: 'enum' },
           {
-            key: "support_on_build_plate_only",
-            label: "On build plate only",
-            unit: "boolean",
+            key: 'support_on_build_plate_only',
+            label: 'On build plate only',
+            unit: 'boolean',
           },
         ],
       },
       {
-        id: "support-advanced",
-        label: "Advanced",
+        id: 'support-advanced',
+        label: 'Advanced',
         properties: [
           {
-            key: "support_threshold_angle",
-            label: "Threshold angle",
-            unit: "°",
+            key: 'support_threshold_angle',
+            label: 'Threshold angle',
+            unit: '°',
             advanced: true,
           },
           {
-            key: "support_top_z_distance",
-            label: "Top Z distance",
-            unit: "mm",
+            key: 'support_top_z_distance',
+            label: 'Top Z distance',
+            unit: 'mm',
           },
           {
-            key: "support_bottom_z_distance",
-            label: "Bottom Z distance",
-            unit: "mm",
+            key: 'support_bottom_z_distance',
+            label: 'Bottom Z distance',
+            unit: 'mm',
             advanced: true,
           },
           {
-            key: "support_interface_pattern",
-            label: "Interface pattern",
-            unit: "enum",
+            key: 'support_interface_pattern',
+            label: 'Interface pattern',
+            unit: 'enum',
             advanced: true,
           },
         ],
@@ -275,46 +272,46 @@ export const BAMBU_PROCESS_UI_TREE: readonly BambuMappedGroup[] = [
     ],
   },
   {
-    id: "others",
-    label: "Others",
+    id: 'others',
+    label: 'Others',
     subgroups: [
       {
-        id: "others-brim",
-        label: "Brim",
+        id: 'others-brim',
+        label: 'Brim',
         properties: [
-          { key: "brim_type", label: "Brim type", unit: "enum" },
-          { key: "brim_width", label: "Brim width", unit: "mm" },
+          { key: 'brim_type', label: 'Brim type', unit: 'enum' },
+          { key: 'brim_width', label: 'Brim width', unit: 'mm' },
           {
-            key: "brim_object_gap",
-            label: "Brim-object gap",
-            unit: "mm",
+            key: 'brim_object_gap',
+            label: 'Brim-object gap',
+            unit: 'mm',
             advanced: true,
           },
         ],
       },
       {
-        id: "others-skirt",
-        label: "Skirt",
+        id: 'others-skirt',
+        label: 'Skirt',
         properties: [
-          { key: "skirt_loops", label: "Skirt loops", unit: "count" },
-          { key: "skirt_distance", label: "Skirt distance", unit: "mm" },
-          { key: "skirt_height", label: "Skirt height", unit: "count" },
+          { key: 'skirt_loops', label: 'Skirt loops', unit: 'count' },
+          { key: 'skirt_distance', label: 'Skirt distance', unit: 'mm' },
+          { key: 'skirt_height', label: 'Skirt height', unit: 'count' },
         ],
       },
       {
-        id: "others-prime-tower",
-        label: "Prime tower",
+        id: 'others-prime-tower',
+        label: 'Prime tower',
         properties: [
           {
-            key: "enable_prime_tower",
-            label: "Enable prime tower",
-            unit: "boolean",
+            key: 'enable_prime_tower',
+            label: 'Enable prime tower',
+            unit: 'boolean',
             advanced: true,
           },
           {
-            key: "prime_tower_width",
-            label: "Width",
-            unit: "mm",
+            key: 'prime_tower_width',
+            label: 'Width',
+            unit: 'mm',
             advanced: true,
           },
         ],
@@ -329,29 +326,29 @@ export const BAMBU_PROCESS_UI_MAP = BAMBU_PROCESS_UI_TREE;
 /** Alias for docs / external references */
 export const BAMBU_MAPPING = BAMBU_PROCESS_UI_TREE;
 
-export { BAMBU_FILAMENT_UI_TREE } from "./mapping-filament";
+export { BAMBU_FILAMENT_UI_TREE } from './mapping-filament';
 
 const UNITS_IN_TITLE: ReadonlySet<string> = new Set([
-  "mm",
-  "mm/s",
-  "mm/s²",
-  "g/s²",
-  "%",
-  "°",
-  "°C",
-  "count",
-  "g/cm³",
-  "money/kg",
-  "mm³",
-  "mm³/s",
-  "s",
-  "layers",
-  "mm/%",
+  'mm',
+  'mm/s',
+  'mm/s²',
+  'g/s²',
+  '%',
+  '°',
+  '°C',
+  'count',
+  'g/cm³',
+  'money/kg',
+  'mm³',
+  'mm³/s',
+  's',
+  'layers',
+  'mm/%',
 ]);
 
 /** Row title: ui label plus unit in parentheses when it is a physical/count unit. */
 export function propertyRowTitle(p: BambuPropertyRowDef): string {
-  if (p.unit === "string" || p.unit === "enum" || p.unit === "boolean") {
+  if (p.unit === 'string' || p.unit === 'enum' || p.unit === 'boolean') {
     return p.label;
   }
   if (UNITS_IN_TITLE.has(p.unit)) {
@@ -360,11 +357,22 @@ export function propertyRowTitle(p: BambuPropertyRowDef): string {
   return p.label;
 }
 
+function stringifyUnknown(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return String(value);
+  }
+  if (value == null) return '';
+  try {
+    const json = JSON.stringify(value);
+    return json === undefined ? '' : json;
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
+}
+
 /** Pick scalar from profile: first array element when value is an array. */
-export function pickScalarValue(
-  value: unknown,
-  extruderIndex: number,
-): unknown {
+export function pickScalarValue(value: unknown, extruderIndex: number): unknown {
   if (!Array.isArray(value)) return value;
   if (value.length === 0) return undefined;
   const i = Math.min(Math.max(0, extruderIndex), value.length - 1);
@@ -378,67 +386,60 @@ export function formatBambuMappedValue(
   value: unknown,
   unit: BambuValueUnit,
   extruderIndex: number,
-  locale: AppLocale = "en",
+  locale: AppLocale = 'en',
 ): string {
   const v = pickScalarValue(value, extruderIndex);
-  if (v === undefined || v === null) return "—";
+  if (v === undefined || v === null) return '—';
 
-  if (unit === "boolean") {
-    if (v === true || v === "true" || v === 1 || v === "1") {
+  if (unit === 'boolean') {
+    if (v === true || v === 'true' || v === 1 || v === '1') {
       return localizedBoolean(true, locale);
     }
-    if (v === false || v === "false" || v === 0 || v === "0") {
+    if (v === false || v === 'false' || v === 0 || v === '0') {
       return localizedBoolean(false, locale);
     }
-    return String(v);
+    return stringifyUnknown(v);
   }
-  if (typeof v === "boolean") {
+  if (typeof v === 'boolean') {
     return localizedBoolean(v, locale);
   }
 
-  const s =
-    typeof v === "number" && Number.isFinite(v) ? String(v) : String(v).trim();
-  if (s === "") return "—";
+  const s = typeof v === 'number' && Number.isFinite(v) ? String(v) : stringifyUnknown(v).trim();
+  if (s === '') return '—';
 
-  if (unit === "enum") {
+  if (unit === 'enum') {
     return localizedEnumValue(s, locale);
   }
 
-  if (unit === "string") {
+  if (unit === 'string') {
     return s;
   }
 
-  if (unit === "%" || unit === "mm/%") {
-    if (s.endsWith("%")) return s;
+  if (unit === '%' || unit === 'mm/%') {
+    if (s.endsWith('%')) return s;
     return `${s}%`;
   }
 
-  if (
-    unit === "mm" ||
-    unit === "mm/s" ||
-    unit === "mm/s²" ||
-    unit === "°" ||
-    unit === "°C"
-  ) {
-    const suffix = unit === "mm/s²" ? "mm/s²" : unit;
+  if (unit === 'mm' || unit === 'mm/s' || unit === 'mm/s²' || unit === '°' || unit === '°C') {
+    const suffix = unit === 'mm/s²' ? 'mm/s²' : unit;
     if (s.toLowerCase().endsWith(suffix.toLowerCase())) return s;
     return `${s} ${suffix}`;
   }
 
   if (
-    unit === "g/cm³" ||
-    unit === "money/kg" ||
-    unit === "mm³" ||
-    unit === "mm³/s" ||
-    unit === "s" ||
-    unit === "layers" ||
-    unit === "g/s²"
+    unit === 'g/cm³' ||
+    unit === 'money/kg' ||
+    unit === 'mm³' ||
+    unit === 'mm³/s' ||
+    unit === 's' ||
+    unit === 'layers' ||
+    unit === 'g/s²'
   ) {
     if (s.toLowerCase().endsWith(unit.toLowerCase())) return s;
     return `${s} ${unit}`;
   }
 
-  if (unit === "count") {
+  if (unit === 'count') {
     return s;
   }
 
@@ -470,17 +471,13 @@ export function buildKeyIndex(): ReadonlyMap<string, BambuPropertyLookup> {
   return m;
 }
 
-export function getMappedPropertyByKey(
-  key: string,
-): MappedPropertyLookup | undefined {
+export function getMappedPropertyByKey(key: string): MappedPropertyLookup | undefined {
   return buildKeyIndex().get(key);
 }
 
 export type BambuFlatRow = BambuPropertyLookup & { order: number };
 
-export function iterateMappedTreeRows(options: {
-  includeAdvanced: boolean;
-}): BambuFlatRow[] {
+export function iterateMappedTreeRows(options: { includeAdvanced: boolean }): BambuFlatRow[] {
   let order = 0;
   const rows: BambuFlatRow[] = [];
   for (const group of BAMBU_PROCESS_UI_TREE) {
@@ -499,10 +496,10 @@ export function iterateMappedTreeRows(options: {
 /* -------------------------------------------------------------------------- */
 
 export type PropertyValueLayout =
-  | { kind: "scalar" }
+  | { kind: 'scalar' }
   | {
-      kind: "array";
-      semantics: "per_extruder" | "per_component" | "generic";
+      kind: 'array';
+      semantics: 'per_extruder' | 'per_component' | 'generic';
       length?: number;
     };
 
@@ -544,7 +541,7 @@ export function iterateMappedProperties(): MappedPropertyRow[] {
         const property: MappedProperty = {
           key: row.key,
           label: row.label,
-          layout: row.advanced ? { kind: "scalar" } : { kind: "scalar" },
+          layout: row.advanced ? { kind: 'scalar' } : { kind: 'scalar' },
         };
         out.push({
           group: group as unknown as MappedGroup,
@@ -575,51 +572,40 @@ export function segmentsForProfileValue(
 }
 
 function formatJsonLeaf(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
   }
   try {
     return JSON.stringify(value);
   } catch {
-    return String(value);
+    return Object.prototype.toString.call(value);
   }
 }
 
-export function valuesEqualForLayout(
-  a: unknown,
-  b: unknown,
-  layout: PropertyValueLayout,
-): boolean {
-  if (layout.kind === "array") {
+export function valuesEqualForLayout(a: unknown, b: unknown, layout: PropertyValueLayout): boolean {
+  if (layout.kind === 'array') {
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) return false;
-      return a.every((v, i) =>
-        valuesEqualForLayout(v, b[i], { kind: "scalar" }),
-      );
+      return a.every((v, i) => valuesEqualForLayout(v, b[i], { kind: 'scalar' }));
     }
   }
   if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
-    return a.every((v, i) => valuesEqualForLayout(v, b[i], { kind: "scalar" }));
+    return a.every((v, i) => valuesEqualForLayout(v, b[i], { kind: 'scalar' }));
   }
   return stableStringify(a) === stableStringify(b);
 }
 
 function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
+  if (value === null || typeof value !== 'object') {
     return JSON.stringify(value);
   }
   if (Array.isArray(value)) {
-    return `[${value.map((v) => stableStringify(v)).join(",")}]`;
+    return `[${value.map((v) => stableStringify(v)).join(',')}]`;
   }
   const keys = Object.keys(value as object).sort();
   const entries = keys.map(
-    (k) =>
-      `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`,
+    (k) => `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`,
   );
-  return `{${entries.join(",")}}`;
+  return `{${entries.join(',')}}`;
 }

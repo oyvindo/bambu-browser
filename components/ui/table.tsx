@@ -1,34 +1,28 @@
-"use client";
+'use client';
 
-import { ComponentProps } from "react";
+import { ComponentProps } from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
-function TableHeader({ className, ...props }: ComponentProps<"thead">) {
-  return (
-    <thead
-      data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
-      {...props}
-    />
-  );
+function TableHeader({ className, ...props }: ComponentProps<'thead'>) {
+  return <thead data-slot='table-header' className={cn('[&_tr]:border-b', className)} {...props} />;
 }
 
-function TableBody({ className, ...props }: ComponentProps<"tbody">) {
+function TableBody({ className, ...props }: ComponentProps<'tbody'>) {
   return (
     <tbody
-      data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
+      data-slot='table-body'
+      className={cn('[&_tr:last-child]:border-0', className)}
       {...props}
     />
   );
 }
-function TableRow({ className, ...props }: ComponentProps<"tr">) {
+function TableRow({ className, ...props }: ComponentProps<'tr'>) {
   return (
     <tr
-      data-slot="table-row"
+      data-slot='table-row'
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
+        'border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted',
         className,
       )}
       {...props}
@@ -36,12 +30,12 @@ function TableRow({ className, ...props }: ComponentProps<"tr">) {
   );
 }
 
-function TableHead({ className, ...props }: ComponentProps<"th">) {
+function TableHead({ className, ...props }: ComponentProps<'th'>) {
   return (
     <th
-      data-slot="table-head"
+      data-slot='table-head'
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
+        'h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0',
         className,
       )}
       {...props}
@@ -49,14 +43,11 @@ function TableHead({ className, ...props }: ComponentProps<"th">) {
   );
 }
 
-function TableCell({ className, ...props }: ComponentProps<"td">) {
+function TableCell({ className, ...props }: ComponentProps<'td'>) {
   return (
     <td
-      data-slot="table-cell"
-      className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
-        className,
-      )}
+      data-slot='table-cell'
+      className={cn('p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0', className)}
       {...props}
     />
   );

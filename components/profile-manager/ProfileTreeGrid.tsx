@@ -1,15 +1,13 @@
-"use client";
-import * as React from "react";
-import {
-  getInheritanceColumns,
-  type ColumnRoleLabels,
-} from "@/lib/bambu/chain-display";
-import { useTranslations } from "@/localization/context";
-import type { InheritanceChainLevel } from "@/lib/bambu/resolver";
-import type { SlicerSource } from "@/lib/bambu/slicer-source";
-import { ProfileTreeGridWrapper } from "@/components/profile-manager/profileTreeGrid/ProfileTreeGridWrapper";
-import { ProfileTable } from "@/components/profile-manager/profileTreeGrid/ProfileTable";
-import { useMemo } from "react";
+'use client';
+import * as React from 'react';
+import { useMemo } from 'react';
+
+import { ProfileTable } from '@/components/profile-manager/profileTreeGrid/ProfileTable';
+import { ProfileTreeGridWrapper } from '@/components/profile-manager/profileTreeGrid/ProfileTreeGridWrapper';
+import { getInheritanceColumns, type ColumnRoleLabels } from '@/lib/bambu/chain-display';
+import type { InheritanceChainLevel } from '@/lib/bambu/resolver';
+import type { SlicerSource } from '@/lib/bambu/slicer-source';
+import { useTranslations } from '@/localization/context';
 
 export type ProfileTreeGridProps = {
   chain: readonly InheritanceChainLevel[];
@@ -35,24 +33,24 @@ export function ProfileTreeGrid({
   onPropertyFilterChange,
   compareAccordion,
   onEditLeaf,
-  slicer = "bambu",
+  slicer = 'bambu',
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
   const isFilamentProfile = useMemo(() => {
     const last = chain[chain.length - 1];
     if (!last) return false;
-    return last.relativePath.includes("/filament/");
+    return last.relativePath.includes('/filament/');
   }, [chain]);
 
   const roleLabels = useMemo<ColumnRoleLabels>(
     () => ({
       profile: isFilamentProfile
-        ? t("chainColumn.profileFilament")
-        : t("chainColumn.profileProcess"),
-      root: t("chainColumn.root"),
-      parent: t("chainColumn.parent"),
-      level: (levelIndex: number) => t("chainColumn.level", { n: levelIndex }),
+        ? t('chainColumn.profileFilament')
+        : t('chainColumn.profileProcess'),
+      root: t('chainColumn.root'),
+      parent: t('chainColumn.parent'),
+      level: (levelIndex: number) => t('chainColumn.level', { n: levelIndex }),
     }),
     [t, isFilamentProfile],
   );
@@ -63,13 +61,10 @@ export function ProfileTreeGrid({
   );
 
   return (
-    <ProfileTreeGridWrapper
-      className={className}
-      compareAccordion={compareAccordion}
-    >
+    <ProfileTreeGridWrapper className={className} compareAccordion={compareAccordion}>
       {chain.length === 0 || columns.length === 0 ? (
-        <div className="text-muted-foreground border-border m-3 rounded-md border border-dashed p-8 text-center text-sm">
-          {t("treeGrid.emptyHint")}
+        <div className='text-muted-foreground border-border m-3 rounded-md border border-dashed p-8 text-center text-sm'>
+          {t('treeGrid.emptyHint')}
         </div>
       ) : (
         <ProfileTable

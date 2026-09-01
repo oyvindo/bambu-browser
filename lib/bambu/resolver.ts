@@ -8,15 +8,15 @@ import {
   joinPath,
   normalizeInheritsReference,
   normalizeRelativePath,
-} from "./fs-path-utils";
-import type { ProfileFsAccess } from "./profile-fs-access";
+} from './fs-path-utils';
+import type { ProfileFsAccess } from './profile-fs-access';
 import {
   createSplitUsersAccess,
   createStudioRootAccess,
   type SplitUsersAccessParams,
-} from "./profile-fs-access";
+} from './profile-fs-access';
 
-export type ProfileKind = "process" | "filament";
+export type ProfileKind = 'process' | 'filament';
 
 /** One level in the inheritance chain (root → … → selected user file). */
 export type InheritanceChainLevel = {
@@ -26,37 +26,32 @@ export type InheritanceChainLevel = {
   data: Record<string, unknown>;
 };
 
-const SYSTEM_PROCESS_DIR = "system/BBL/process";
-const SYSTEM_FILAMENT_DIR = "system/BBL/filament";
+const SYSTEM_PROCESS_DIR = 'system/BBL/process';
+const SYSTEM_FILAMENT_DIR = 'system/BBL/filament';
 
 /** System template process presets build on. */
-export const FDM_PROCESS_COMMON_RELATIVE = joinPath(
-  SYSTEM_PROCESS_DIR,
-  "fdm_process_common.json",
-);
+export const FDM_PROCESS_COMMON_RELATIVE = joinPath(SYSTEM_PROCESS_DIR, 'fdm_process_common.json');
 
 /** System template filament presets build on; prepended as ROOT for any filament with no `inherits`. */
 export const FDM_FILAMENT_COMMON_RELATIVE = joinPath(
   SYSTEM_FILAMENT_DIR,
-  "fdm_filament_common.json",
+  'fdm_filament_common.json',
 );
 
 function inferProfileKind(relPath: string): ProfileKind {
   const n = normalizeRelativePath(relPath);
-  if (n.includes("/filament/")) return "filament";
-  return "process";
+  if (n.includes('/filament/')) return 'filament';
+  return 'process';
 }
 
 function systemDirForKind(kind: ProfileKind): string {
-  return kind === "filament" ? SYSTEM_FILAMENT_DIR : SYSTEM_PROCESS_DIR;
+  return kind === 'filament' ? SYSTEM_FILAMENT_DIR : SYSTEM_PROCESS_DIR;
 }
 
 function normalizeInheritsFileName(inherits: string): string {
   const trimmed = inherits.trim();
-  const base = trimmed.includes("/")
-    ? (trimmed.split("/").pop() ?? trimmed)
-    : trimmed;
-  if (!base.toLowerCase().endsWith(".json")) {
+  const base = trimmed.includes('/') ? (trimmed.split('/').pop() ?? trimmed) : trimmed;
+  if (!base.toLowerCase().endsWith('.json')) {
     return `${base}.json`;
   }
   return base;
@@ -64,13 +59,13 @@ function normalizeInheritsFileName(inherits: string): string {
 
 function getInheritsField(data: Record<string, unknown>): string | null {
   const v = data.inherits;
-  if (typeof v !== "string") return null;
+  if (typeof v !== 'string') return null;
   const t = v.trim();
   return t.length > 0 ? t : null;
 }
 
 function isUnderFilamentBase(relPath: string): boolean {
-  return normalizeRelativePath(relPath).includes("/filament/base/");
+  return normalizeRelativePath(relPath).includes('/filament/base/');
 }
 
 async function resolveParentRelativePath(
@@ -85,7 +80,7 @@ async function resolveParentRelativePath(
   const systemDir = systemDirForKind(kind);
   const ref = normalizeInheritsReference(trimmed);
 
-  if (ref.includes("/")) {
+  if (ref.includes('/')) {
     const fromCurrent = normalizeRelativePath(joinPath(currentDir, ref));
     if (await access.exists(fromCurrent)) return fromCurrent;
     const fromRoot = ref;
@@ -98,8 +93,8 @@ async function resolveParentRelativePath(
     if (d && !searchDirs.includes(d)) searchDirs.push(d);
   };
   add(currentDir);
-  if (kind === "filament" && !isUnderFilamentBase(currentPath)) {
-    add(joinPath(currentDir, "base"));
+  if (kind === 'filament' && !isUnderFilamentBase(currentPath)) {
+    add(joinPath(currentDir, 'base'));
   }
   add(systemDir);
 
@@ -129,9 +124,7 @@ async function resolveInheritanceRecursive(
   if (!inherits) {
     const leaf: InheritanceChainLevel = { relativePath: path, data };
     const commonPath =
-      kind === "filament"
-        ? FDM_FILAMENT_COMMON_RELATIVE
-        : FDM_PROCESS_COMMON_RELATIVE;
+      kind === 'filament' ? FDM_FILAMENT_COMMON_RELATIVE : FDM_PROCESS_COMMON_RELATIVE;
     if (normalizeRelativePath(path) !== normalizeRelativePath(commonPath)) {
       let commonData: Record<string, unknown> = {};
       if (await access.exists(commonPath)) {
@@ -142,58 +135,42 @@ async function resolveInheritanceRecursive(
     return [leaf];
   }
 
-  const parentPath = await resolveParentRelativePath(
-    access,
-    path,
-    inherits,
-    kind,
-  );
+  const parentPath = await resolveParentRelativePath(access, path, inherits, kind);
   if (!parentPath) {
     throw new Error(
       `Could not resolve inherits "${inherits}" from "${path}". Tried same folder and ${systemDirForKind(kind)}.`,
     );
   }
 
-  const ancestors = await resolveInheritanceRecursive(
-    access,
-    parentPath,
-    kind,
-    visited,
-  );
+  const ancestors = await resolveInheritanceRecursive(access, parentPath, kind, visited);
   return [...ancestors, { relativePath: path, data }];
 }
 
 type DirectoryPickerOptions = {
-  mode?: "read" | "readwrite";
+  mode?: 'read' | 'readwrite';
   id?: string;
   startIn?: FileSystemHandle;
 };
 
 type WindowWithDirectoryPicker = Window & {
-  showDirectoryPicker?: (
-    options?: DirectoryPickerOptions,
-  ) => Promise<FileSystemDirectoryHandle>;
+  showDirectoryPicker?: (options?: DirectoryPickerOptions) => Promise<FileSystemDirectoryHandle>;
 };
 
 /** macOS Go to Folder — `users` holds one folder per Bambu Lab account name. */
-export const MACOS_BAMBUSTUDIO_USERS_GO_TO =
-  "~/Library/Application Support/BambuStudio/users";
+export const MACOS_BAMBUSTUDIO_USERS_GO_TO = '~/Library/Application Support/BambuStudio/users';
 
 export const MACOS_BAMBUSTUDIO_SYSTEM_PROCESS_GO_TO =
-  "~/Library/Application Support/BambuStudio/system/BBL/process";
+  '~/Library/Application Support/BambuStudio/system/BBL/process';
 
-export const MACOS_BAMBUSTUDIO_ROOT_FOLDER_GO_TO =
-  "~/Library/Application Support/BambuStudio";
+export const MACOS_BAMBUSTUDIO_ROOT_FOLDER_GO_TO = '~/Library/Application Support/BambuStudio';
 
 /** Legacy singular folder name (older layouts). */
-export const MACOS_BAMBUSTUDIO_USER_FOLDER_GO_TO =
-  MACOS_BAMBUSTUDIO_USERS_GO_TO;
+export const MACOS_BAMBUSTUDIO_USER_FOLDER_GO_TO = MACOS_BAMBUSTUDIO_USERS_GO_TO;
 
 export function isFileSystemAccessSupported(): boolean {
   return (
-    typeof window !== "undefined" &&
-    typeof (window as WindowWithDirectoryPicker).showDirectoryPicker ===
-      "function"
+    typeof window !== 'undefined' &&
+    typeof (window as WindowWithDirectoryPicker).showDirectoryPicker === 'function'
   );
 }
 
@@ -210,7 +187,7 @@ export async function pickDirectory(
   }
   const w = window as WindowWithDirectoryPicker;
   return w.showDirectoryPicker!({
-    mode: "read",
+    mode: 'read',
     id: options.id,
     ...(options.startIn ? { startIn: options.startIn } : {}),
   });
@@ -219,7 +196,7 @@ export async function pickDirectory(
 export async function pickBambuStudioFolder(options?: {
   startIn?: FileSystemDirectoryHandle;
 }): Promise<FileSystemDirectoryHandle | null> {
-  return pickDirectory({ id: "bambu-studio-root", ...options });
+  return pickDirectory({ id: 'bambu-studio-root', ...options });
 }
 
 /**
@@ -228,15 +205,11 @@ export async function pickBambuStudioFolder(options?: {
 export class BambuInheritanceResolver {
   constructor(private readonly access: ProfileFsAccess) {}
 
-  static fromStudioRoot(
-    root: FileSystemDirectoryHandle,
-  ): BambuInheritanceResolver {
+  static fromStudioRoot(root: FileSystemDirectoryHandle): BambuInheritanceResolver {
     return new BambuInheritanceResolver(createStudioRootAccess(root));
   }
 
-  static fromSplitUsers(
-    params: SplitUsersAccessParams,
-  ): BambuInheritanceResolver {
+  static fromSplitUsers(params: SplitUsersAccessParams): BambuInheritanceResolver {
     return new BambuInheritanceResolver(createSplitUsersAccess(params));
   }
 
@@ -244,9 +217,7 @@ export class BambuInheritanceResolver {
    * Walks `inherits` from the user file up to the root template (e.g. fdm_process_common.json).
    * Returns ordered chain: [root, …, selected file].
    */
-  async resolveInheritance(
-    userFilePath: string,
-  ): Promise<InheritanceChainLevel[]> {
+  async resolveInheritance(userFilePath: string): Promise<InheritanceChainLevel[]> {
     const path = normalizeRelativePath(userFilePath);
     const kind = inferProfileKind(path);
     return resolveInheritanceRecursive(this.access, path, kind, new Set());
@@ -257,7 +228,5 @@ export async function resolveInheritanceChain(
   root: FileSystemDirectoryHandle,
   userFilePath: string,
 ): Promise<InheritanceChainLevel[]> {
-  return BambuInheritanceResolver.fromStudioRoot(root).resolveInheritance(
-    userFilePath,
-  );
+  return BambuInheritanceResolver.fromStudioRoot(root).resolveInheritance(userFilePath);
 }

@@ -1,12 +1,13 @@
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { STICKY_HEADER_SURFACE } from "@/components/profile-manager/profileTreeGrid/profileTreeGrid.constants";
+import * as React from 'react';
+
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
+import { fileLabel } from '@/components/profile-manager/profileTreeGrid/profileTable/fileLabel';
+import { ProfileColumnExportActions } from '@/components/profile-manager/profileTreeGrid/profileTable/ProfileColumnExportActions';
+import { ProfilePathTooltip } from '@/components/profile-manager/profileTreeGrid/profileTable/ProfilePathTooltip';
+import { STICKY_HEADER_SURFACE } from '@/components/profile-manager/profileTreeGrid/profileTreeGrid.constants';
+import { PropertyHelpTooltipLazy } from '@/components/profile-manager/profileTreeGrid/PropertyHelpTooltipLazy';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   BAMBU_FILAMENT_UI_TREE,
   BAMBU_PROCESS_UI_TREE,
@@ -21,19 +22,14 @@ import {
   isLeafInheritanceOverride,
   mergedValueAt,
   propertyRowTitle,
-} from "@/lib/bambu";
-import * as React from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { PropertyHelpTooltipLazy } from "@/components/profile-manager/profileTreeGrid/PropertyHelpTooltipLazy";
-import { useLocale, useTranslations } from "@/localization";
+} from '@/lib/bambu';
+import { cn } from '@/lib/utils';
+import { useLocale, useTranslations } from '@/localization';
 import {
   localizedGroupLabel,
   localizedPropertyLabel,
   localizedSubgroupLabel,
-} from "@/localization/profile-fields";
-import { fileLabel } from "@/components/profile-manager/profileTreeGrid/profileTable/fileLabel";
-import { ProfileColumnExportActions } from "@/components/profile-manager/profileTreeGrid/profileTable/ProfileColumnExportActions";
-import { ProfilePathTooltip } from "@/components/profile-manager/profileTreeGrid/profileTable/ProfilePathTooltip";
+} from '@/localization/profile-fields';
 
 type UiTree = readonly BambuMappedGroup[];
 
@@ -66,11 +62,11 @@ export const ProfileTable = ({
   activeExtruderIndex = 0,
   chain,
   hasCompareAccordion,
-  propertyFilter = "",
+  propertyFilter = '',
   onPropertyFilterChange = () => {},
   showOnlyChangedLeaf = false,
   onEditLeaf,
-  slicer = "bambu",
+  slicer = 'bambu',
 }: ProfileTableProps) => {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -81,17 +77,17 @@ export const ProfileTable = ({
   const isFilamentProfile = React.useMemo(() => {
     const last = chain[chain.length - 1];
     if (!last) return false;
-    return last.relativePath.includes("/filament/");
+    return last.relativePath.includes('/filament/');
   }, [chain]);
 
   const roleLabels = React.useMemo<ColumnRoleLabels>(
     () => ({
       profile: isFilamentProfile
-        ? t("chainColumn.profileFilament")
-        : t("chainColumn.profileProcess"),
-      root: t("chainColumn.root"),
-      parent: t("chainColumn.parent"),
-      level: (levelIndex: number) => t("chainColumn.level", { n: levelIndex }),
+        ? t('chainColumn.profileFilament')
+        : t('chainColumn.profileProcess'),
+      root: t('chainColumn.root'),
+      parent: t('chainColumn.parent'),
+      level: (levelIndex: number) => t('chainColumn.level', { n: levelIndex }),
     }),
     [t, isFilamentProfile],
   );
@@ -102,10 +98,10 @@ export const ProfileTable = ({
   );
   const colCount = 1 + columns.length;
 
-  const profileKind = isFilamentProfile ? "filament" : "process";
+  const profileKind = isFilamentProfile ? 'filament' : 'process';
   const uiTree = React.useMemo(
     () =>
-      slicer === "orca"
+      slicer === 'orca'
         ? buildOrcaUiTree(profileKind, chain)
         : buildCompleteUiTree(
             profileKind,
@@ -152,35 +148,32 @@ export const ProfileTable = ({
   let zebraDataRow = 0;
 
   return (
-    <table className="w-full min-w-max caption-bottom border-separate border-spacing-0 text-sm">
+    <table className='w-full min-w-max caption-bottom border-separate border-spacing-0 text-sm'>
       <TableHeader
-        className={cn(
-          "sticky top-0 z-30 isolate [&_tr]:border-0",
-          STICKY_HEADER_SURFACE,
-        )}
+        className={cn('sticky top-0 z-30 isolate [&_tr]:border-0', STICKY_HEADER_SURFACE)}
       >
-        <TableRow className="border-0 bg-background hover:bg-transparent">
+        <TableRow className='border-0 bg-background hover:bg-transparent'>
           <TableHead
             className={cn(
-              "border-border min-w-0 border-b bg-background p-4 align-bottom",
-              hasCompareAccordion ? "" : "rounded-tl-lg",
+              'border-border min-w-0 border-b bg-background p-4 align-bottom',
+              hasCompareAccordion ? '' : 'rounded-tl-lg',
             )}
           >
-            <div className="flex w-full min-w-0 items-end justify-between gap-4">
-              <span className="text-foreground shrink-0 text-lg font-bold tracking-tight">
-                {t("treeGrid.columnProperty")}
+            <div className='flex w-full min-w-0 items-end justify-between gap-4'>
+              <span className='text-foreground shrink-0 text-lg font-bold tracking-tight'>
+                {t('treeGrid.columnProperty')}
               </span>
-              <div className="flex min-w-0 shrink flex-col items-start gap-1.5">
-                <span className="text-muted-foreground block text-xs font-medium">
-                  {t("treeGrid.filterLabel")}
+              <div className='flex min-w-0 shrink flex-col items-start gap-1.5'>
+                <span className='text-muted-foreground block text-xs font-medium'>
+                  {t('treeGrid.filterLabel')}
                 </span>
                 <input
-                  type="search"
+                  type='search'
                   value={propertyFilter}
                   onChange={(e) => onPropertyFilterChange(e.target.value)}
-                  placeholder={t("treeGrid.propertySearchPlaceholder")}
-                  className="border-input bg-background placeholder:text-muted-foreground h-8 w-full min-w-40 max-w-56 rounded-md border px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-                  aria-label={t("treeGrid.propertySearchPlaceholder")}
+                  placeholder={t('treeGrid.propertySearchPlaceholder')}
+                  className='border-input bg-background placeholder:text-muted-foreground h-8 w-full min-w-40 max-w-56 rounded-md border px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50'
+                  aria-label={t('treeGrid.propertySearchPlaceholder')}
                 />
               </div>
             </div>
@@ -192,43 +185,38 @@ export const ProfileTable = ({
               <TableHead
                 key={col.index}
                 className={cn(
-                  "border-border min-w-30 max-w-50 border-b bg-background py-5 align-bottom",
-                  isLastHead && "rounded-tr-lg",
+                  'border-border min-w-30 max-w-50 border-b bg-background py-5 align-bottom',
+                  isLastHead && 'rounded-tr-lg',
                 )}
               >
-                <div className="mb-1 flex items-center gap-1.5">
+                <div className='mb-1 flex items-center gap-1.5'>
                   <ProfileColumnExportActions
                     chain={chain}
                     columnIndex={col.index}
                     onEdit={
                       colIdx === columns.length - 1 &&
                       onEditLeaf &&
-                      (col.level.relativePath.startsWith("user/") ||
-                        col.level.relativePath.startsWith("users/")) &&
-                      String(col.level.data.from).toLowerCase() !== "system"
+                      (col.level.relativePath.startsWith('user/') ||
+                        col.level.relativePath.startsWith('users/')) &&
+                      String(col.level.data.from).toLowerCase() !== 'system'
                         ? onEditLeaf
                         : undefined
                     }
                   />
-                  <span className="text-muted-foreground text-xl font-semibold tracking-wide uppercase">
+                  <span className='text-muted-foreground text-xl font-semibold tracking-wide uppercase'>
                     {col.roleLabel}
                   </span>
                 </div>
-                <ProfilePathTooltip
-                  filename={name}
-                  relativePath={col.level.relativePath}
-                />
+                <ProfilePathTooltip filename={name} relativePath={col.level.relativePath} />
               </TableHead>
             );
           })}
         </TableRow>
       </TableHeader>
-      <TableBody className="[&_tr]:border-0">
+      <TableBody className='[&_tr]:border-0'>
         {uiTree.map((group, groupIndex) => {
           const groupLabel = localizedGroupLabel(group.id, group.label, locale);
-          const groupOpen = propertySearchActive
-            ? true
-            : !collapsedInTree.groups[group.id];
+          const groupOpen = propertySearchActive ? true : !collapsedInTree.groups[group.id];
           const isLastGroup = groupIndex === uiTree.length - 1;
           const visibleSubgroups = group.subgroups
             .map((subgroup) => {
@@ -240,21 +228,13 @@ export const ProfileTable = ({
                   groupLabel,
                   localizedSubgroupLabel(subgroup.id, subgroup.label, locale),
                 ]
-                  .join(" ")
+                  .join(' ')
                   .toLowerCase();
-                if (
-                  propertySearchTrim &&
-                  !searchable.includes(propertySearchTrim)
-                ) {
+                if (propertySearchTrim && !searchable.includes(propertySearchTrim)) {
                   return false;
                 }
                 if (!showOnlyChangedLeaf) return true;
-                return isLeafInheritanceOverride(
-                  chain,
-                  p.key,
-                  p.unit,
-                  activeExtruderIndex,
-                );
+                return isLeafInheritanceOverride(chain, p.key, p.unit, activeExtruderIndex);
               });
               return { subgroup, visibleProps };
             })
@@ -262,24 +242,18 @@ export const ProfileTable = ({
           if (visibleSubgroups.length === 0) return null;
           return (
             <React.Fragment key={group.id}>
-              <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">
-                <TableCell colSpan={colCount} className="p-0">
-                  <div className="bg-muted/80 hover:bg-muted mx-2 rounded-md">
+              <TableRow className='border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent'>
+                <TableCell colSpan={colCount} className='p-0'>
+                  <div className='bg-muted/80 hover:bg-muted mx-2 rounded-md'>
                     <button
-                      type="button"
+                      type='button'
                       onClick={() => toggleGroup(group.id)}
-                      className="text-foreground flex w-full items-center gap-2 px-2 py-3 text-left text-sm font-semibold tracking-tight uppercase"
+                      className='text-foreground flex w-full items-center gap-2 px-2 py-3 text-left text-sm font-semibold tracking-tight uppercase'
                     >
                       {groupOpen ? (
-                        <ChevronDown
-                          className="size-4 shrink-0 opacity-70"
-                          aria-hidden
-                        />
+                        <ChevronDown className='size-4 shrink-0 opacity-70' aria-hidden />
                       ) : (
-                        <ChevronRight
-                          className="size-4 shrink-0 opacity-70"
-                          aria-hidden
-                        />
+                        <ChevronRight className='size-4 shrink-0 opacity-70' aria-hidden />
                       )}
                       {groupLabel}
                     </button>
@@ -288,32 +262,25 @@ export const ProfileTable = ({
               </TableRow>
               {groupOpen &&
                 visibleSubgroups.map(({ subgroup, visibleProps }) => {
-                  const subgroupLabel = localizedSubgroupLabel(
-                    subgroup.id,
-                    subgroup.label,
-                    locale,
-                  );
+                  const subgroupLabel = localizedSubgroupLabel(subgroup.id, subgroup.label, locale);
                   const subOpen = propertySearchActive
                     ? true
                     : !collapsedInTree.subgroups[subgroup.id];
                   return (
                     <React.Fragment key={subgroup.id}>
-                      <TableRow className="border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent">
-                        <TableCell colSpan={colCount} className="p-0">
-                          <div className="bg-muted/35 hover:bg-muted/60 mx-2 rounded-md">
+                      <TableRow className='border-0 bg-transparent hover:bg-transparent dark:hover:bg-transparent'>
+                        <TableCell colSpan={colCount} className='p-0'>
+                          <div className='bg-muted/35 hover:bg-muted/60 mx-2 rounded-md'>
                             <button
-                              type="button"
+                              type='button'
                               onClick={() => toggleSubgroup(subgroup.id)}
-                              className="text-muted-foreground flex w-full items-center gap-2 py-2.5 pl-10 pr-2 text-left text-xs font-medium"
+                              className='text-muted-foreground flex w-full items-center gap-2 py-2.5 pl-10 pr-2 text-left text-xs font-medium'
                             >
                               {subOpen ? (
-                                <ChevronDown
-                                  className="size-3.5 shrink-0 opacity-70"
-                                  aria-hidden
-                                />
+                                <ChevronDown className='size-3.5 shrink-0 opacity-70' aria-hidden />
                               ) : (
                                 <ChevronRight
-                                  className="size-3.5 shrink-0 opacity-70"
+                                  className='size-3.5 shrink-0 opacity-70'
                                   aria-hidden
                                 />
                               )}
@@ -326,11 +293,7 @@ export const ProfileTable = ({
                         visibleProps.map((prop) => {
                           const key = prop.key;
                           const unit = prop.unit;
-                          const propertyLabel = localizedPropertyLabel(
-                            key,
-                            prop.label,
-                            locale,
-                          );
+                          const propertyLabel = localizedPropertyLabel(key, prop.label, locale);
                           const title = propertyRowTitle({
                             ...prop,
                             label: propertyLabel,
@@ -341,12 +304,7 @@ export const ProfileTable = ({
                           );
 
                           const cellTexts = effectiveValues.map((v) =>
-                            formatBambuMappedValue(
-                              v,
-                              unit,
-                              activeExtruderIndex,
-                              locale,
-                            ),
+                            formatBambuMappedValue(v, unit, activeExtruderIndex, locale),
                           );
 
                           const overridesParent = cellTexts.map(
@@ -355,27 +313,25 @@ export const ProfileTable = ({
 
                           const isOddStripe = zebraDataRow % 2 === 1;
                           zebraDataRow += 1;
-                          const rowStripe = isOddStripe
-                            ? "bg-muted/20"
-                            : "bg-background";
+                          const rowStripe = isOddStripe ? 'bg-muted/20' : 'bg-background';
 
                           return (
                             <TableRow
                               key={key}
                               className={cn(
-                                "border-border border-0 transition-colors",
+                                'border-border border-0 transition-colors',
                                 rowStripe,
-                                "hover:bg-accent/40",
+                                'hover:bg-accent/40',
                               )}
                             >
                               <TableCell
                                 className={cn(
-                                  "border-border w-px max-w-fit border-b py-3 pl-28 align-middle whitespace-nowrap",
+                                  'border-border w-px max-w-fit border-b py-3 pl-28 align-middle whitespace-nowrap',
                                   rowStripe,
                                 )}
                               >
-                                <div className="flex max-w-max flex-nowrap items-baseline gap-x-1.5">
-                                  <span className="text-foreground/80 text-sm font-normal whitespace-nowrap">
+                                <div className='flex max-w-max flex-nowrap items-baseline gap-x-1.5'>
+                                  <span className='text-foreground/80 text-sm font-normal whitespace-nowrap'>
                                     {title}
                                   </span>
                                   <PropertyHelpTooltipLazy
@@ -386,7 +342,7 @@ export const ProfileTable = ({
                                   />
                                 </div>
                                 <span
-                                  className="text-muted-foreground mt-0.5 block max-w-max font-mono text-[10px] whitespace-nowrap"
+                                  className='text-muted-foreground mt-0.5 block max-w-max font-mono text-[10px] whitespace-nowrap'
                                   title={key}
                                 >
                                   {key}
@@ -396,23 +352,22 @@ export const ProfileTable = ({
                                 <TableCell
                                   key={col.index}
                                   className={cn(
-                                    "border-border border-b py-3 align-middle",
+                                    'border-border border-b py-3 align-middle',
                                     rowStripe,
                                   )}
                                   title={col.level.relativePath}
                                 >
                                   <span
                                     className={cn(
-                                      "text-foreground inline-flex min-h-6.5 max-w-full items-center font-mono text-sm tabular-nums",
+                                      'text-foreground inline-flex min-h-6.5 max-w-full items-center font-mono text-sm tabular-nums',
                                       overridesParent[i] &&
-                                        "bg-profile-changed text-profile-changed-foreground rounded-[calc(var(--radius-md)/2)] px-3 py-1 shadow-sm",
+                                        'bg-profile-changed text-profile-changed-foreground rounded-[calc(var(--radius-md)/2)] px-3 py-1 shadow-sm',
                                     )}
                                   >
                                     <span
-                                      className="block max-w-50 truncate"
+                                      className='block max-w-50 truncate'
                                       title={
-                                        cellTexts[i].length >
-                                        VALUE_TITLE_MIN_LENGTH
+                                        cellTexts[i].length > VALUE_TITLE_MIN_LENGTH
                                           ? cellTexts[i]
                                           : undefined
                                       }
@@ -429,12 +384,8 @@ export const ProfileTable = ({
                   );
                 })}
               {!isLastGroup ? (
-                <TableRow className="h-5 border-0 bg-transparent hover:bg-transparent">
-                  <TableCell
-                    colSpan={colCount}
-                    className="h-5 border-0 p-0"
-                    aria-hidden
-                  />
+                <TableRow className='h-5 border-0 bg-transparent hover:bg-transparent'>
+                  <TableCell colSpan={colCount} className='h-5 border-0 p-0' aria-hidden />
                 </TableRow>
               ) : null}
             </React.Fragment>

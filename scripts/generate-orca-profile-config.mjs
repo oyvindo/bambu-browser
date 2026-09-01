@@ -1,12 +1,13 @@
-import { writeFile } from "node:fs/promises";
-import path from "node:path";
-import process from "node:process";
-import prettier from "prettier";
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import process from 'node:process';
 
-const ORCA_VERSION = "v2.4.2";
-const ORCA_COMMIT = "8500fcdccaa10b5099ac20d252af3a7c560046f1";
+import prettier from 'prettier';
+
+const ORCA_VERSION = 'v2.4.2';
+const ORCA_COMMIT = '8500fcdccaa10b5099ac20d252af3a7c560046f1';
 const DEFAULT_SOURCE_URL = `https://raw.githubusercontent.com/OrcaSlicer/OrcaSlicer/${ORCA_VERSION}/src/libslic3r/PrintConfig.cpp`;
-const outputPath = path.resolve("lib/bambu/orca-profile-config.generated.ts");
+const outputPath = path.resolve('lib/bambu/orca-profile-config.generated.ts');
 const sourceUrl = process.env.ORCASLICER_PRINTCONFIG_URL ?? DEFAULT_SOURCE_URL;
 
 const response = await fetch(sourceUrl);
@@ -17,7 +18,7 @@ const text = await response.text();
 
 function decodeCppString(raw) {
   const jsonString = raw
-    .replace(/^u8/, "")
+    .replace(/^u8/, '')
     .replace(/\\x([0-9a-fA-F]{2})/g, (_match, hex) =>
       String.fromCharCode(Number.parseInt(hex, 16)),
     );
@@ -26,9 +27,9 @@ function decodeCppString(raw) {
   } catch {
     return jsonString
       .slice(1, -1)
-      .replaceAll("\\n", "\n")
+      .replaceAll('\\n', '\n')
       .replaceAll('\\"', '"')
-      .replaceAll("\\\\", "\\");
+      .replaceAll('\\\\', '\\');
   }
 }
 
@@ -39,9 +40,7 @@ function stringsIn(expression) {
 }
 
 function assignment(block, property) {
-  const startMatch = new RegExp(`def\\s*->\\s*${property}\\s*=\\s*`).exec(
-    block,
-  );
+  const startMatch = new RegExp(`def\\s*->\\s*${property}\\s*=\\s*`).exec(block);
   if (!startMatch || startMatch.index === undefined) return null;
 
   const start = startMatch.index + startMatch[0].length;
@@ -49,11 +48,11 @@ function assignment(block, property) {
   for (let index = start; index < block.length; index += 1) {
     const char = block[index];
     if (inString) {
-      if (char === "\\") index += 1;
+      if (char === '\\') index += 1;
       else if (char === '"') inString = false;
     } else if (char === '"') {
       inString = true;
-    } else if (char === ";") {
+    } else if (char === ';') {
       return block.slice(start, index);
     }
   }
@@ -64,19 +63,19 @@ function assignedText(block, property) {
   const expression = assignment(block, property);
   if (!expression) return undefined;
   const parts = stringsIn(expression);
-  return parts.length > 0 ? parts.join("") : undefined;
+  return parts.length > 0 ? parts.join('') : undefined;
 }
 
 const constants = new Map();
 for (const match of text.matchAll(
   /(?:static\s+)?const\s+(?:int|float|double)\s+(\w+)\s*=\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?f?)\s*;/gi,
 )) {
-  const value = Number(match[2].replace(/f$/i, ""));
+  const value = Number(match[2].replace(/f$/i, ''));
   if (Number.isFinite(value)) constants.set(match[1], value);
 }
 
 function numberFrom(raw) {
-  const trimmed = raw.trim().replace(/f$/i, "");
+  const trimmed = raw.trim().replace(/f$/i, '');
   if (/^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i.test(trimmed)) {
     return Number(trimmed);
   }
@@ -84,16 +83,16 @@ function numberFrom(raw) {
   if (!constant) return undefined;
   const value = constants.get(constant[2]);
   if (value === undefined) return undefined;
-  return constant[1] === "-" ? -value : value;
+  return constant[1] === '-' ? -value : value;
 }
 
 const enumKeyMaps = new Map();
 for (const match of text.matchAll(
   /(?:static\s+)?t_config_enum_values\s+(\w+)\s*\{([\s\S]*?)\};/g,
 )) {
-  const values = [
-    ...match[2].matchAll(/\{\s*(?:u8)?"((?:\\.|[^"\\])*)"\s*,[\s\S]*?\}/g),
-  ].map((entry) => decodeCppString(`"${entry[1]}"`));
+  const values = [...match[2].matchAll(/\{\s*(?:u8)?"((?:\\.|[^"\\])*)"\s*,[\s\S]*?\}/g)].map(
+    (entry) => decodeCppString(`"${entry[1]}"`),
+  );
   if (values.length > 0) enumKeyMaps.set(match[1], values);
 }
 
@@ -108,8 +107,8 @@ function enumValuesFrom(block) {
   ].map((entry) => decodeCppString(entry[1]));
   if (direct.length > 0) return direct;
 
-  const assigned = assignment(block, "enum_values");
-  if (assigned?.trim().startsWith("{")) {
+  const assigned = assignment(block, 'enum_values');
+  if (assigned?.trim().startsWith('{')) {
     const values = stringsIn(assigned);
     if (values.length > 0) return values;
   }
@@ -125,8 +124,7 @@ const definitionVariables = new Map(
     ),
   ].map((match) => [match[1], match[2]]),
 );
-const addPattern =
-  /this->add(?:_nullable)?\(\s*"([A-Za-z0-9_]+)"\s*,\s*(co\w+)\s*\)/g;
+const addPattern = /this->add(?:_nullable)?\(\s*"([A-Za-z0-9_]+)"\s*,\s*(co\w+)\s*\)/g;
 const additions = [...text.matchAll(addPattern)];
 
 for (const [index, match] of additions.entries()) {
@@ -136,8 +134,8 @@ for (const [index, match] of additions.entries()) {
   const block = text.slice(blockStart, blockEnd);
   const definition = { type: match[2] };
 
-  const min = assignment(block, "min");
-  const max = assignment(block, "max");
+  const min = assignment(block, 'min');
+  const max = assignment(block, 'max');
   const minValue = min ? numberFrom(min) : undefined;
   const maxValue = max ? numberFrom(max) : undefined;
   if (minValue !== undefined) definition.min = minValue;
@@ -145,15 +143,13 @@ for (const [index, match] of additions.entries()) {
 
   const enumValues = enumValuesFrom(block);
   if (enumValues) definition.enumValues = enumValues;
-  const enumAlias = assignment(block, "enum_values")?.match(
-    /^\s*(def_\w+)->enum_values\s*$/,
-  )?.[1];
+  const enumAlias = assignment(block, 'enum_values')?.match(/^\s*(def_\w+)->enum_values\s*$/)?.[1];
   if (enumAlias) enumAliases.set(key, enumAlias);
 
-  const label = assignedText(block, "label");
-  const category = assignedText(block, "category");
-  const tooltip = assignedText(block, "tooltip");
-  const sidetext = assignedText(block, "sidetext");
+  const label = assignedText(block, 'label');
+  const category = assignedText(block, 'category');
+  const tooltip = assignedText(block, 'tooltip');
+  const sidetext = assignedText(block, 'sidetext');
   if (label) definition.label = label;
   if (category) definition.category = category;
   if (tooltip) definition.tooltip = tooltip;
@@ -172,22 +168,18 @@ for (const [key, variable] of enumAliases) {
   if (values) definitions.get(key).enumValues = values;
 }
 
-const overrideList = text.match(
-  /filament_extruder_override_keys\s*=\s*\{([\s\S]*?)\};/,
-)?.[1];
+const overrideList = text.match(/filament_extruder_override_keys\s*=\s*\{([\s\S]*?)\};/)?.[1];
 if (overrideList) {
   const simpleOverrides = new Set([
-    "filament_retraction_length",
-    "filament_z_hop",
-    "filament_long_retractions_when_cut",
-    "filament_retraction_distances_when_cut",
+    'filament_retraction_length',
+    'filament_z_hop',
+    'filament_long_retractions_when_cut',
+    'filament_retraction_distances_when_cut',
   ]);
   for (const filamentKey of stringsIn(overrideList)) {
-    const source = definitions.get(filamentKey.replace(/^filament_/, ""));
+    const source = definitions.get(filamentKey.replace(/^filament_/, ''));
     if (!source) {
-      throw new Error(
-        `Could not find source definition for dynamic option ${filamentKey}.`,
-      );
+      throw new Error(`Could not find source definition for dynamic option ${filamentKey}.`);
     }
     definitions.set(filamentKey, {
       ...source,
@@ -197,9 +189,7 @@ if (overrideList) {
 }
 
 const sorted = Object.fromEntries(
-  [...definitions.entries()].sort(([left], [right]) =>
-    left.localeCompare(right),
-  ),
+  [...definitions.entries()].sort(([left], [right]) => left.localeCompare(right)),
 );
 
 const contents = await prettier.format(
@@ -231,10 +221,10 @@ export const ORCA_PROFILE_CONFIG_DEFS: Readonly<
   Record<string, OrcaProfileConfigDef>
 > = ${JSON.stringify(sorted, null, 2)};
 `,
-  { parser: "typescript" },
+  { parser: 'typescript' },
 );
 
-await writeFile(outputPath, contents, "utf8");
+await writeFile(outputPath, contents, 'utf8');
 console.log(
   `Generated ${outputPath} with ${definitions.size} option definitions from OrcaSlicer ${ORCA_VERSION}.`,
 );

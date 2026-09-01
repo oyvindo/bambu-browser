@@ -1,10 +1,10 @@
 export type ProfileDiffLine = {
-  kind: "unchanged" | "added" | "removed";
+  kind: 'unchanged' | 'added' | 'removed';
   text: string;
 };
 
 export type ProfileDiffSide = {
-  kind: "unchanged" | "added" | "removed" | "empty";
+  kind: 'unchanged' | 'added' | 'removed' | 'empty';
   text: string;
 };
 
@@ -15,9 +15,9 @@ export type ProfileDiffPair = {
 };
 
 function splitLines(text: string): string[] {
-  const lines = text.split("\n");
+  const lines = text.split('\n');
   // A trailing newline ends the last line rather than starting an empty one.
-  if (lines.length > 1 && lines[lines.length - 1] === "") lines.pop();
+  if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
   return lines;
 }
 
@@ -45,10 +45,7 @@ function suffixLcsLengths(left: string[], right: string[]): Uint32Array[] {
  * Line-by-line diff between the file on disk and the editor buffer.
  * Removed lines come before the added lines that replace them.
  */
-export function diffProfileLines(
-  original: string,
-  draft: string,
-): ProfileDiffLine[] {
+export function diffProfileLines(original: string, draft: string): ProfileDiffLine[] {
   const before = splitLines(original);
   const after = splitLines(draft);
   const lcs = suffixLcsLengths(before, after);
@@ -60,17 +57,14 @@ export function diffProfileLines(
     const atOriginalEnd = i >= before.length;
     const atDraftEnd = j >= after.length;
     if (!atOriginalEnd && !atDraftEnd && before[i] === after[j]) {
-      lines.push({ kind: "unchanged", text: after[j]! });
+      lines.push({ kind: 'unchanged', text: after[j]! });
       i += 1;
       j += 1;
-    } else if (
-      !atOriginalEnd &&
-      (atDraftEnd || lcs[i + 1]![j]! >= lcs[i]![j + 1]!)
-    ) {
-      lines.push({ kind: "removed", text: before[i]! });
+    } else if (!atOriginalEnd && (atDraftEnd || lcs[i + 1]![j]! >= lcs[i]![j + 1]!)) {
+      lines.push({ kind: 'removed', text: before[i]! });
       i += 1;
     } else {
-      lines.push({ kind: "added", text: after[j]! });
+      lines.push({ kind: 'added', text: after[j]! });
       j += 1;
     }
   }
@@ -79,24 +73,22 @@ export function diffProfileLines(
 }
 
 export function hasProfileChanges(lines: readonly ProfileDiffLine[]): boolean {
-  return lines.some((line) => line.kind !== "unchanged");
+  return lines.some((line) => line.kind !== 'unchanged');
 }
 
 /**
  * Fold a unified line diff into aligned pairs: a run of removals and additions
  * between unchanged lines is zipped so replacements sit on the same row.
  */
-export function pairProfileDiffLines(
-  lines: readonly ProfileDiffLine[],
-): ProfileDiffPair[] {
+export function pairProfileDiffLines(lines: readonly ProfileDiffLine[]): ProfileDiffPair[] {
   const pairs: ProfileDiffPair[] = [];
   let index = 0;
   while (index < lines.length) {
     const line = lines[index]!;
-    if (line.kind === "unchanged") {
+    if (line.kind === 'unchanged') {
       pairs.push({
-        left: { kind: "unchanged", text: line.text },
-        right: { kind: "unchanged", text: line.text },
+        left: { kind: 'unchanged', text: line.text },
+        right: { kind: 'unchanged', text: line.text },
       });
       index += 1;
       continue;
@@ -104,9 +96,9 @@ export function pairProfileDiffLines(
 
     const removed: string[] = [];
     const added: string[] = [];
-    while (index < lines.length && lines[index]!.kind !== "unchanged") {
+    while (index < lines.length && lines[index]!.kind !== 'unchanged') {
       const change = lines[index]!;
-      if (change.kind === "removed") removed.push(change.text);
+      if (change.kind === 'removed') removed.push(change.text);
       else added.push(change.text);
       index += 1;
     }
@@ -117,12 +109,12 @@ export function pairProfileDiffLines(
       pairs.push({
         left:
           leftText === undefined
-            ? { kind: "empty", text: "" }
-            : { kind: "removed", text: leftText },
+            ? { kind: 'empty', text: '' }
+            : { kind: 'removed', text: leftText },
         right:
           rightText === undefined
-            ? { kind: "empty", text: "" }
-            : { kind: "added", text: rightText },
+            ? { kind: 'empty', text: '' }
+            : { kind: 'added', text: rightText },
       });
     }
   }

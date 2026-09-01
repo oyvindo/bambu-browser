@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { Popover } from "@base-ui/react/popover";
-import { Tooltip } from "@base-ui/react/tooltip";
-import { ChevronDown, X } from "lucide-react";
-import * as React from "react";
+import * as React from 'react';
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Popover } from '@base-ui/react/popover';
+import { Tooltip } from '@base-ui/react/tooltip';
+import { ChevronDown, X } from 'lucide-react';
+
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   buildBrandOptions,
   defaultBrandIds,
@@ -20,12 +21,12 @@ import {
   SYSTEM_FILAMENT_ROOT_KEY,
   uniqueFilamentSubfolderNames,
   type SystemFilamentEntry,
-} from "@/lib/bambu/system-filament-filters";
-import { useTranslations } from "@/localization/context";
-import { cn } from "@/lib/utils";
+} from '@/lib/bambu/system-filament-filters';
+import { cn } from '@/lib/utils';
+import { useTranslations } from '@/localization/context';
 
 function fileLabel(relativePath: string): string {
-  const parts = relativePath.split("/").filter(Boolean);
+  const parts = relativePath.split('/').filter(Boolean);
   return parts[parts.length - 1] ?? relativePath;
 }
 
@@ -54,7 +55,7 @@ export function CompareFilamentToolbar({
 }: CompareFilamentToolbarProps) {
   const t = useTranslations();
   const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState('');
 
   const listEntries = React.useMemo(
     () =>
@@ -73,7 +74,7 @@ export function CompareFilamentToolbar({
   );
 
   const rootBrandOptions = React.useMemo(
-    () => buildBrandOptions(listEntries).filter((b) => b.folder === ""),
+    () => buildBrandOptions(listEntries).filter((b) => b.folder === ''),
     [listEntries],
   );
 
@@ -83,7 +84,7 @@ export function CompareFilamentToolbar({
   );
 
   const hasRootEntries = React.useMemo(
-    () => listEntries.some((e) => e.folder === ""),
+    () => listEntries.some((e) => e.folder === ''),
     [listEntries],
   );
 
@@ -93,10 +94,7 @@ export function CompareFilamentToolbar({
     if (listEntries.length > 0) {
       for (const key of orderedMaterialLocationKeys(listEntries)) {
         const mats = discoverMaterialsForLocation(listEntries, key);
-        materialSelByFolder.set(
-          key,
-          defaultMaterialSelectionForDiscoveredList(mats),
-        );
+        materialSelByFolder.set(key, defaultMaterialSelectionForDiscoveredList(mats));
       }
       rootBrandSel = defaultBrandIds(rootBrandOptions);
       if (rootBrandSel.size === 0 && rootBrandOptions.length > 0) {
@@ -118,17 +116,13 @@ export function CompareFilamentToolbar({
   } | null>(null);
 
   const { materialSelByFolder, rootBrandSel, locationSel } =
-    selectionOverride?.source === listEntries
-      ? selectionOverride.selection
-      : defaultSelection;
+    selectionOverride?.source === listEntries ? selectionOverride.selection : defaultSelection;
 
   const updateSelection = React.useCallback(
     (update: (previous: FilterSelection) => FilterSelection) => {
       setSelectionOverride((prev) => ({
         source: listEntries,
-        selection: update(
-          prev?.source === listEntries ? prev.selection : defaultSelection,
-        ),
+        selection: update(prev?.source === listEntries ? prev.selection : defaultSelection),
       }));
     },
     [listEntries, defaultSelection],
@@ -146,12 +140,9 @@ export function CompareFilamentToolbar({
     [listEntries, materialSelByFolder, rootBrandSel, locationSel, query],
   );
 
-  const grouped = React.useMemo(
-    () => groupEntriesByFolder(filteredEntries),
-    [filteredEntries],
-  );
+  const grouped = React.useMemo(() => groupEntriesByFolder(filteredEntries), [filteredEntries]);
 
-  const displayLabel = value ? fileLabel(value) : "";
+  const displayLabel = value ? fileLabel(value) : '';
 
   const toggleMaterial = React.useCallback(
     (folderKey: string, id: string) => {
@@ -193,35 +184,31 @@ export function CompareFilamentToolbar({
 
   const handleOpenChange = React.useCallback((next: boolean) => {
     setOpen(next);
-    if (!next) setQuery("");
+    if (!next) setQuery('');
   }, []);
 
   const rootLocationOn = locationSel.has(SYSTEM_FILAMENT_ROOT_KEY);
 
   return (
     <Tooltip.Provider delay={400}>
-      <div className="border-border min-w-0 max-w-full space-y-3 border-t px-4 py-3">
+      <div className='border-border min-w-0 max-w-full space-y-3 border-t px-4 py-3'>
         {hasRootEntries || subfolderNames.length > 0 ? (
-          <div className="min-w-0 max-w-full space-y-1.5">
-            <span className="text-muted-foreground block text-xs font-medium">
-              {t("compareFilament.foldersHeading")}
+          <div className='min-w-0 max-w-full space-y-1.5'>
+            <span className='text-muted-foreground block text-xs font-medium'>
+              {t('compareFilament.foldersHeading')}
             </span>
-            <div className="flex min-w-0 max-h-32 flex-wrap gap-2 overflow-y-auto pr-1">
+            <div className='flex min-w-0 max-h-32 flex-wrap gap-2 overflow-y-auto pr-1'>
               {hasRootEntries ? (
                 <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    locationSel.has(SYSTEM_FILAMENT_ROOT_KEY)
-                      ? "secondary"
-                      : "outline"
-                  }
+                  type='button'
+                  size='sm'
+                  variant={locationSel.has(SYSTEM_FILAMENT_ROOT_KEY) ? 'secondary' : 'outline'}
                   aria-pressed={locationSel.has(SYSTEM_FILAMENT_ROOT_KEY)}
                   disabled={disabled || loadingList}
-                  className="h-8 rounded-md text-xs font-medium"
+                  className='h-8 rounded-md text-xs font-medium'
                   onClick={() => toggleLocation(SYSTEM_FILAMENT_ROOT_KEY)}
                 >
-                  {t("compareFilament.rootToggle")}
+                  {t('compareFilament.rootToggle')}
                 </Button>
               ) : null}
               {subfolderNames.map((name) => {
@@ -229,12 +216,12 @@ export function CompareFilamentToolbar({
                 return (
                   <Button
                     key={name}
-                    type="button"
-                    size="sm"
-                    variant={on ? "secondary" : "outline"}
+                    type='button'
+                    size='sm'
+                    variant={on ? 'secondary' : 'outline'}
                     aria-pressed={on}
                     disabled={disabled || loadingList}
-                    className="h-8 rounded-md text-xs font-medium"
+                    className='h-8 rounded-md text-xs font-medium'
                     onClick={() => toggleLocation(name)}
                   >
                     {name}
@@ -245,30 +232,30 @@ export function CompareFilamentToolbar({
           </div>
         ) : null}
 
-        <div className="min-w-0 max-w-full space-y-1.5">
-          <span className="text-muted-foreground block text-xs font-medium">
-            {t("compareFilament.brandsHeading")}
+        <div className='min-w-0 max-w-full space-y-1.5'>
+          <span className='text-muted-foreground block text-xs font-medium'>
+            {t('compareFilament.brandsHeading')}
           </span>
-          <div className="flex flex-col gap-2">
+          <div className='flex flex-col gap-2'>
             {rootBrandOptions.length > 0 ? (
-              <div className="flex min-w-0 max-h-32 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1">
+              <div className='flex min-w-0 max-h-32 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1'>
                 {rootBrandOptions.map((b) => (
                   <label
                     key={b.id}
                     className={cn(
-                      "text-foreground flex max-w-full items-center gap-1.5 text-xs",
+                      'text-foreground flex max-w-full items-center gap-1.5 text-xs',
                       disabled || loadingList || !rootLocationOn
-                        ? "cursor-not-allowed opacity-50"
-                        : "cursor-pointer",
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'cursor-pointer',
                     )}
                   >
                     <input
-                      type="checkbox"
+                      type='checkbox'
                       checked={rootBrandSel.has(b.id)}
                       onChange={() => toggleRootBrand(b.id)}
                       disabled={disabled || loadingList || !rootLocationOn}
                     />
-                    <span className="wrap-break-word">{b.label}</span>
+                    <span className='wrap-break-word'>{b.label}</span>
                   </label>
                 ))}
               </div>
@@ -276,55 +263,55 @@ export function CompareFilamentToolbar({
           </div>
         </div>
 
-        <div className="min-w-0 max-w-full space-y-3">
-          <span className="text-muted-foreground block text-xs font-medium">
-            {t("compareFilament.materialsHeading")}
+        <div className='min-w-0 max-w-full space-y-3'>
+          <span className='text-muted-foreground block text-xs font-medium'>
+            {t('compareFilament.materialsHeading')}
           </span>
           {materialLocationKeys.map((folderKey) => {
             const mats = discoverMaterialsForLocation(listEntries, folderKey);
             if (mats.length === 0) return null;
             const sel = materialSelByFolder.get(folderKey);
             const locOn =
-              folderKey === ""
+              folderKey === ''
                 ? locationSel.has(SYSTEM_FILAMENT_ROOT_KEY)
                 : locationSel.has(folderKey);
             return (
               <div
-                key={folderKey || "root"}
+                key={folderKey || 'root'}
                 className={cn(
-                  "min-w-0 max-w-full space-y-1.5",
-                  !locOn && "text-muted-foreground opacity-50",
+                  'min-w-0 max-w-full space-y-1.5',
+                  !locOn && 'text-muted-foreground opacity-50',
                 )}
               >
-                {folderKey !== "" ? (
-                  <span className="text-muted-foreground block text-[11px] font-medium">
+                {folderKey !== '' ? (
+                  <span className='text-muted-foreground block text-[11px] font-medium'>
                     {folderKey}
                   </span>
                 ) : null}
                 <div
                   className={cn(
-                    "flex min-w-0 max-h-28 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1",
-                    folderKey !== "" && "border-border ml-3 border-l pl-3",
+                    'flex min-w-0 max-h-28 flex-wrap gap-x-3 gap-y-1.5 overflow-y-auto pr-1',
+                    folderKey !== '' && 'border-border ml-3 border-l pl-3',
                   )}
                 >
                   {mats.map((id) => (
                     <label
                       key={`${folderKey}:${id}`}
                       className={cn(
-                        "flex min-w-0 max-w-full items-center gap-1.5 text-xs wrap-break-word",
+                        'flex min-w-0 max-w-full items-center gap-1.5 text-xs wrap-break-word',
                         disabled || loadingList || !locOn
-                          ? "cursor-not-allowed"
-                          : "text-foreground cursor-pointer",
+                          ? 'cursor-not-allowed'
+                          : 'text-foreground cursor-pointer',
                       )}
                     >
                       <input
-                        type="checkbox"
-                        className="shrink-0"
+                        type='checkbox'
+                        className='shrink-0'
                         checked={sel?.has(id) ?? false}
                         onChange={() => toggleMaterial(folderKey, id)}
                         disabled={disabled || loadingList || !locOn}
                       />
-                      <span className="min-w-0 wrap-break-word">{id}</span>
+                      <span className='min-w-0 wrap-break-word'>{id}</span>
                     </label>
                   ))}
                 </div>
@@ -333,62 +320,60 @@ export function CompareFilamentToolbar({
           })}
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className='space-y-1.5'>
+          <div className='flex min-w-0 items-center gap-2'>
             <Popover.Root open={open} onOpenChange={handleOpenChange}>
               <Popover.Trigger
-                type="button"
+                type='button'
                 disabled={disabled || loadingList}
                 className={cn(
-                  "border-input bg-background text-foreground inline-flex h-9 min-w-0 flex-1 items-center justify-between gap-2 rounded-md border px-2 text-left text-sm",
-                  "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                  "disabled:pointer-events-none disabled:opacity-50",
+                  'border-input bg-background text-foreground inline-flex h-9 min-w-0 flex-1 items-center justify-between gap-2 rounded-md border px-2 text-left text-sm',
+                  'outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+                  'disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
-                <span className="min-w-0 flex-1 truncate">
+                <span className='min-w-0 flex-1 truncate'>
                   {loadingList
-                    ? t("compareFilament.loadingList")
+                    ? t('compareFilament.loadingList')
                     : value
                       ? displayLabel
-                      : t("compareFilament.placeholderClosed")}
+                      : t('compareFilament.placeholderClosed')}
                 </span>
                 <ChevronDown
-                  className="text-muted-foreground size-4 shrink-0 opacity-70"
+                  className='text-muted-foreground size-4 shrink-0 opacity-70'
                   aria-hidden
                 />
               </Popover.Trigger>
               <Popover.Portal>
                 <Popover.Positioner
-                  side="bottom"
-                  align="start"
+                  side='bottom'
+                  align='start'
                   sideOffset={4}
-                  className="z-50 min-w-[min(100vw-2rem,24rem)] max-w-[min(100vw-2rem,32rem)]"
+                  className='z-50 min-w-[min(100vw-2rem,24rem)] max-w-[min(100vw-2rem,32rem)]'
                 >
                   <Popover.Popup
                     className={cn(
-                      "border-border bg-popover text-popover-foreground rounded-md border shadow-md outline-none",
-                      "flex max-h-[min(22rem,calc(100vh-6rem))] flex-col overflow-hidden",
+                      'border-border bg-popover text-popover-foreground rounded-md border shadow-md outline-none',
+                      'flex max-h-[min(22rem,calc(100vh-6rem))] flex-col overflow-hidden',
                     )}
                   >
-                    <div className="border-border shrink-0 border-b p-2">
+                    <div className='border-border shrink-0 border-b p-2'>
                       <input
-                        type="search"
+                        type='search'
+                        // Focus the filter when the popover opens.
+                        // oxlint-disable-next-line jsx-a11y/no-autofocus
                         autoFocus
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={t("compareFilament.searchPlaceholder")}
-                        className="border-input bg-background placeholder:text-muted-foreground h-8 w-full rounded-md border px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-                        aria-label={t("compareFilament.searchPlaceholder")}
+                        placeholder={t('compareFilament.searchPlaceholder')}
+                        className='border-input bg-background placeholder:text-muted-foreground h-8 w-full rounded-md border px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50'
+                        aria-label={t('compareFilament.searchPlaceholder')}
                       />
                     </div>
-                    <ul
-                      className="min-h-0 flex-1 overflow-y-auto p-1"
-                      role="listbox"
-                    >
-                      {grouped.length === 0 ||
-                      grouped.every((g) => g.entries.length === 0) ? (
-                        <li className="text-muted-foreground list-none px-2 py-2 text-sm">
-                          {t("compareFilament.noMatches")}
+                    <ul className='min-h-0 flex-1 overflow-y-auto p-1' role='listbox'>
+                      {grouped.every((g) => g.entries.length === 0) ? (
+                        <li className='text-muted-foreground list-none px-2 py-2 text-sm'>
+                          {t('compareFilament.noMatches')}
                         </li>
                       ) : (
                         grouped.flatMap((group, gi) => {
@@ -397,50 +382,41 @@ export function CompareFilamentToolbar({
                             nodes.push(
                               <li
                                 key={`sep-${group.folder}`}
-                                role="separator"
-                                className="border-border list-none border-t"
+                                role='separator'
+                                className='border-border list-none border-t'
                                 aria-hidden
                               />,
                             );
                           }
                           nodes.push(
                             <li
-                              key={`h-${group.folder || "root"}`}
-                              role="presentation"
-                              className="list-none"
+                              key={`h-${group.folder || 'root'}`}
+                              role='presentation'
+                              className='list-none'
                             >
-                              <div className="bg-muted/80 text-muted-foreground sticky top-0 z-1 px-2 py-1.5 text-[11px] font-semibold tracking-wide uppercase">
-                                {group.folder
-                                  ? group.folder
-                                  : t("compareFilament.rootFolder")}
+                              <div className='bg-muted/80 text-muted-foreground sticky top-0 z-1 px-2 py-1.5 text-[11px] font-semibold tracking-wide uppercase'>
+                                {group.folder ? group.folder : t('compareFilament.rootFolder')}
                               </div>
                             </li>,
                           );
                           for (const e of group.entries) {
                             nodes.push(
-                              <li
-                                key={e.relativePath}
-                                role="presentation"
-                                className="list-none"
-                              >
+                              <li key={e.relativePath} role='presentation' className='list-none'>
                                 <button
-                                  type="button"
-                                  role="option"
+                                  type='button'
+                                  role='option'
                                   aria-selected={value === e.relativePath}
                                   className={cn(
-                                    "hover:bg-muted focus:bg-muted w-full rounded-sm px-2 py-1.5 text-left text-sm",
-                                    value === e.relativePath &&
-                                      "bg-muted font-medium",
+                                    'hover:bg-muted focus:bg-muted w-full rounded-sm px-2 py-1.5 text-left text-sm',
+                                    value === e.relativePath && 'bg-muted font-medium',
                                   )}
                                   onClick={() => {
                                     onChange(e.relativePath);
                                     setOpen(false);
                                   }}
                                 >
-                                  <span className="block truncate font-medium">
-                                    {e.fileName}
-                                  </span>
-                                  <span className="text-muted-foreground block truncate font-mono text-[10px]">
+                                  <span className='block truncate font-medium'>{e.fileName}</span>
+                                  <span className='text-muted-foreground block truncate font-mono text-[10px]'>
                                     {e.relativePath}
                                   </span>
                                 </button>
@@ -459,29 +435,25 @@ export function CompareFilamentToolbar({
             {value ? (
               <Tooltip.Root>
                 <Tooltip.Trigger
-                  type="button"
+                  type='button'
                   className={cn(
-                    buttonVariants({ variant: "outline", size: "icon-lg" }),
-                    "shrink-0",
+                    buttonVariants({ variant: 'outline', size: 'icon-lg' }),
+                    'shrink-0',
                   )}
                   disabled={disabled}
                   onClick={() => onClear()}
-                  aria-label={t("compareFilament.removeAria")}
+                  aria-label={t('compareFilament.removeAria')}
                 >
-                  <X className="size-4" strokeWidth={2} aria-hidden />
+                  <X className='size-4' strokeWidth={2} aria-hidden />
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
-                  <Tooltip.Positioner
-                    side="top"
-                    sideOffset={6}
-                    className="z-50"
-                  >
+                  <Tooltip.Positioner side='top' sideOffset={6} className='z-50'>
                     <Tooltip.Popup
                       className={cn(
-                        "bg-popover text-popover-foreground border-border rounded-md border px-2 py-1 text-xs shadow-md",
+                        'bg-popover text-popover-foreground border-border rounded-md border px-2 py-1 text-xs shadow-md',
                       )}
                     >
-                      {t("compareFilament.removeTooltip")}
+                      {t('compareFilament.removeTooltip')}
                     </Tooltip.Popup>
                   </Tooltip.Positioner>
                 </Tooltip.Portal>
