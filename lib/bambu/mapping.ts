@@ -3,6 +3,7 @@
  * Row title: label + unit in parentheses when applicable.
  */
 
+import { stringifyUnknown } from '@/lib/utils';
 import { localizedBoolean, localizedEnumValue } from '@/localization/profile-fields';
 import type { AppLocale } from '@/localization/types';
 
@@ -357,20 +358,6 @@ export function propertyRowTitle(p: BambuPropertyRowDef): string {
   return p.label;
 }
 
-function stringifyUnknown(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
-    return String(value);
-  }
-  if (value == null) return '';
-  try {
-    const json = JSON.stringify(value);
-    return json === undefined ? '' : json;
-  } catch {
-    return Object.prototype.toString.call(value);
-  }
-}
-
 /** Pick scalar from profile: first array element when value is an array. */
 export function pickScalarValue(value: unknown, extruderIndex: number): unknown {
   if (!Array.isArray(value)) return value;
@@ -566,21 +553,9 @@ export function segmentsForProfileValue(
 ): { index: number | null; text: string }[] {
   void layout;
   if (Array.isArray(value)) {
-    return value.map((v, i) => ({ index: i, text: formatJsonLeaf(v) }));
+    return value.map((v, i) => ({ index: i, text: stringifyUnknown(v) }));
   }
-  return [{ index: null, text: formatJsonLeaf(value) }];
-}
-
-function formatJsonLeaf(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return Object.prototype.toString.call(value);
-  }
+  return [{ index: null, text: stringifyUnknown(value) }];
 }
 
 export function valuesEqualForLayout(a: unknown, b: unknown, layout: PropertyValueLayout): boolean {

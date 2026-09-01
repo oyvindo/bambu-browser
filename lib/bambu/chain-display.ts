@@ -1,3 +1,5 @@
+import { stringifyUnknown } from '@/lib/utils';
+
 import { formatBambuMappedValue, type BambuValueUnit } from './mapping';
 import type { InheritanceChainLevel } from './resolver';
 
@@ -126,20 +128,6 @@ export function mergedValueAt(
 /**
  * Display for grid cells: strings like "25%" as-is; arrays use the active extruder slot (default 0), then first element.
  */
-function stringifyUnknown(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
-    return String(value);
-  }
-  if (value == null) return '';
-  try {
-    const json = JSON.stringify(value);
-    return json === undefined ? '' : json;
-  } catch {
-    return Object.prototype.toString.call(value);
-  }
-}
-
 export function formatProfileCellValue(value: unknown, activeExtruderIndex: number): string {
   if (value === undefined || value === null) return '—';
   if (Array.isArray(value)) {

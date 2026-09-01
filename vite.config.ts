@@ -16,7 +16,7 @@ export default defineConfig({
   },
   staged: {
     '*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}': 'vp check --fix',
-    '*.{json,jsonc,css,scss,md,mdx,yml,yaml}': 'vp fmt',
+    '*.{json,jsonc,css,scss,md,mdx}': 'vp fmt',
   },
   lint: {
     plugins: ['oxc', 'typescript', 'unicorn', 'react', 'nextjs', 'import', 'jsx-a11y'],
@@ -203,6 +203,8 @@ export default defineConfig({
       'coverage',
       '*.min.js',
       'package-lock.json',
+      '*.yml',
+      '*.yaml',
     ],
     sortImports: {
       customGroups: [{ groupName: 'react', elementNamePattern: ['react', 'react-dom'] }],
