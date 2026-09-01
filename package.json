@@ -52,5 +52,10 @@
     "typescript": "6.0.3",
     "vitest": "^4.1.11",
     "wait-on": "^9.1.0"
+  },
+  "allowScripts": {
+    "unrs-resolver": true,
+    "fsevents": true,
+    "electron-winstaller": false
   }
 }
