@@ -1,9 +1,9 @@
 export function normalizeRelativePath(path: string): string {
   return path
-    .replace(/\\/g, "/")
-    .replace(/^\.\/+/, "")
-    .replace(/\/+/g, "/")
-    .replace(/^\/+/, "");
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '')
+    .replace(/\/+/g, '/')
+    .replace(/^\/+/, '');
 }
 
 /**
@@ -11,9 +11,9 @@ export function normalizeRelativePath(path: string): string {
  * (e.g. macOS `.../BambuStudio/system/BBL/filament/x.json` → `system/BBL/filament/x.json`).
  */
 export function normalizeInheritsReference(raw: string): string {
-  let t = raw.trim().replace(/\\/g, "/");
+  let t = raw.trim().replace(/\\/g, '/');
   const lower = t.toLowerCase();
-  const needle = "bambustudio/";
+  const needle = 'bambustudio/';
   const idx = lower.lastIndexOf(needle);
   if (idx !== -1) {
     t = t.slice(idx + needle.length);
@@ -22,18 +22,18 @@ export function normalizeInheritsReference(raw: string): string {
 }
 
 export function splitPath(path: string): string[] {
-  return normalizeRelativePath(path).split("/").filter(Boolean);
+  return normalizeRelativePath(path).split('/').filter(Boolean);
 }
 
 export function dirname(relPath: string): string {
   const parts = splitPath(relPath);
   parts.pop();
-  return parts.join("/");
+  return parts.join('/');
 }
 
 export function joinPath(dir: string, fileName: string): string {
-  const d = dir.replace(/\/+$/, "");
-  const f = fileName.replace(/^\/+/, "");
+  const d = dir.replace(/\/+$/, '');
+  const f = fileName.replace(/^\/+/, '');
   return d ? `${d}/${f}` : f;
 }
 
@@ -78,7 +78,7 @@ export async function readJsonUnderRoot(
   const file = await handle.getFile();
   const text = await file.text();
   const parsed: unknown = JSON.parse(text);
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error(`Invalid profile JSON (expected object): ${relativePath}`);
   }
   return parsed as Record<string, unknown>;
@@ -87,17 +87,15 @@ export async function readJsonUnderRoot(
 function assertEditableUserProfilePath(relativePath: string): string {
   const normalized = normalizeRelativePath(relativePath);
   const parts = splitPath(normalized);
-  const validRoot = parts[0] === "user" || parts[0] === "users";
-  const validKind = parts[2] === "process" || parts[2] === "filament";
+  const validRoot = parts[0] === 'user' || parts[0] === 'users';
+  const validKind = parts[2] === 'process' || parts[2] === 'filament';
   if (
     !validRoot ||
     !validKind ||
-    parts.some((part) => part === "..") ||
-    !normalized.toLowerCase().endsWith(".json")
+    parts.some((part) => part === '..') ||
+    !normalized.toLowerCase().endsWith('.json')
   ) {
-    throw new Error(
-      "Only existing user process and filament JSON files are editable.",
-    );
+    throw new Error('Only existing user process and filament JSON files are editable.');
   }
   return normalized;
 }
@@ -108,8 +106,8 @@ export async function readEditableProfileUnderRoot(
 ): Promise<Record<string, unknown>> {
   const normalized = assertEditableUserProfilePath(relativePath);
   const data = await readJsonUnderRoot(root, normalized);
-  if (String(data.from).toLowerCase() === "system") {
-    throw new Error("System profiles are read-only.");
+  if (String(data.from).toLowerCase() === 'system') {
+    throw new Error('System profiles are read-only.');
   }
   return data;
 }
@@ -122,26 +120,23 @@ export async function writeEditableProfileUnderRoot(
   const normalized = assertEditableUserProfilePath(relativePath);
   const current = await readEditableProfileUnderRoot(root, normalized);
   const next: unknown = JSON.parse(formattedJson);
-  if (next === null || typeof next !== "object" || Array.isArray(next)) {
-    throw new Error("Profile JSON must be an object.");
+  if (next === null || typeof next !== 'object' || Array.isArray(next)) {
+    throw new Error('Profile JSON must be an object.');
   }
-  if (
-    String((next as Record<string, unknown>).from).toLowerCase() === "system"
-  ) {
-    throw new Error("System profiles are read-only.");
+  if (String((next as Record<string, unknown>).from).toLowerCase() === 'system') {
+    throw new Error('System profiles are read-only.');
   }
-  if (String(current.from).toLowerCase() === "system") {
-    throw new Error("System profiles are read-only.");
+  if (String(current.from).toLowerCase() === 'system') {
+    throw new Error('System profiles are read-only.');
   }
   const nextRecord = next as Record<string, unknown>;
-  const expectedKind =
-    splitPath(normalized)[2] === "filament" ? "filament" : "process";
-  for (const key of ["inherits", "type", "name", "from"] as const) {
+  const expectedKind = splitPath(normalized)[2] === 'filament' ? 'filament' : 'process';
+  for (const key of ['inherits', 'type', 'name', 'from'] as const) {
     if (JSON.stringify(current[key]) === JSON.stringify(nextRecord[key])) {
       continue;
     }
     const spellsOutInheritedKind =
-      !(key in current) && key === "type" && nextRecord.type === expectedKind;
+      !(key in current) && key === 'type' && nextRecord.type === expectedKind;
     if (spellsOutInheritedKind) continue;
     throw new Error(`${key} cannot be changed.`);
   }

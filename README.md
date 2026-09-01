@@ -15,8 +15,8 @@ The hosted [Vercel web app](https://bambu-browser.vercel.app/) **cannot read
 slicer profiles on its own**. On both macOS and Windows, `server.js` must be
 running locally on the same computer. Developers can either:
 
-1. run only `npm run api` locally and use the Vercel interface, or
-2. clone the repository and run both `npm run api` and `npm run dev`.
+1. run only `vp run api` locally and use the Vercel interface, or
+2. clone the repository and run both `vp run api` and `vp run dev`.
 
 The browser never uploads profile data. The API is bound to loopback and reads
 the slicer files directly from your computer.
@@ -27,21 +27,23 @@ Bambu Studio stores machine, process, and filament presets under an application-
 
 ## Developer requirements
 
-- **Node.js** (current LTS is fine)
+- **[Vite+](https://viteplus.dev/)** (`vp`) — install with `curl -fsSL https://vite.plus | bash`, then open a new terminal and run `vp help`. Vite+ manages the Node.js runtime and npm for this repo.
 - **Bambu Studio** installed and used at least once so its data directory exists (or point the API at a copy of that tree with `BAMBUSTUDIO_ROOT`)
+
+This app is still **Next.js + Electron**. Vite+ is the toolchain (install, lint, format, type-check, tests). `vp dev` and `vp build` always start Vite, which this project does not use. Run Next and Electron through `vp run <script>` (same as the `package.json` scripts).
 
 ## Developer usage
 
 1. **Install dependencies**
 
    ```bash
-   npm install
+   vp install
    ```
 
 2. **Start the local JSON API** (in a separate terminal). It reads profiles and can replace explicitly selected user process/filament files under your Bambu Studio root.
 
    ```bash
-   npm run api
+   vp run api
    ```
 
    Optional environment variables:
@@ -53,13 +55,13 @@ Bambu Studio stores machine, process, and filament presets under an application-
    Example:
 
    ```bash
-   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" PORT=3847 npm run api
+   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" PORT=3847 vp run api
    ```
 
 3. **Start the Next.js app**
 
    ```bash
-   npm run dev
+   vp run dev
    ```
 
    Open [http://localhost:3000](http://localhost:3000). The UI talks to the API at **http://127.0.0.1:3847** by default.
@@ -67,27 +69,27 @@ Bambu Studio stores machine, process, and filament presets under an application-
    The same API process serves both slicers. Its routes accept
    `slicer=bambu|orca` and default to `bambu` for backward compatibility.
 
-   If the API runs on another host or port, set **`NEXT_PUBLIC_BAMBU_API_URL`** before `npm run dev`, for example:
+   If the API runs on another host or port, set **`NEXT_PUBLIC_BAMBU_API_URL`** before `vp run dev`, for example:
 
    ```bash
-   NEXT_PUBLIC_BAMBU_API_URL=http://127.0.0.1:3847 npm run dev
+   NEXT_PUBLIC_BAMBU_API_URL=http://127.0.0.1:3847 vp run dev
    ```
 
 4. **Production build** (UI only; you still need the API process for full functionality)
 
    ```bash
-   npm run build
-   npm start
+   vp run build
+   vp run start
    ```
 
 ### Desktop app (Electron)
 
 The same UI and `server.js` API can run inside a desktop window so you do not need two terminals. The web commands above are unchanged: Electron is only an extra packaging layer.
 
-- **`npm run electron:dev`** — starts Next.js (`next dev` on port 3000) and opens Electron. The app starts `server.js` on port **3847** itself. Do not run `npm run api` at the same time unless you intend to reuse that process (the app will attach if 3847 already serves `/api/health`).
-- **`npm run electron:preview`** — static-export the UI and open Electron without building a `.dmg`.
-- **`npm run dist`** (or `npm run dist:mac`) — static-export the UI and build an ad-hoc signed macOS `.dmg` under `dist/`.
-- **`npm run dist:win`** — same export, then a Windows NSIS installer (x64) under `dist/`. Prefer running this **on Windows**. From macOS, NSIS often needs [Wine](https://www.electron.build/multi-platform-build); otherwise build on a Windows machine or CI runner.
+- **`vp run electron:dev`** — starts Next.js (`next dev` on port 3000) and opens Electron. The app starts `server.js` on port **3847** itself. Do not run `vp run api` at the same time unless you intend to reuse that process (the app will attach if 3847 already serves `/api/health`).
+- **`vp run electron:preview`** — static-export the UI and open Electron without building a `.dmg`.
+- **`vp run dist`** (or `vp run dist:mac`) — static-export the UI and build an ad-hoc signed macOS `.dmg` under `dist/`.
+- **`vp run dist:win`** — same export, then a Windows NSIS installer (x64) under `dist/`. Prefer running this **on Windows**. From macOS, NSIS often needs [Wine](https://www.electron.build/multi-platform-build); otherwise build on a Windows machine or CI runner.
 
 **GitHub Releases:** pushing a version tag (`v0.1.0`, `v1.2.3`, …) runs [`.github/workflows/desktop-release.yml`](.github/workflows/desktop-release.yml). It builds the arm64 `.dmg` on `macos-latest` and the NSIS installer on `windows-latest`, then attaches those files to a GitHub Release for that tag. Ordinary pushes (for example to `main`) do not run this workflow; **Vercel still publishes the web app** independently.
 
@@ -98,7 +100,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Closing the window quits the app and stops the API process it started. If it reused an API you started with `npm run api`, that process is left running.
+Closing the window quits the app and stops the API process it started. If it reused an API you started with `vp run api`, that process is left running.
 
 #### First launch of a downloaded build
 
@@ -124,10 +126,25 @@ macOS notarization (which would remove the Gatekeeper prompt entirely) and Windo
 
 ### Other scripts
 
-- **`npm run lint`** — ESLint
-- **`npm run format`** — Prettier write
-- **`npm run format:check`** — Prettier check (e.g. for CI)
-- **`npm run electron:dev`** / **`electron:preview`** / **`dist`** / **`dist:win`** — desktop wrapper (see above)
+- **`vp check`** — format, lint, and type-check (prefer this in validation loops)
+- **`vp lint`** / **`vp fmt`** — Oxlint and Oxfmt on their own
+- **`vp test`** — Vitest only; **`vp run test`** also runs `server.node-test.js`
+- **`vp run electron:dev`** / **`electron:preview`** / **`dist`** / **`dist:win`** — desktop wrapper (see above)
+
+`package.json` scripts still work with `npm run …` if you already have Node installed.
+
+### Git hooks
+
+`vp install` runs `vp config` locally and installs the project-owned hooks:
+
+- **Pre-commit** runs `vp staged`. Code files receive `vp check --fix`; supported
+  non-code files receive `vp fmt`. Only staged files matching those patterns run.
+- **Pre-push** validates the whole project with `vp check`, then runs the complete
+  test script with `vp run test`.
+
+Skip a hook once with `git commit --no-verify` or `git push --no-verify`. Set
+`VP_GIT_HOOKS=0` to disable Vite+ hooks for a process. CI does not install hooks:
+the `prepare` script exits when `CI` is set.
 
 ## Limitations and security
 
@@ -147,9 +164,9 @@ Treat this repository as a **personal, localhost-only utility**. If you need rem
 
 The app is split into **two processes** in the web workflow (an optional Electron process wraps both for the desktop app):
 
-1. **Next.js client** (`npm run dev` / `build` + `start`) — React 19 with the App Router (`app/`). The home page (`app/page.tsx`) renders the `BambuProfileWorkbench`, which loads Bambu Studio or OrcaSlicer data from the local API URL (`NEXT_PUBLIC_BAMBU_API_URL`, default `http://127.0.0.1:3847`).
+1. **Next.js client** (`vp run dev` / `vp run build` + `vp run start`) — React 19 with the App Router (`app/`). The home page (`app/page.tsx`) renders the `BambuProfileWorkbench`, which loads Bambu Studio or OrcaSlicer data from the local API URL (`NEXT_PUBLIC_BAMBU_API_URL`, default `http://127.0.0.1:3847`).
 
-2. **Local HTTP API** (`server.js`, started with `npm run api`) — plain Node with `http` and `fs/promises`. A `slicer` request parameter selects the configured Bambu Studio or OrcaSlicer root. The API validates paths under that root, lists user profiles, and resolves vendor-specific system inheritance. The Electron app starts this process automatically.
+2. **Local HTTP API** (`server.js`, started with `vp run api`) — plain Node with `http` and `fs/promises`. A `slicer` request parameter selects the configured Bambu Studio or OrcaSlicer root. The API validates paths under that root, lists user profiles, and resolves vendor-specific system inheritance. The Electron app starts this process automatically.
 
 The shared workbench, inheritance grid, and leaf editor are deliberately
 slicer-neutral. Bambu keeps its curated field descriptions and generated
@@ -163,23 +180,23 @@ editable process and filament profiles.
 
 ### Packages and tooling
 
-| Area                  | Package                                                                        | Role                                                                    |
-| --------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| Framework             | `next`                                                                         | App Router, routing, build/start                                        |
-| UI                    | `react`, `react-dom`                                                           | Component library                                                       |
-| Components / headless | `@base-ui/react`                                                               | Unstyled primitives for building UI                                     |
-| Variants              | `tailwind-variants`                                                            | Variant-based Tailwind classes on components (with built-in twMerge)    |
-| Classes               | `tailwind-merge`                                                               | Merge and dedupe CSS class names                                        |
-| Icons                 | `lucide-react`                                                                 | Icons in the UI                                                         |
-| Theme                 | `@wrksz/themes`                                                                | Light/dark/system via `class` on `<html>` (Next.js 16 / React 19 ready) |
-| CLI / scaffolding     | `shadcn`                                                                       | shadcn/ui tooling for component setup (project conventions)             |
-| Animation             | `tw-animate-css`                                                               | Tailwind-oriented animation utilities                                   |
-| Styling               | `tailwindcss`, `@tailwindcss/postcss`                                          | Tailwind CSS v4 with PostCSS                                            |
-| Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom`                  | Type-checking                                                           |
-| Quality               | `eslint`, `eslint-config-next`, `eslint-config-prettier`, `prettier`, `vitest` | Tests, lint and formatting                                              |
-| Desktop               | `electron`, `electron-builder`, `concurrently`, `wait-on`                      | Optional wrapper and macOS `.dmg` (`npm run electron:dev` / `dist`)     |
+| Area                  | Package                                                       | Role                                                                    |
+| --------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Framework             | `next`                                                        | App Router, routing, build/start                                        |
+| UI                    | `react`, `react-dom`                                          | Component library                                                       |
+| Components / headless | `@base-ui/react`                                              | Unstyled primitives for building UI                                     |
+| Variants              | `tailwind-variants`                                           | Variant-based Tailwind classes on components (with built-in twMerge)    |
+| Classes               | `tailwind-merge`                                              | Merge and dedupe CSS class names                                        |
+| Icons                 | `lucide-react`                                                | Icons in the UI                                                         |
+| Theme                 | `@wrksz/themes`                                               | Light/dark/system via `class` on `<html>` (Next.js 16 / React 19 ready) |
+| CLI / scaffolding     | `shadcn`                                                      | shadcn/ui tooling for component setup (project conventions)             |
+| Animation             | `tw-animate-css`                                              | Tailwind-oriented animation utilities                                   |
+| Styling               | `tailwindcss`, `@tailwindcss/postcss`                         | Tailwind CSS v4 with PostCSS                                            |
+| Language              | TypeScript, `@types/node`, `@types/react`, `@types/react-dom` | Type-checking                                                           |
+| Toolchain             | `vite-plus` (`vp`)                                            | Install, Oxlint, Oxfmt, Vitest, type-check (`vp check` / `vp test`)     |
+| Desktop               | `electron`, `electron-builder`, `concurrently`, `wait-on`     | Optional wrapper and macOS `.dmg` (`vp run electron:dev` / `dist`)      |
 
-Versions live in `package.json`; bump `next` and `eslint-config-next` together if you change the Next.js version.
+Versions live in `package.json`. Lint, format, and test config live in `vite.config.ts`.
 
 ### Validate Bambu Studio schema coverage
 
@@ -190,21 +207,21 @@ unknown keys found in inherited or future profiles under **Other settings**.
 Run the normal schema and localization tests with:
 
 ```sh
-npm test
+vp run test
 ```
 
 To compare the manifests with the Bambu Studio files installed on your
 computer:
 
 ```sh
-npm run validate:bambu-schema
+vp run validate:bambu-schema
 ```
 
 The validator uses the same default Bambu Studio location as `server.js`.
 Override it when necessary:
 
 ```sh
-BAMBUSTUDIO_ROOT="/path/to/BambuStudio" npm run validate:bambu-schema
+BAMBUSTUDIO_ROOT="/path/to/BambuStudio" vp run validate:bambu-schema
 ```
 
 Generated validation metadata (known keys, value shapes, and small categorical
@@ -216,14 +233,14 @@ Numeric limits and option types come from Bambu Studio's own
 happens to appear in the shipped profiles. Refresh that artifact with:
 
 ```sh
-npm run generate:config-bounds
+vp run generate:config-bounds
 ```
 
 It downloads `PrintConfig.cpp` from the BambuStudio repository. Point it at a
 local checkout instead when you prefer:
 
 ```sh
-BAMBUSTUDIO_PRINTCONFIG="/path/to/BambuStudio/src/libslic3r/PrintConfig.cpp" npm run generate:config-bounds
+BAMBUSTUDIO_PRINTCONFIG="/path/to/BambuStudio/src/libslic3r/PrintConfig.cpp" vp run generate:config-bounds
 ```
 
 OrcaSlicer's separate field metadata and validation definitions are pinned to
@@ -232,7 +249,7 @@ the release and commit recorded in
 after intentionally updating that pin:
 
 ```sh
-npm run generate:orca-config
+vp run generate:orca-config
 ```
 
 ### Directory map (short)
@@ -243,6 +260,7 @@ npm run generate:orca-config
 - `lib/utils/` — Shared helpers (for example `cn`)
 - `localization/` — Translations and `LocaleProvider`
 - `types/` — Shared types where needed
+- `vite.config.ts` — Vite+ lint, format, test, and staged-file config
 - `server.js` — Local HTTP API for reading profiles and editing user profile files
 - `electron/` — Desktop shell (`main.js`) that starts `server.js` and loads the UI
 - `electron-builder.yml` — macOS `.dmg` packaging

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Øyvind Øyen
 
-import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import type { Metadata } from 'next';
 
-import { Providers } from "@/components/providers";
+import { GeistMono } from 'geist/font/mono';
+import { GeistSans } from 'geist/font/sans';
 
-import "./globals.css";
+import { Providers } from '@/components/providers';
+
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Slicer profile browser",
-  description:
-    "Browse Bambu Studio and OrcaSlicer process/filament profile inheritance",
+  title: 'Slicer profile browser',
+  description: 'Browse Bambu Studio and OrcaSlicer process/filament profile inheritance',
 };
 
 export default function RootLayout({
@@ -22,11 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang='en'
       suppressHydrationWarning
       className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
     >
-      <body className="flex h-dvh min-h-0 flex-col overflow-hidden">
+      <body className='flex h-dvh min-h-0 flex-col overflow-hidden'>
         <Providers>{children}</Providers>
       </body>
     </html>

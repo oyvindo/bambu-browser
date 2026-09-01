@@ -1,10 +1,12 @@
-import { cn } from "@/lib/utils";
-import * as React from "react";
-import { Tooltip } from "@base-ui/react/tooltip";
+import * as React from 'react';
+
+import { Tooltip } from '@base-ui/react/tooltip';
+
 import {
   STICKY_HEADER_SURFACE,
   TABLE_FRAME,
-} from "@/components/profile-manager/profileTreeGrid/profileTreeGrid.constants";
+} from '@/components/profile-manager/profileTreeGrid/profileTreeGrid.constants';
+import { cn } from '@/lib/utils';
 
 type ProfileTreeGridWrapperProps = {
   children: React.ReactNode;
@@ -22,7 +24,7 @@ export function ProfileTreeGridWrapper({
         {compareAccordion ? (
           <div
             className={cn(
-              "border-border sticky top-0 z-30 isolate border-b",
+              'border-border sticky top-0 z-30 isolate border-b',
               STICKY_HEADER_SURFACE,
             )}
           >

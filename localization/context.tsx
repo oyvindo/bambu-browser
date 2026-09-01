@@ -1,26 +1,18 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import type { Messages } from "./en";
-import { messagesEn } from "./en";
-import { messagesNb } from "./nb";
-import {
-  APP_LOCALES,
-  DEFAULT_LOCALE,
-  LOCALE_STORAGE_KEY,
-  type AppLocale,
-} from "./types";
+import type { Messages } from './en';
+import { messagesEn } from './en';
+import { messagesNb } from './nb';
+import { APP_LOCALES, DEFAULT_LOCALE, LOCALE_STORAGE_KEY, type AppLocale } from './types';
 
 const LOCALE_MESSAGES: Record<AppLocale, Messages> = {
   en: messagesEn,
   nb: messagesNb,
 };
 
-function interpolate(
-  template: string,
-  vars?: Record<string, string | number>,
-): string {
+function interpolate(template: string, vars?: Record<string, string | number>): string {
   if (!vars) return template;
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const v = vars[key];
@@ -29,20 +21,16 @@ function interpolate(
 }
 
 function readPath(obj: unknown, path: string): string | undefined {
-  const parts = path.split(".");
+  const parts = path.split('.');
   let cur: unknown = obj;
   for (const p of parts) {
-    if (
-      cur !== null &&
-      typeof cur === "object" &&
-      Object.prototype.hasOwnProperty.call(cur, p)
-    ) {
+    if (cur !== null && typeof cur === 'object' && Object.prototype.hasOwnProperty.call(cur, p)) {
       cur = (cur as Record<string, unknown>)[p];
     } else {
       return undefined;
     }
   }
-  return typeof cur === "string" ? cur : undefined;
+  return typeof cur === 'string' ? cur : undefined;
 }
 
 type LocaleContextValue = {
@@ -125,7 +113,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   );
 
   React.useEffect(() => {
-    document.documentElement.lang = locale === "nb" ? "nb" : "en";
+    document.documentElement.lang = locale === 'nb' ? 'nb' : 'en';
     document.title = messages.meta.title;
   }, [locale, messages.meta.title]);
 
@@ -134,15 +122,13 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     [locale, setLocale, messages, t],
   );
 
-  return (
-    <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
-  );
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
 
 export function useLocaleContext(): LocaleContextValue {
   const ctx = React.useContext(LocaleContext);
   if (!ctx) {
-    throw new Error("useLocaleContext must be used within LocaleProvider");
+    throw new Error('useLocaleContext must be used within LocaleProvider');
   }
   return ctx;
 }

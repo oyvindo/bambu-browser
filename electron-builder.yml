@@ -7,7 +7,7 @@ directories:
 files:
   - electron/**/*
   - package.json
-  - "!**/node_modules/**"
+  - '!**/node_modules/**'
 extraResources:
   - from: server.js
     to: server.js
@@ -20,7 +20,7 @@ mac:
       arch:
         - arm64
   # Ad-hoc signature. Without one, Gatekeeper reports the downloaded app as damaged.
-  identity: "-"
+  identity: '-'
   # Library validation under hardened runtime rejects the pre-signed Electron framework when signing ad-hoc.
   hardenedRuntime: false
   # Do not enable App Sandbox; server.js must read ~/Library/Application Support/BambuStudio.

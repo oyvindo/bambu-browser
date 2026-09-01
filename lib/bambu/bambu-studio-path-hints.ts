@@ -10,33 +10,33 @@ export type BambuStudioPathHints = {
 };
 
 function isLikelyMac(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent ?? "");
+  if (typeof navigator === 'undefined') return false;
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent ?? '');
 }
 
 function isLikelyWindows(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /Win/i.test(navigator.userAgent ?? "");
+  if (typeof navigator === 'undefined') return false;
+  return /Win/i.test(navigator.userAgent ?? '');
 }
 
 export function getBambuStudioPathHints(): BambuStudioPathHints {
   if (isLikelyMac()) {
     return {
-      platformLabel: "macOS",
-      typicalPath: "~/Library/Application Support/BambuStudio",
-      tip: "Finder → Go → Go to Folder… (⇧⌘G), paste the path. The Library folder is hidden in normal browsing.",
+      platformLabel: 'macOS',
+      typicalPath: '~/Library/Application Support/BambuStudio',
+      tip: 'Finder → Go → Go to Folder… (⇧⌘G), paste the path. The Library folder is hidden in normal browsing.',
     };
   }
   if (isLikelyWindows()) {
     return {
-      platformLabel: "Windows",
-      typicalPath: "%APPDATA%\\BambuStudio",
-      tip: "Paste into File Explorer address bar. This is the usual Roaming AppData folder for Bambu Studio.",
+      platformLabel: 'Windows',
+      typicalPath: '%APPDATA%\\BambuStudio',
+      tip: 'Paste into File Explorer address bar. This is the usual Roaming AppData folder for Bambu Studio.',
     };
   }
   return {
-    platformLabel: "Linux / other",
-    typicalPath: "~/BambuStudio",
-    tip: "Choose the folder that contains users/ or user/ and system/BBL/…",
+    platformLabel: 'Linux / other',
+    typicalPath: '~/BambuStudio',
+    tip: 'Choose the folder that contains users/ or user/ and system/BBL/…',
   };
 }

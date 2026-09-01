@@ -6,12 +6,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "check": "vp check",
     "start": "next start",
-    "lint": "eslint",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test": "vitest run && node --test server.node-test.js",
-    "validate:bambu-schema": "vitest run lib/bambu/profile-schema.local.test.ts",
+    "lint": "vp lint",
+    "format": "vp fmt .",
+    "format:check": "vp fmt --check .",
+    "test": "vp test run && node --test server.node-test.js",
+    "validate:bambu-schema": "vp test run lib/bambu/profile-schema.local.test.ts",
     "generate:config-bounds": "node scripts/generate-profile-config-bounds.mjs",
     "generate:orca-config": "node scripts/generate-orca-profile-config.mjs",
     "api": "node server.js",
@@ -20,7 +21,8 @@
     "electron:preview": "npm run build:electron && electron .",
     "dist": "npm run build:electron && electron-builder --mac --publish never",
     "dist:mac": "npm run dist",
-    "dist:win": "npm run build:electron && electron-builder --win --publish never"
+    "dist:win": "npm run build:electron && electron-builder --win --publish never",
+    "prepare": "node scripts/vp-config.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -44,18 +46,25 @@
     "cross-env": "^10.1.0",
     "electron": "^44.1.0",
     "electron-builder": "^26.15.7",
-    "eslint": "9.39.5",
-    "eslint-config-next": "16.3.3",
-    "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.9.6",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "vitest": "^4.1.11",
+    "vite-plus": "0.3.0",
     "wait-on": "^9.1.0"
   },
   "allowScripts": {
     "unrs-resolver": true,
     "fsevents": true,
     "electron-winstaller": false
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11",
+      "onFail": "warn"
+    }
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.3.0",
+    "vitest": "4.1.11"
   }
 }
