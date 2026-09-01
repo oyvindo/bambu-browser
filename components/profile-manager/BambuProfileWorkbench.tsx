@@ -597,7 +597,7 @@ export function BambuProfileWorkbench() {
               {layout ? ` · ${t("header.layoutLabel")} ${layout}` : null}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-end gap-3">
             {!desktopShell ? (
               <Button
                 type="button"
@@ -612,7 +612,7 @@ export function BambuProfileWorkbench() {
             ) : null}
             <LanguageSelect />
             <ThemeToggle />
-            <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">
+            <label className="text-muted-foreground flex flex-col items-start gap-1 text-xs whitespace-nowrap">
               {t("controls.extruderIndex")}
               <input
                 type="number"

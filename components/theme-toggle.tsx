@@ -24,7 +24,7 @@ export function ThemeToggle() {
   const mounted = useIsHydrated();
 
   return (
-    <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">
+    <label className="text-muted-foreground flex flex-col items-start gap-1 text-xs whitespace-nowrap">
       {t("theme.label")}
       <NativeSelectField className="min-w-30">
         <select

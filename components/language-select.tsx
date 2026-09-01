@@ -22,7 +22,7 @@ export function LanguageSelect() {
   const mounted = useIsHydrated();
 
   return (
-    <label className="text-muted-foreground flex items-center gap-1 text-xs whitespace-nowrap">
+    <label className="text-muted-foreground flex flex-col items-start gap-1 text-xs whitespace-nowrap">
       {t("language.label")}
       <NativeSelectField className="min-w-32">
         <select
