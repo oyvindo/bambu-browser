@@ -305,7 +305,7 @@ app.on('before-quit', (e) => {
   if (apiOwned && !apiExited) {
     e.preventDefault();
     quitting = true;
-    Promise.all([killApiChild(), stopUiServer()]).finally(() => {
+    void Promise.all([killApiChild(), stopUiServer()]).finally(() => {
       app.quit();
     });
     return;
@@ -314,4 +314,4 @@ app.on('before-quit', (e) => {
   void stopUiServer();
 });
 
-app.whenReady().then(boot);
+void app.whenReady().then(boot);
