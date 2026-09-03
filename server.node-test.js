@@ -85,6 +85,15 @@ test('defaults every request to the Bambu root', async () => {
   assert.equal(body.layout, 'users');
 });
 
+test('identifies the API and protocol version in health responses', async () => {
+  const { status, body } = await getJson('/api/health');
+  assert.equal(status, 200);
+  assert.equal(body.app, 'bambu-browser');
+  assert.equal(body.apiVersion, 1);
+  assert.equal(body.ok, true);
+  assert.equal(body.root, bambuRoot);
+});
+
 test('selects Orca user/default profiles', async () => {
   const { status, body } = await getJson('/api/profiles?slicer=orca&account=default');
   assert.equal(status, 200);

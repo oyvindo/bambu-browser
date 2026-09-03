@@ -20,6 +20,9 @@ const HEALTH_URL = `${API_ORIGIN}/api/health`;
 const DEV_UI_URL = 'http://localhost:3000';
 const HEALTH_TIMEOUT_MS = 15000;
 const KILL_GRACE_MS = 2000;
+const EXPECTED_API_APP = 'bambu-browser';
+// Keep in sync with API_VERSION in server.js.
+const REQUIRED_API_VERSION = 1;
 
 /** @type {import("child_process").ChildProcess | null} */
 let apiChild = null;
@@ -93,21 +96,42 @@ function mimeFor(filePath) {
 function fetchHealth() {
   return new Promise((resolve) => {
     const req = http.get(HEALTH_URL, { timeout: 1500 }, (res) => {
-      res.resume();
-      resolve(res.statusCode === 200);
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => {
+        let body = null;
+        try {
+          body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        } catch {
+          // A responder with a non-JSON health response is not this app's API.
+        }
+        resolve({ reachable: true, statusCode: res.statusCode, body });
+      });
+      res.on('error', () => resolve({ reachable: false, statusCode: null, body: null }));
     });
-    req.on('error', () => resolve(false));
+    req.on('error', () => resolve({ reachable: false, statusCode: null, body: null }));
     req.on('timeout', () => {
       req.destroy();
-      resolve(false);
+      resolve({ reachable: false, statusCode: null, body: null });
     });
   });
+}
+
+function isCompatibleApiHealth(health) {
+  return (
+    health.reachable &&
+    health.statusCode === 200 &&
+    health.body?.app === EXPECTED_API_APP &&
+    Number.isInteger(health.body?.apiVersion) &&
+    health.body.apiVersion >= REQUIRED_API_VERSION
+  );
 }
 
 async function waitForHealth(timeoutMs) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    if (await fetchHealth()) return true;
+    const health = await fetchHealth();
+    if (health.reachable) return health;
     await new Promise((r) => setTimeout(r, 150));
   }
   return fetchHealth();
@@ -266,22 +290,35 @@ async function ensureApi() {
     throw new Error(`server.js not found at ${serverPath}`);
   }
 
-  if (await fetchHealth()) {
+  const existingHealth = await fetchHealth();
+  if (isCompatibleApiHealth(existingHealth)) {
     apiOwned = false;
     console.log(`Reusing existing API at ${API_ORIGIN}`);
     return;
   }
+  if (existingHealth.reachable) {
+    throw new Error(
+      `Port ${API_PORT} is already in use by a service that is not a compatible Bambu Browser API. Close that process and restart Bambu Browser.`,
+    );
+  }
 
+  suppressApiExitDialog = true;
   startApiChild(serverPath);
-  const ok = await waitForHealth(HEALTH_TIMEOUT_MS);
-  if (!ok) {
-    suppressApiExitDialog = true;
+  const startedHealth = await waitForHealth(HEALTH_TIMEOUT_MS);
+  if (!isCompatibleApiHealth(startedHealth) || apiExited) {
     await killApiChild();
     apiOwned = false;
+    suppressApiExitDialog = false;
+    if (startedHealth.reachable) {
+      throw new Error(
+        `Port ${API_PORT} was claimed by a service that is not a compatible Bambu Browser API. Close that process and restart Bambu Browser.`,
+      );
+    }
     throw new Error(
       `Could not start the local API on port ${API_PORT}. If another program is using that port, stop it (for example npm run api) and try again.`,
     );
   }
+  suppressApiExitDialog = false;
 }
 
 async function boot() {

@@ -18,6 +18,9 @@ const path = require('path');
 const os = require('os');
 
 const PORT = Number(process.env.PORT || 3847);
+const API_APP = 'bambu-browser';
+// Keep in sync with REQUIRED_API_VERSION in electron/main.js.
+const API_VERSION = 1;
 const SLICERS = {
   bambu: {
     displayName: 'BambuStudio',
@@ -597,9 +600,16 @@ async function handleRequest(req, res) {
   if (route === '/health' || route === '/api/health') {
     try {
       await fs.access(studioRoot);
-      return sendJson(res, 200, { ok: true, root: studioRoot });
+      return sendJson(res, 200, {
+        app: API_APP,
+        apiVersion: API_VERSION,
+        ok: true,
+        root: studioRoot,
+      });
     } catch {
       return sendJson(res, 200, {
+        app: API_APP,
+        apiVersion: API_VERSION,
         ok: false,
         root: studioRoot,
         error: `${context.displayName} root not found or not readable. Set ${context.envName}.`,
