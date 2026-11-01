@@ -130,8 +130,91 @@ function buildPresetIndex(bundles, kind) {
   return index;
 }
 
+function vendorPresetPath(bundle, kind, preset) {
+  return `vendor/${bundle.fileName}#${kind}:${preset.sectionName}`;
+}
+
+function findVendorPreset(bundles, relativePath, kind) {
+  const match = /^vendor\/([^/#]+)#([a-z]+):(.+)$/.exec(relativePath);
+  if (!match || match[2] !== kind) return null;
+  const bundle = bundles.find((candidate) => candidate.fileName === match[1]);
+  if (!bundle) return null;
+  for (const preset of bundle.presets[kind].values()) {
+    if (preset.sectionName === match[3]) return { bundle, preset };
+  }
+  return null;
+}
+
+/**
+ * Bundle presets in merge order: parents depth-first in declared order, then
+ * the preset itself. A preset reached twice (two parents sharing `*common*`)
+ * keeps only its last position, which leaves PrusaSlicer's "last parent wins"
+ * result unchanged because both copies hold the same data.
+ */
+function linearizeBundlePreset(bundle, kind, preset, warnings, stack = new Set()) {
+  if (stack.has(preset.name)) {
+    throw new Error(`Inheritance cycle detected at "${preset.name}"`);
+  }
+  stack.add(preset.name);
+  const ordered = [];
+  for (const parentName of preset.inherits) {
+    const parent = bundle.presets[kind].get(parentName);
+    if (!parent) {
+      warnings.push(
+        `Parent profile "${parentName}" of "${preset.name}" was not found in ${bundle.fileName}.`,
+      );
+      continue;
+    }
+    ordered.push(...linearizeBundlePreset(bundle, kind, parent, warnings, stack));
+  }
+  stack.delete(preset.name);
+  ordered.push(preset);
+  return ordered.filter(
+    (candidate, index) => ordered.findLastIndex((other) => other === candidate) === index,
+  );
+}
+
+function bundleChain(bundle, kind, preset, warnings) {
+  return linearizeBundlePreset(bundle, kind, preset, warnings).map((level) => ({
+    relativePath: vendorPresetPath(bundle, kind, level),
+    data: level.data,
+  }));
+}
+
+/**
+ * Ordered chain (first level = furthest ancestor, last = the selected preset)
+ * for a user preset file or a `vendor/<file>#<kind>:<section>` path. The
+ * PrusaSlicer built-in defaults are not part of it.
+ */
+async function resolvePrusaChain(rootAbs, relativePath, kind, bundles) {
+  const warnings = [];
+  if (relativePath.startsWith('vendor/')) {
+    const hit = findVendorPreset(bundles, relativePath, kind);
+    if (!hit) throw new Error(`Profile not found: ${relativePath}`);
+    return { chain: bundleChain(hit.bundle, kind, hit.preset, warnings), warnings };
+  }
+
+  const text = await fs.readFile(path.join(rootAbs, ...relativePath.split('/')), 'utf8');
+  const data = parseIni(text).root;
+  const leaf = { relativePath, data };
+  const parentName = typeof data.inherits === 'string' ? data.inherits.trim() : '';
+  if (!parentName) return { chain: [leaf], warnings };
+
+  const parent = buildPresetIndex(bundles, kind).get(parentName);
+  if (!parent) {
+    warnings.push(`Parent profile "${parentName}" is not installed.`);
+    return { chain: [leaf], warnings };
+  }
+  return {
+    chain: [...bundleChain(parent.bundle, kind, parent.preset, warnings), leaf],
+    warnings,
+  };
+}
+
 module.exports = {
   buildPresetIndex,
   loadVendorBundles,
   parseIni,
+  resolvePrusaChain,
+  vendorPresetPath,
 };
