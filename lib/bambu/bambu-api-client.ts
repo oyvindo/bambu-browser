@@ -1,3 +1,5 @@
+import { prusaKindForPath, toPrusaDisplayChain } from '@/lib/prusa/prusa-values';
+
 import type { UserProfileEntry } from './list-user-profiles';
 import type { InheritanceChainLevel } from './resolver';
 import type { SlicerSource } from './slicer-source';
@@ -119,7 +121,14 @@ export async function fetchApiResolve(
   if (compareWith && compareWith.trim()) {
     q.set('compareWith', compareWith.trim());
   }
-  return apiGet(`/api/resolve?${q.toString()}`, slicer);
+  const resolved = await apiGet<{ chain: InheritanceChainLevel[]; warnings?: string[] }>(
+    `/api/resolve?${q.toString()}`,
+    slicer,
+  );
+  if (slicer !== 'prusa') return resolved;
+  // PrusaSlicer values arrive as INI text; the grid wants parsed values and
+  // the compiled-in defaults as the root level.
+  return { ...resolved, chain: toPrusaDisplayChain(prusaKindForPath(path), resolved.chain) };
 }
 
 export async function fetchApiProfileFile(
