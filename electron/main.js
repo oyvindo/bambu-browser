@@ -22,7 +22,7 @@ const HEALTH_TIMEOUT_MS = 15000;
 const KILL_GRACE_MS = 2000;
 const EXPECTED_API_APP = 'bambu-browser';
 // Keep in sync with API_VERSION in server.js.
-const REQUIRED_API_VERSION = 1;
+const REQUIRED_API_VERSION = 2;
 
 /** @type {import("child_process").ChildProcess | null} */
 let apiChild = null;

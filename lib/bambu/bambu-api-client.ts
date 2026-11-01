@@ -114,7 +114,7 @@ export async function fetchApiResolve(
   path: string,
   slicer: SlicerSource,
   compareWith?: string | null,
-): Promise<{ chain: InheritanceChainLevel[] }> {
+): Promise<{ chain: InheritanceChainLevel[]; warnings?: string[] }> {
   const q = new URLSearchParams({ path });
   if (compareWith && compareWith.trim()) {
     q.set('compareWith', compareWith.trim());
