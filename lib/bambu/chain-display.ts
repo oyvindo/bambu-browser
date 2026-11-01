@@ -1,7 +1,19 @@
+import { prusaKindForPath } from '@/lib/prusa/prusa-values';
 import { stringifyUnknown } from '@/lib/utils';
 
 import { formatBambuMappedValue, type BambuValueUnit } from './mapping';
-import type { InheritanceChainLevel } from './resolver';
+import type { InheritanceChainLevel, ProfileKind } from './resolver';
+import type { SlicerSource } from './slicer-source';
+
+/** Kind of the selected (last) profile in a resolved chain. */
+export function profileKindForChain(
+  chain: readonly InheritanceChainLevel[],
+  slicer: SlicerSource,
+): ProfileKind {
+  const path = chain.at(-1)?.relativePath ?? '';
+  if (slicer === 'prusa') return prusaKindForPath(path);
+  return path.includes('/filament/') ? 'filament' : 'process';
+}
 
 /** One column in the TreeGrid: merged state up this inheritance step (root → … → profile). */
 export type InheritanceColumnMeta = {

@@ -59,11 +59,13 @@ export const messagesNb = {
     slicer: 'Slicer',
     slicerBambu: 'Bambu',
     slicerOrca: 'Orca',
+    slicerPrusa: 'Prusa',
+    prusaDefaultAccount: 'PrusaSlicer har ett sett brukerprofiler (print/ og filament/).',
     orcaDefaultAccount: 'OrcaSlicer-profiler bruker standardkontoen.',
   },
   errors: {
     serverCannotReadRoot:
-      'Serveren kan ikke lese roten til valgt slicer: {root}. Sjekk BAMBUSTUDIO_ROOT eller ORCASLICER_ROOT.',
+      'Serveren kan ikke lese roten til valgt slicer: {root}. Sjekk BAMBUSTUDIO_ROOT, ORCASLICER_ROOT eller PRUSASLICER_ROOT.',
     cannotReachApi: 'Får ikke kontakt med det lokale API-et. Kjør: node server.js (se terminal).',
     loadProfilesFailed: 'Kunne ikke laste profiler',
     refreshFailed: 'Oppdatering mislyktes',
@@ -109,6 +111,8 @@ export const messagesNb = {
     title: 'Rediger profilfil',
     intro:
       'Rediger den opprinnelige leaf-JSON-filen. Inherits, type, name og from kan ikke endres.',
+    introPrusa:
+      'Rediger innstillingene denne profilen endrer i forhold til forelderen; fjern en nøkkel for å bruke forelderens verdi. Lagring skriver hele filen slik PrusaSlicer forventer. Inherits kan ikke endres. Start PrusaSlicer på nytt eller velg profilen igjen for å se endringen.',
     format: 'Formater',
     validate: 'Valider',
     save: 'Lagre',
@@ -156,9 +160,14 @@ export const messagesNb = {
     removeAria: 'Fjern',
     removeTooltip: 'Fjern',
   },
+  resolve: {
+    incompleteChain: 'Arvekjeden er ufullstendig; viser det som kunne løses opp:',
+  },
   chainColumn: {
     profileFilament: 'Filamentprofil',
     profileProcess: 'Prosessprofil',
+    profilePrint: 'Utskriftsprofil',
+    prusaDefaults: 'PrusaSlicer-standarder',
     root: 'Rot',
     parent: 'Forelder',
     level: 'Nivå {n}',

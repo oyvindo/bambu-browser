@@ -2,13 +2,14 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Øyvind Øyen
  *
- * Local Bambu Studio / OrcaSlicer JSON API.
+ * Local Bambu Studio / OrcaSlicer / PrusaSlicer JSON API.
  *
  * Usage:
- *   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" ORCASLICER_ROOT="/path/to/OrcaSlicer" PORT=3847 node server.js
+ *   BAMBUSTUDIO_ROOT="/path/to/BambuStudio" ORCASLICER_ROOT="/path/to/OrcaSlicer" \
+ *   PRUSASLICER_ROOT="/path/to/PrusaSlicer" PORT=3847 node server.js
  *
- * Defaults (macOS): ~/Library/Application Support/{BambuStudio,OrcaSlicer}
- * Defaults (Windows): %APPDATA%\\{BambuStudio,OrcaSlicer}
+ * Defaults (macOS): ~/Library/Application Support/{BambuStudio,OrcaSlicer,PrusaSlicer}
+ * Defaults (Windows): %APPDATA%\\{BambuStudio,OrcaSlicer,PrusaSlicer}
  * Frontend: set NEXT_PUBLIC_BAMBU_API_URL=http://127.0.0.1:3847
  */
 
@@ -17,10 +18,12 @@ const fs = require('fs/promises');
 const path = require('path');
 const os = require('os');
 
+const { handlePrusaRoute } = require('./server/prusa-api');
+
 const PORT = Number(process.env.PORT || 3847);
 const API_APP = 'bambu-browser';
 // Keep in sync with REQUIRED_API_VERSION in electron/main.js.
-const API_VERSION = 1;
+const API_VERSION = 2;
 const SLICERS = {
   bambu: {
     displayName: 'BambuStudio',
@@ -31,6 +34,11 @@ const SLICERS = {
     displayName: 'OrcaSlicer',
     envName: 'ORCASLICER_ROOT',
     appDirectory: 'OrcaSlicer',
+  },
+  prusa: {
+    displayName: 'PrusaSlicer',
+    envName: 'PRUSASLICER_ROOT',
+    appDirectory: 'PrusaSlicer',
   },
 };
 
@@ -584,7 +592,7 @@ async function handleRequest(req, res) {
   const slicer = selectedSlicer(url);
   if (!slicer) {
     return sendJson(res, 400, {
-      error: 'slicer must be either "bambu" or "orca"',
+      error: 'slicer must be "bambu", "orca" or "prusa"',
     });
   }
   const context = slicerContext(slicer);
@@ -624,6 +632,13 @@ async function handleRequest(req, res) {
       error: `${context.displayName} root not found or not readable: ${studioRoot}`,
       hint: `Set ${context.envName} to your ${context.displayName} folder.`,
     });
+  }
+
+  if (slicer === 'prusa') {
+    const handled = await handlePrusaRoute(req.method, route, url, studioRoot, () =>
+      readRequestText(req),
+    );
+    if (handled) return sendJson(res, handled.status, handled.body);
   }
 
   if (route === '/api/profile-file') {
@@ -800,9 +815,12 @@ function createServer() {
 if (require.main === module) {
   const server = createServer();
   server.listen(PORT, '127.0.0.1', () => {
-    console.log(`Bambu Studio / OrcaSlicer API listening on http://127.0.0.1:${PORT}`);
+    console.log(
+      `Bambu Studio / OrcaSlicer / PrusaSlicer API listening on http://127.0.0.1:${PORT}`,
+    );
     console.log(`BambuStudio root: ${slicerContext('bambu').root}`);
     console.log(`OrcaSlicer root: ${slicerContext('orca').root}`);
+    console.log(`PrusaSlicer root: ${slicerContext('prusa').root}`);
   });
 }
 

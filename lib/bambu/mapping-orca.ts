@@ -76,7 +76,8 @@ function firstDefinedValue(chain: readonly InheritanceChainLevel[], key: string)
   return undefined;
 }
 
-function normalizedUnit(
+/** Grid unit for a key from its PrintConfig definition (type and sidetext). */
+export function unitFromConfigDef(
   key: string,
   def: OrcaProfileConfigDef | undefined,
   value: unknown,
@@ -154,7 +155,7 @@ export function buildOrcaUiTree(
     properties.push({
       key,
       label: def?.label ?? key,
-      unit: normalizedUnit(key, def, firstDefinedValue(chain, key)),
+      unit: unitFromConfigDef(key, def, firstDefinedValue(chain, key)),
       ...(def?.advanced ? { advanced: true } : {}),
     });
     byGroup.set(group, properties);

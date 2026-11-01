@@ -4,7 +4,11 @@ import { useMemo } from 'react';
 
 import { ProfileTable } from '@/components/profile-manager/profileTreeGrid/ProfileTable';
 import { ProfileTreeGridWrapper } from '@/components/profile-manager/profileTreeGrid/ProfileTreeGridWrapper';
-import { getInheritanceColumns, type ColumnRoleLabels } from '@/lib/bambu/chain-display';
+import {
+  getInheritanceColumns,
+  profileKindForChain,
+  type ColumnRoleLabels,
+} from '@/lib/bambu/chain-display';
 import type { InheritanceChainLevel } from '@/lib/bambu/resolver';
 import type { SlicerSource } from '@/lib/bambu/slicer-source';
 import { useTranslations } from '@/localization/context';
@@ -37,22 +41,23 @@ export function ProfileTreeGrid({
 }: ProfileTreeGridProps) {
   const t = useTranslations();
 
-  const isFilamentProfile = useMemo(() => {
-    const last = chain[chain.length - 1];
-    if (!last) return false;
-    return last.relativePath.includes('/filament/');
-  }, [chain]);
+  const isFilamentProfile = useMemo(
+    () => profileKindForChain(chain, slicer) === 'filament',
+    [chain, slicer],
+  );
 
   const roleLabels = useMemo<ColumnRoleLabels>(
     () => ({
       profile: isFilamentProfile
         ? t('chainColumn.profileFilament')
-        : t('chainColumn.profileProcess'),
+        : slicer === 'prusa'
+          ? t('chainColumn.profilePrint')
+          : t('chainColumn.profileProcess'),
       root: t('chainColumn.root'),
       parent: t('chainColumn.parent'),
       level: (levelIndex: number) => t('chainColumn.level', { n: levelIndex }),
     }),
-    [t, isFilamentProfile],
+    [t, isFilamentProfile, slicer],
   );
 
   const columns = React.useMemo(

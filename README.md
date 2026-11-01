@@ -1,8 +1,8 @@
 # Bambu browser
 
-A local profile browser for **Bambu Studio** and **OrcaSlicer**: browse process
-and filament profiles, inspect inheritance chains, compare values, and edit
-user profiles.
+A local profile browser for **Bambu Studio**, **OrcaSlicer** and
+**PrusaSlicer**: browse process (print) and filament profiles, inspect
+inheritance chains, compare values, and edit user profiles.
 
 ## Recommended: download the desktop app
 
@@ -49,6 +49,7 @@ This app is still **Next.js + Electron**. Vite+ is the toolchain (install, lint,
    Optional environment variables:
    - **`BAMBUSTUDIO_ROOT`** — absolute path to the Bambu Studio data folder. If omitted, the server uses the default for your OS (on macOS: `~/Library/Application Support/BambuStudio`; on Windows: `%APPDATA%\BambuStudio`).
    - **`ORCASLICER_ROOT`** — absolute path to the OrcaSlicer data folder. Defaults to `~/Library/Application Support/OrcaSlicer` on macOS and `%APPDATA%\OrcaSlicer` on Windows.
+   - **`PRUSASLICER_ROOT`** — absolute path to the PrusaSlicer data folder. Defaults to `~/Library/Application Support/PrusaSlicer` on macOS and `%APPDATA%\PrusaSlicer` on Windows.
    - **`PORT`** — API port (default **3847**).
    - **`BAMBU_BROWSER_WRITE_ORIGINS`** — optional comma-separated non-localhost browser origins that may use the profile write endpoint. Localhost and 127.0.0.1 origins are allowed automatically.
 
@@ -67,7 +68,7 @@ This app is still **Next.js + Electron**. Vite+ is the toolchain (install, lint,
    Open [http://localhost:3000](http://localhost:3000). The UI talks to the API at **http://127.0.0.1:3847** by default.
 
    The same API process serves both slicers. Its routes accept
-   `slicer=bambu|orca` and default to `bambu` for backward compatibility.
+   `slicer=bambu|orca|prusa` and default to `bambu` for backward compatibility.
 
    If the API runs on another host or port, set **`NEXT_PUBLIC_BAMBU_API_URL`** before `vp run dev`, for example:
 
@@ -176,6 +177,20 @@ types, bounds, and enums generated from OrcaSlicer v2.4.2's pinned
 profiles are intentionally omitted from the sidebar to keep it focused on
 editable process and filament profiles.
 
+PrusaSlicer stores profiles differently. User presets are INI files in
+`print/` and `filament/`; system presets are sections of the installed vendor
+bundles in `vendor/<Vendor>.ini`, which the API addresses as virtual paths
+such as `vendor/Creality.ini#print:*0.20mm*`. A bundle section can inherit
+from several parents (`inherits = *0.20mm*; *0.4nozzle*`, the last parent
+wins), names in asterisks are abstract building blocks, and filaments of the
+`Templates` bundle get an ` @Template` suffix. User presets are full
+snapshots on top of PrusaSlicer's built-in defaults, so the grid starts with
+those defaults, the editor shows only what a preset changes compared with
+its parent, and saving writes the complete file PrusaSlicer expects. Field
+metadata, defaults and the settings-tab layout are generated from
+PrusaSlicer's `PrintConfig.cpp`, `Preset.cpp` and `GUI/Tab.cpp` (code in
+`lib/prusa/` and `server/`).
+
 **`lib/bambu/`** holds client-side domain logic: API client (`bambu-api-client.ts`), profile and inheritance resolution (`resolver.ts`, `mapping.ts`), helpers for displaying inheritance chains (`chain-display.ts`), file-handling / validation helpers where needed, and related types. **`components/profile-manager/`** is the profile tree and toolbar UI (for example `ProfileTreeGrid`, `BambuProfileWorkbench`). **`components/ui/`** is reusable primitives (buttons, table, collapsible). **`localization/`** handles locales (context, strings, process-parameter tooltips). **`components/providers.tsx`** wires `@wrksz/themes` (light/dark) and the locale provider around the app. Fonts and global styles live in `app/layout.tsx` and `app/globals.css`.
 
 ### Packages and tooling
@@ -252,11 +267,27 @@ after intentionally updating that pin:
 vp run generate:orca-config
 ```
 
+PrusaSlicer's field metadata, built-in defaults and settings-tab layout are
+pinned to the tag recorded in `lib/prusa/prusa-profile-config.generated.ts`:
+
+```sh
+vp run generate:prusa-config
+```
+
+To check the PrusaSlicer resolver against your own presets (PrusaSlicer
+writes them as full snapshots, so every unchanged value must match):
+
+```sh
+PRUSASLICER_ROOT="$HOME/Library/Application Support/PrusaSlicer" vp test run lib/prusa/prusa-resolve.local.test.ts
+```
+
 ### Directory map (short)
 
 - `app/` — Next.js App Router: `layout.tsx`, `page.tsx`, `globals.css`
 - `components/` — React components (profile manager, UI, theme, language)
 - `lib/bambu/` — Bambu-specific logic and client-side API calls
+- `lib/prusa/` — PrusaSlicer values, defaults, grid layout and editing
+- `server/` — PrusaSlicer INI parsing and API routes used by `server.js`
 - `lib/utils/` — Shared helpers (for example `cn`)
 - `localization/` — Translations and `LocaleProvider`
 - `types/` — Shared types where needed

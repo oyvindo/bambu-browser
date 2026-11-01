@@ -130,6 +130,7 @@ export default defineConfig({
           'scripts/**/*.{js,mjs,cjs}',
           'server.js',
           'server.node-test.js',
+          'server/**/*.js',
           '*.{config.js,config.mjs,config.cjs}',
         ],
         env: {
@@ -138,14 +139,14 @@ export default defineConfig({
         },
       },
       {
-        files: ['electron/**/*.js', 'server.js', 'server.node-test.js'],
+        files: ['electron/**/*.js', 'server.js', 'server.node-test.js', 'server/**/*.js'],
         rules: {
           // These entry points are intentionally CommonJS for Electron/Node.
           'typescript/no-require-imports': 'off',
         },
       },
       {
-        files: ['server.node-test.js'],
+        files: ['server.node-test.js', 'server/**/*.node-test.js'],
         rules: {
           // node:test owns the promises returned by async test callbacks.
           'typescript/no-floating-promises': 'off',

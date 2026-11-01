@@ -1,3 +1,5 @@
+import { prusaKindForPath, toPrusaDisplayChain } from '@/lib/prusa/prusa-values';
+
 import type { UserProfileEntry } from './list-user-profiles';
 import type { InheritanceChainLevel } from './resolver';
 import type { SlicerSource } from './slicer-source';
@@ -10,12 +12,12 @@ export function getBambuApiBaseUrl(): string {
 
 export type ApiMeta = {
   root: string;
-  layout: 'users' | 'user' | null;
+  layout: 'users' | 'user' | 'prusa' | null;
   accountCount: number;
 };
 
 export type ApiAccounts = {
-  layout: 'users' | 'user' | null;
+  layout: 'users' | 'user' | 'prusa' | null;
   accounts: string[];
 };
 
@@ -114,12 +116,19 @@ export async function fetchApiResolve(
   path: string,
   slicer: SlicerSource,
   compareWith?: string | null,
-): Promise<{ chain: InheritanceChainLevel[] }> {
+): Promise<{ chain: InheritanceChainLevel[]; warnings?: string[] }> {
   const q = new URLSearchParams({ path });
   if (compareWith && compareWith.trim()) {
     q.set('compareWith', compareWith.trim());
   }
-  return apiGet(`/api/resolve?${q.toString()}`, slicer);
+  const resolved = await apiGet<{ chain: InheritanceChainLevel[]; warnings?: string[] }>(
+    `/api/resolve?${q.toString()}`,
+    slicer,
+  );
+  if (slicer !== 'prusa') return resolved;
+  // PrusaSlicer values arrive as INI text; the grid wants parsed values and
+  // the compiled-in defaults as the root level.
+  return { ...resolved, chain: toPrusaDisplayChain(prusaKindForPath(path), resolved.chain) };
 }
 
 export async function fetchApiProfileFile(

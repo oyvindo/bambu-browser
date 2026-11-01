@@ -1,3 +1,5 @@
+import { PRUSA_PROFILE_CONFIG_DEFS } from '@/lib/prusa/prusa-profile-config.generated';
+
 import { ORCA_PROFILE_CONFIG_DEFS } from './orca-profile-config.generated';
 import { PROFILE_CONFIG_DEFS, type ProfileConfigDef } from './profile-config-bounds.generated';
 import { FILAMENT_ROOT_KEYS, PROCESS_ROOT_KEYS, PROFILE_METADATA_KEYS } from './profile-schema';
@@ -219,12 +221,13 @@ function comparableNumeric(value: unknown): number | null {
 }
 
 function configDef(key: string, slicer: SlicerSource): ProfileConfigDef | undefined {
+  if (slicer === 'prusa') return PRUSA_PROFILE_CONFIG_DEFS[key];
   return slicer === 'orca' ? ORCA_PROFILE_CONFIG_DEFS[key] : PROFILE_CONFIG_DEFS[key];
 }
 
 function configShape(def: ProfileConfigDef | undefined): 'array' | 'scalar' | undefined {
   if (!def) return undefined;
-  return /^(?:coBools|coEnums|coFloats|coInts|coPercents|coPoints|coPointsGroups|coStrings)$/.test(
+  return /^(?:coBools|coEnums|coFloats|coFloatsOrPercents|coInts|coPercents|coPoints|coPointsGroups|coStrings)$/.test(
     def.type,
   )
     ? 'array'
@@ -275,7 +278,10 @@ export function validateProfileJson(
 
   const findings: ProfileValidationFinding[] = [];
   const slicer = options.slicer ?? 'bambu';
-  const isOrca = slicer === 'orca';
+  // Orca and PrusaSlicer are checked against their PrintConfig.cpp definitions;
+  // Bambu also uses values seen in its shipped profiles.
+  const isOrca = slicer !== 'bambu';
+  const isPrusa = slicer === 'prusa';
   const generated = PROFILE_VALUE_VALIDATION[options.kind] as GeneratedKindValidation;
   const knownKeys = new Set([
     ...generated.knownKeys,
@@ -306,9 +312,11 @@ export function validateProfileJson(
   }
 
   for (const [key, value] of Object.entries(data)) {
+    const known = isPrusa ? configDef(key, slicer) !== undefined : knownKeys.has(key);
     if (
-      !isOrca &&
-      !knownKeys.has(key) &&
+      (!isOrca || isPrusa) &&
+      !known &&
+      key !== 'inherits' &&
       !Object.prototype.hasOwnProperty.call(options.original, key)
     ) {
       addFinding(findings, 'error', 'Unknown profile field.', key);
@@ -334,8 +342,11 @@ export function validateProfileJson(
     }
 
     if (isBoolean(def) || (!isOrca && def === undefined && booleanKeys.has(key))) {
-      const valid = scalarValues(value).every((entry) =>
-        [0, 1, '0', '1', true, false, 'true', 'false'].includes(entry as never),
+      // null is PrusaSlicer's `nil`: the filament does not override the printer.
+      const valid = scalarValues(value).every(
+        (entry) =>
+          (isPrusa && entry === null) ||
+          [0, 1, '0', '1', true, false, 'true', 'false'].includes(entry as never),
       );
       if (!valid) {
         addFinding(findings, 'warning', 'Expected a boolean value (0/1 or true/false).', key);

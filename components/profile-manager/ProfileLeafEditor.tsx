@@ -85,7 +85,7 @@ function Finding({
       {finding.key ? (
         <div className='flex items-center gap-1 pl-4'>
           <PropertyHelpTooltipLazy
-            label={localizedPropertyLabel(finding.key, finding.key, locale)}
+            label={localizedPropertyLabel(finding.key, finding.key, locale, slicer)}
             propertyKey={finding.key}
             profileKind={kind}
             slicer={slicer}
@@ -570,7 +570,9 @@ export function ProfileLeafEditor({
               {t('profileEditor.title')}
             </h2>
             <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>{relativePath}</p>
-            <p className='text-muted-foreground mt-1 text-xs'>{t('profileEditor.intro')}</p>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              {t(slicer === 'prusa' ? 'profileEditor.introPrusa' : 'profileEditor.intro')}
+            </p>
           </div>
           <div className='flex shrink-0 items-center gap-0.5'>
             <Tooltip.Provider delay={200}>
@@ -644,7 +646,7 @@ export function ProfileLeafEditor({
                 }}
                 onClick={() => revealKey(key)}
               >
-                {localizedPropertyLabel(key, key, locale)}
+                {localizedPropertyLabel(key, key, locale, slicer)}
               </button>
             ))}
           </div>

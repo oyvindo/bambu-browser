@@ -21,8 +21,12 @@ import {
   type SlicerSource,
   isLeafInheritanceOverride,
   mergedValueAt,
+  profileKindForChain,
   propertyRowTitle,
 } from '@/lib/bambu';
+import { buildMergedProfileData } from '@/lib/bambu/chain-display';
+import { buildPrusaUiTree, formatPrusaCell } from '@/lib/prusa/mapping-prusa';
+import { PRUSA_DEFAULTS_PATH } from '@/lib/prusa/prusa-values';
 import { cn } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/localization';
 import {
@@ -74,22 +78,23 @@ export const ProfileTable = ({
   const propertySearchTrim = propertyFilter.trim().toLowerCase();
   const propertySearchActive = propertySearchTrim.length > 0;
 
-  const isFilamentProfile = React.useMemo(() => {
-    const last = chain[chain.length - 1];
-    if (!last) return false;
-    return last.relativePath.includes('/filament/');
-  }, [chain]);
+  const isFilamentProfile = React.useMemo(
+    () => profileKindForChain(chain, slicer) === 'filament',
+    [chain, slicer],
+  );
 
   const roleLabels = React.useMemo<ColumnRoleLabels>(
     () => ({
       profile: isFilamentProfile
         ? t('chainColumn.profileFilament')
-        : t('chainColumn.profileProcess'),
+        : slicer === 'prusa'
+          ? t('chainColumn.profilePrint')
+          : t('chainColumn.profileProcess'),
       root: t('chainColumn.root'),
       parent: t('chainColumn.parent'),
       level: (levelIndex: number) => t('chainColumn.level', { n: levelIndex }),
     }),
-    [t, isFilamentProfile],
+    [t, isFilamentProfile, slicer],
   );
 
   const columns = React.useMemo(
@@ -98,17 +103,26 @@ export const ProfileTable = ({
   );
   const colCount = 1 + columns.length;
 
+  // PrusaSlicer percentages are computed against the effective profile of each column.
+  const mergedByColumn = React.useMemo(
+    () =>
+      slicer === 'prusa' ? columns.map((col) => buildMergedProfileData(chain, col.index)) : [],
+    [chain, columns, slicer],
+  );
+
   const profileKind = isFilamentProfile ? 'filament' : 'process';
   const uiTree = React.useMemo(
     () =>
-      slicer === 'orca'
-        ? buildOrcaUiTree(profileKind, chain)
-        : buildCompleteUiTree(
-            profileKind,
-            chain,
-            isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
-            slicer,
-          ),
+      slicer === 'prusa'
+        ? buildPrusaUiTree(profileKind, chain)
+        : slicer === 'orca'
+          ? buildOrcaUiTree(profileKind, chain)
+          : buildCompleteUiTree(
+              profileKind,
+              chain,
+              isFilamentProfile ? BAMBU_FILAMENT_UI_TREE : BAMBU_PROCESS_UI_TREE,
+              slicer,
+            ),
     [chain, isFilamentProfile, profileKind, slicer],
   );
 
@@ -179,7 +193,9 @@ export const ProfileTable = ({
             </div>
           </TableHead>
           {columns.map((col, colIdx) => {
-            const name = fileLabel(col.level.relativePath);
+            const name = Object.values(PRUSA_DEFAULTS_PATH).includes(col.level.relativePath)
+              ? t('chainColumn.prusaDefaults')
+              : fileLabel(col.level.relativePath);
             const isLastHead = colIdx === columns.length - 1;
             return (
               <TableHead
@@ -197,7 +213,9 @@ export const ProfileTable = ({
                       colIdx === columns.length - 1 &&
                       onEditLeaf &&
                       (col.level.relativePath.startsWith('user/') ||
-                        col.level.relativePath.startsWith('users/')) &&
+                        col.level.relativePath.startsWith('users/') ||
+                        (slicer === 'prusa' &&
+                          /^(print|filament)\//.test(col.level.relativePath))) &&
                       String(col.level.data.from).toLowerCase() !== 'system'
                         ? onEditLeaf
                         : undefined
@@ -221,7 +239,7 @@ export const ProfileTable = ({
           const visibleSubgroups = group.subgroups
             .map((subgroup) => {
               const visibleProps = subgroup.properties.filter((p) => {
-                const label = localizedPropertyLabel(p.key, p.label, locale);
+                const label = localizedPropertyLabel(p.key, p.label, locale, slicer);
                 const searchable = [
                   propertyRowTitle({ ...p, label }),
                   p.key,
@@ -293,7 +311,12 @@ export const ProfileTable = ({
                         visibleProps.map((prop) => {
                           const key = prop.key;
                           const unit = prop.unit;
-                          const propertyLabel = localizedPropertyLabel(key, prop.label, locale);
+                          const propertyLabel = localizedPropertyLabel(
+                            key,
+                            prop.label,
+                            locale,
+                            slicer,
+                          );
                           const title = propertyRowTitle({
                             ...prop,
                             label: propertyLabel,
@@ -303,8 +326,17 @@ export const ProfileTable = ({
                             mergedValueAt(chain, col.index, key),
                           );
 
-                          const cellTexts = effectiveValues.map((v) =>
-                            formatBambuMappedValue(v, unit, activeExtruderIndex, locale),
+                          const cellTexts = effectiveValues.map((v, i) =>
+                            slicer === 'prusa'
+                              ? formatPrusaCell(
+                                  key,
+                                  v,
+                                  mergedByColumn[i] ?? {},
+                                  unit,
+                                  activeExtruderIndex,
+                                  locale,
+                                )
+                              : formatBambuMappedValue(v, unit, activeExtruderIndex, locale),
                           );
 
                           const overridesParent = cellTexts.map(

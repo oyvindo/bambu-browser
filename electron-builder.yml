@@ -11,6 +11,11 @@ files:
 extraResources:
   - from: server.js
     to: server.js
+  - from: server
+    to: server
+    filter:
+      - '**/*.js'
+      - '!**/*.node-test.js'
   - from: out
     to: out
 mac:
