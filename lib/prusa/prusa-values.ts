@@ -194,9 +194,19 @@ function parseLevel(
   );
 }
 
+/**
+ * Keys a preset of this kind holds: Preset::print_options / filament_options
+ * plus the preset id PrusaSlicer writes into every saved preset.
+ */
+function presetKeys(kind: ProfileKind): readonly string[] {
+  return kind === 'filament'
+    ? [...PRUSA_FILAMENT_OPTION_KEYS, 'filament_settings_id']
+    : [...PRUSA_PRINT_OPTION_KEYS, 'print_settings_id'];
+}
+
 /** PrusaSlicer's compiled-in defaults for every key a preset of this kind holds. */
 export function prusaDefaultsLevel(kind: ProfileKind): InheritanceChainLevel {
-  const keys = kind === 'filament' ? PRUSA_FILAMENT_OPTION_KEYS : PRUSA_PRINT_OPTION_KEYS;
+  const keys = presetKeys(kind);
   const data: Record<string, string> = {};
   for (const key of keys) {
     const def = PRUSA_PROFILE_CONFIG_DEFS[key];
@@ -217,10 +227,15 @@ export function toPrusaDisplayChain(
   kind: ProfileKind,
   chain: readonly InheritanceChainLevel[],
 ): InheritanceChainLevel[] {
-  return [prusaDefaultsLevel(kind), ...chain].map((level) => ({
-    relativePath: level.relativePath,
-    data: parseLevel(kind, level.data),
-  }));
+  const optionKeys = new Set(presetKeys(kind));
+  return [prusaDefaultsLevel(kind), ...chain].map((level) => {
+    // A preset only keeps the options of its kind; obsolete or printer-level
+    // keys in a bundle section are dropped when PrusaSlicer loads it.
+    const data = level.relativePath.startsWith('vendor/')
+      ? Object.fromEntries(Object.entries(level.data).filter(([key]) => optionKeys.has(key)))
+      : level.data;
+    return { relativePath: level.relativePath, data: parseLevel(kind, data) };
+  });
 }
 
 export type PrusaUnresolvedReason = 'nozzle_diameter' | 'auto' | 'cycle' | 'missing';

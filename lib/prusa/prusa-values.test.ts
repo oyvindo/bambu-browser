@@ -111,6 +111,31 @@ describe('toPrusaDisplayChain', () => {
     expect(chain[1]?.data.compatible_printers).toEqual([]);
   });
 
+  it('keeps the preset id key PrusaSlicer writes into every preset', () => {
+    const bundle: InheritanceChainLevel = {
+      relativePath: 'vendor/Creality.ini#print:*common*',
+      data: { print_settings_id: '' },
+    };
+    const print = toPrusaDisplayChain('process', [bundle]);
+    expect(print[0]?.data.print_settings_id).toBe('');
+    expect(print[1]?.data.print_settings_id).toBe('');
+    expect(toPrusaDisplayChain('filament', [])[0]?.data.filament_settings_id).toEqual(['']);
+  });
+
+  it('drops bundle keys a preset of this kind does not hold, like PrusaSlicer', () => {
+    const bundle: InheritanceChainLevel = {
+      relativePath: 'vendor/Creality.ini#print:*common*',
+      data: { clip_multipart_objects: '1', wipe_tower_x: '170', perimeters: '2' },
+    };
+    const user: InheritanceChainLevel = {
+      relativePath: 'print/U.ini',
+      data: { wipe_tower_x: '170', perimeters: '3' },
+    };
+    const chain = toPrusaDisplayChain('process', [bundle, user]);
+    expect(chain[1]?.data).toEqual({ perimeters: '2' });
+    expect(chain[2]?.data).toEqual({ wipe_tower_x: '170', perimeters: '3' });
+  });
+
   it('parses every level', () => {
     const chain = toPrusaDisplayChain('process', [leaf]);
     expect(chain[1]?.data.temperature).toEqual(['215', '210']);

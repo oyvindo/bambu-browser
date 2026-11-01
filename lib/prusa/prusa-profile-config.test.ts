@@ -68,6 +68,11 @@ describe('generated PrusaSlicer option definitions', () => {
     expect(PRUSA_PROFILE_CONFIG_DEFS.compatible_printers?.defaultValue).toBe('');
   });
 
+  it('ignores options that are commented out in the C++ source', () => {
+    expect(PRUSA_PRINT_OPTION_KEYS).not.toContain('infill_only_where_needed');
+    expect(PRUSA_PROFILE_CONFIG_DEFS.infill_only_where_needed).toBeUndefined();
+  });
+
   it('lists which keys belong to print and filament presets', () => {
     expect(PRUSA_PRINT_OPTION_KEYS).toContain('fill_density');
     expect(PRUSA_PRINT_OPTION_KEYS).not.toContain('temperature');

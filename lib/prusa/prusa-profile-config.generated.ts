@@ -2145,15 +2145,6 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     advanced: true,
     defaultValue: '0',
   },
-  infill_only_where_needed: {
-    type: 'coBool',
-    label: 'Only infill where needed',
-    category: 'Infill',
-    tooltip:
-      'This option will limit infill to the areas actually needed for supporting ceilings (it will act as internal support material). If enabled, slows down the G-code generation due to the multiple checks involved.',
-    advanced: true,
-    defaultValue: '0',
-  },
   infill_overlap: {
     type: 'coFloatOrPercent',
     label: 'Infill/perimeters overlap',
@@ -2998,15 +2989,6 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     advanced: true,
     defaultValue: '1.6',
   },
-  pad_edge_radius: {
-    type: 'coFloat',
-    min: 0,
-    label: 'Pad edge radius',
-    category: 'Pad',
-    sidetext: 'mm',
-    advanced: true,
-    defaultValue: '1',
-  },
   pad_enable: {
     type: 'coBool',
     label: 'Use pad',
@@ -3835,7 +3817,8 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
   slice: {
     type: 'coBool',
     label: 'Slice',
-    tooltip: 'Slice the model as FFF or SLA based on the printer_technology configuration value.',
+    tooltip:
+      'Slice the model as FFF or SLA based on the printer_technology configuration value and export the result.',
     defaultValue: '0',
   },
   slice_closing_radius: {
@@ -4054,7 +4037,6 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
   },
   support_material_bottom_contact_distance: {
     type: 'coFloat',
-    min: 0,
     label: 'Bottom contact Z distance',
     category: 'Support material',
     tooltip:
@@ -4094,7 +4076,6 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
   },
   support_material_contact_distance: {
     type: 'coFloat',
-    min: 0,
     label: 'Top contact Z distance',
     category: 'Support material',
     tooltip:
@@ -5787,7 +5768,6 @@ export const PRUSA_PRINT_OPTION_KEYS: readonly string[] = [
   'scarf_seam_max_segment_length',
   'scarf_seam_on_inner_perimeters',
   'infill_every_layers',
-  'infill_only_where_needed',
   'solid_infill_every_layers',
   'fill_angle',
   'bridge_angle',

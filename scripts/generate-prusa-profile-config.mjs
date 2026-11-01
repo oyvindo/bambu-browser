@@ -30,9 +30,22 @@ async function loadSource(envName, sourcePath) {
   return response.text();
 }
 
-const text = await loadSource('PRUSASLICER_PRINTCONFIG', 'libslic3r/PrintConfig.cpp');
-const presetText = await loadSource('PRUSASLICER_PRESET', 'libslic3r/Preset.cpp');
-const tabText = await loadSource('PRUSASLICER_TAB', 'slic3r/GUI/Tab.cpp');
+/**
+ * Drops C++ comments so commented-out options (`// def = this->add(…)`,
+ * `/*"infill_only_where_needed",*\/`) are not read. String literals are
+ * kept intact, so URLs inside tooltips survive.
+ */
+function stripComments(source) {
+  return source.replace(/"(?:\\.|[^"\\\n])*"|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) =>
+    match.startsWith('"') ? match : match.startsWith('/*') ? match.replace(/[^\n]/g, ' ') : '',
+  );
+}
+
+const text = stripComments(
+  await loadSource('PRUSASLICER_PRINTCONFIG', 'libslic3r/PrintConfig.cpp'),
+);
+const presetText = stripComments(await loadSource('PRUSASLICER_PRESET', 'libslic3r/Preset.cpp'));
+const tabText = stripComments(await loadSource('PRUSASLICER_TAB', 'slic3r/GUI/Tab.cpp'));
 const { numberFrom } = createPrintConfigReader(text);
 
 /** Text between `open` at `start` and its matching closing bracket. */
