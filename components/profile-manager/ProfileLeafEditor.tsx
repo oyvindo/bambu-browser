@@ -570,7 +570,9 @@ export function ProfileLeafEditor({
               {t('profileEditor.title')}
             </h2>
             <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>{relativePath}</p>
-            <p className='text-muted-foreground mt-1 text-xs'>{t('profileEditor.intro')}</p>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              {t(slicer === 'prusa' ? 'profileEditor.introPrusa' : 'profileEditor.intro')}
+            </p>
           </div>
           <div className='flex shrink-0 items-center gap-0.5'>
             <Tooltip.Provider delay={200}>

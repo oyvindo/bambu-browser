@@ -635,7 +635,9 @@ async function handleRequest(req, res) {
   }
 
   if (slicer === 'prusa') {
-    const handled = await handlePrusaRoute(req.method, route, url, studioRoot);
+    const handled = await handlePrusaRoute(req.method, route, url, studioRoot, () =>
+      readRequestText(req),
+    );
     if (handled) return sendJson(res, handled.status, handled.body);
   }
 

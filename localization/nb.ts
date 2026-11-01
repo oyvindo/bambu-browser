@@ -111,6 +111,8 @@ export const messagesNb = {
     title: 'Rediger profilfil',
     intro:
       'Rediger den opprinnelige leaf-JSON-filen. Inherits, type, name og from kan ikke endres.',
+    introPrusa:
+      'Rediger innstillingene denne profilen endrer i forhold til forelderen; fjern en nøkkel for å bruke forelderens verdi. Lagring skriver hele filen slik PrusaSlicer forventer. Inherits kan ikke endres. Start PrusaSlicer på nytt eller velg profilen igjen for å se endringen.',
     format: 'Formater',
     validate: 'Valider',
     save: 'Lagre',

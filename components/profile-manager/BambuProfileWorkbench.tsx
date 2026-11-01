@@ -35,6 +35,7 @@ import {
 } from '@/lib/bambu/slicer-source';
 import { useIsHydrated } from '@/lib/hooks/use-is-hydrated';
 import { isDesktopShell } from '@/lib/is-desktop-shell';
+import { buildPrusaFullConfig, prusaLeafOverrides } from '@/lib/prusa/prusa-leaf';
 import { cn } from '@/lib/utils';
 import { useTranslations } from '@/localization/context';
 
@@ -448,7 +449,11 @@ export function BambuProfileWorkbench() {
   const handleOpenEditor = useCallback(async () => {
     if (!selectedPath || !selectedProfile || chain.length === 0) return;
     try {
-      const original = (await fetchApiProfileFile(selectedPath, slicer)).data;
+      // PrusaSlicer files are full snapshots; edit only what differs from the parent.
+      const original =
+        slicer === 'prusa'
+          ? prusaLeafOverrides(chain)
+          : (await fetchApiProfileFile(selectedPath, slicer)).data;
       if (!original) throw new Error(t('errors.loadProfilesFailed'));
       setEditSession({
         relativePath: selectedPath,
@@ -468,7 +473,16 @@ export function BambuProfileWorkbench() {
   const handleSaveEditedProfile = useCallback(
     async (formattedJson: string) => {
       if (!editSession) return;
-      await replaceApiProfileFile(editSession.relativePath, formattedJson, slicer);
+      const body =
+        slicer === 'prusa'
+          ? JSON.stringify({
+              values: buildPrusaFullConfig(
+                chain,
+                JSON.parse(formattedJson) as Record<string, unknown>,
+              ),
+            })
+          : formattedJson;
+      await replaceApiProfileFile(editSession.relativePath, body, slicer);
 
       const compareArg =
         editSession.kind === 'filament' && isCustomFilamentProfile && compareFilamentPath
@@ -480,13 +494,16 @@ export function BambuProfileWorkbench() {
         current
           ? {
               ...current,
-              original: JSON.parse(formattedJson) as Record<string, unknown>,
+              original:
+                slicer === 'prusa'
+                  ? prusaLeafOverrides(refreshed)
+                  : (JSON.parse(formattedJson) as Record<string, unknown>),
               inherited: buildMergedProfileData(refreshed, refreshed.length - 2),
             }
           : null,
       );
     },
-    [compareFilamentPath, editSession, isCustomFilamentProfile, slicer],
+    [chain, compareFilamentPath, editSession, isCustomFilamentProfile, slicer],
   );
 
   return (

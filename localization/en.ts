@@ -107,6 +107,8 @@ export const messagesEn = {
   profileEditor: {
     title: 'Edit profile file',
     intro: 'Edit the original leaf JSON. Inherits, type, name, and from cannot be changed.',
+    introPrusa:
+      'Edit the settings this preset changes compared with its parent; remove a key to use the parent value. Saving writes the full file PrusaSlicer expects. Inherits cannot be changed. Restart PrusaSlicer or reselect the preset to see the change.',
     format: 'Format',
     validate: 'Validate',
     save: 'Save',

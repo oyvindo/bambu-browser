@@ -213,7 +213,9 @@ export const ProfileTable = ({
                       colIdx === columns.length - 1 &&
                       onEditLeaf &&
                       (col.level.relativePath.startsWith('user/') ||
-                        col.level.relativePath.startsWith('users/')) &&
+                        col.level.relativePath.startsWith('users/') ||
+                        (slicer === 'prusa' &&
+                          /^(print|filament)\//.test(col.level.relativePath))) &&
                       String(col.level.data.from).toLowerCase() !== 'system'
                         ? onEditLeaf
                         : undefined

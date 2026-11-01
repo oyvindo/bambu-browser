@@ -211,10 +211,19 @@ async function resolvePrusaChain(rootAbs, relativePath, kind, bundles) {
   };
 }
 
+/** A user preset file: header comment, then `key = value` sorted by key, as PrusaSlicer writes it. */
+function serializeUserPreset(values, header) {
+  const lines = Object.keys(values)
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+    .map((key) => `${key} = ${values[key]}`);
+  return `${header}\n${lines.join('\n')}\n`;
+}
+
 module.exports = {
   buildPresetIndex,
   loadVendorBundles,
   parseIni,
   resolvePrusaChain,
+  serializeUserPreset,
   vendorPresetPath,
 };
