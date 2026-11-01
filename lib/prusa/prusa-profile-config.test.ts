@@ -5,6 +5,7 @@ import {
   PRUSA_PRINT_OPTION_KEYS,
   PRUSA_PROFILE_CONFIG_DEFS,
   PRUSA_PROFILE_CONFIG_SOURCE,
+  PRUSA_UI_LAYOUT,
 } from './prusa-profile-config.generated';
 
 describe('generated PrusaSlicer option definitions', () => {
@@ -48,6 +49,11 @@ describe('generated PrusaSlicer option definitions', () => {
     }
   });
 
+  it('reads the first string of L_CONTEXT labels and keeps the full label', () => {
+    expect(PRUSA_PROFILE_CONFIG_DEFS.top_solid_layers?.label).toBe('Top');
+    expect(PRUSA_PROFILE_CONFIG_DEFS.top_solid_layers?.fullLabel).toBe('Top solid layers');
+  });
+
   it('marks only comSimple options as not advanced', () => {
     expect(PRUSA_PROFILE_CONFIG_DEFS.layer_height?.advanced).toBeUndefined();
     expect(PRUSA_PROFILE_CONFIG_DEFS.support_material_interface_speed?.advanced).toBe(true);
@@ -67,5 +73,30 @@ describe('generated PrusaSlicer option definitions', () => {
     expect(PRUSA_PRINT_OPTION_KEYS).not.toContain('temperature');
     expect(PRUSA_FILAMENT_OPTION_KEYS).toContain('temperature');
     expect(PRUSA_FILAMENT_OPTION_KEYS).toContain('filament_retract_length');
+  });
+
+  it('copies the page and group layout of the PrusaSlicer settings tabs', () => {
+    const print = PRUSA_UI_LAYOUT.print;
+    expect(print[0]?.title).toBe('Layers and perimeters');
+    expect(print[0]?.groups[0]).toEqual({
+      title: 'Layer height',
+      keys: ['layer_height', 'first_layer_height'],
+    });
+    const horizontal = print[0]?.groups.find((group) => group.title === 'Horizontal shells');
+    expect(horizontal?.keys).toContain('top_solid_layers');
+    expect(PRUSA_UI_LAYOUT.filament[0]?.title).toBe('Filament');
+    const overrides = PRUSA_UI_LAYOUT.filament.find((page) => page.title === 'Filament Overrides');
+    expect(overrides?.groups.map((group) => group.title)).toContain('Retraction');
+  });
+
+  it('places almost every print and filament key on a page', () => {
+    const placed = (pages: typeof PRUSA_UI_LAYOUT.print) =>
+      new Set(pages.flatMap((page) => page.groups.flatMap((group) => group.keys)));
+    const print = placed(PRUSA_UI_LAYOUT.print);
+    const filament = placed(PRUSA_UI_LAYOUT.filament);
+    const unplacedPrint = PRUSA_PRINT_OPTION_KEYS.filter((key) => !print.has(key));
+    const unplacedFilament = PRUSA_FILAMENT_OPTION_KEYS.filter((key) => !filament.has(key));
+    expect(unplacedPrint.length).toBeLessThan(10);
+    expect(unplacedFilament.length).toBeLessThan(10);
   });
 });

@@ -83,6 +83,49 @@ function escapeStrings(values: readonly string[]): string {
     .join(';');
 }
 
+/** Value conversions of PrintConfigDef::handle_legacy for print and filament keys. */
+function legacyValue(key: string, raw: string): string {
+  if (key === 'ensure_vertical_shell_thickness') {
+    if (raw === '1') return 'enabled';
+    if (raw === '0') return 'partial';
+  }
+  if ((key === 'gcode_label_objects' || key === 'draft_shield') && (raw === '1' || raw === '0')) {
+    if (key === 'draft_shield') return raw === '1' ? 'enabled' : 'disabled';
+    return raw === '1' ? 'octoprint' : 'disabled';
+  }
+  if (key === 'fill_density' && !raw.includes('%')) {
+    const fraction = Number(raw);
+    if (Number.isFinite(fraction)) return `${fraction * 100}%`;
+  }
+  if (
+    (key === 'perimeter_acceleration' && raw === '25') ||
+    (key === 'infill_acceleration' && raw === '50')
+  ) {
+    return '0';
+  }
+  if (key === 'support_material_pattern' && raw === 'pillars') return 'rectilinear';
+  if (raw === 'monotonous' && /^(top_|bottom_)?fill_pattern$/.test(key)) return 'monotonic';
+  return raw;
+}
+
+const NUMERIC_TYPES = new Set([
+  'coFloat',
+  'coFloats',
+  'coInt',
+  'coInts',
+  'coPercent',
+  'coPercents',
+  'coFloatOrPercent',
+  'coFloatsOrPercents',
+]);
+
+/** `0.20` → `0.2`, `15.0%` → `15%`: the text PrusaSlicer writes for the same number. */
+function canonicalNumber(text: string): string {
+  const match = /^(-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?)(%?)$/i.exec(text.trim());
+  if (!match) return text;
+  return `${Number(match[1])}${match[2]}`;
+}
+
 /**
  * Display form of one INI value: vectors become arrays (one slot per
  * extruder), `nil` becomes null, everything else stays the written text.
@@ -95,11 +138,13 @@ export function parsePrusaValue(
   const type = defs[key]?.type;
   if (!type) return raw;
   if (type === 'coStrings') return unescapeStrings(raw);
-  if (raw.trim() === NIL) return null;
+  const value = legacyValue(key, raw);
+  if (value.trim() === NIL) return null;
+  const tidy = (item: string) => (NUMERIC_TYPES.has(type) ? canonicalNumber(item) : item);
   if (COMMA_VECTOR_TYPES.has(type)) {
-    return raw.split(',').map((item) => (item.trim() === NIL ? null : item.trim()));
+    return value.split(',').map((item) => (item.trim() === NIL ? null : tidy(item.trim())));
   }
-  return raw;
+  return tidy(value);
 }
 
 /** Inverse of {@link parsePrusaValue}: the text PrusaSlicer would write. */
@@ -119,12 +164,33 @@ export function serializePrusaValue(
   return stringifyUnknown(value);
 }
 
-function parseLevel(data: Readonly<Record<string, unknown>>): Record<string, unknown> {
+const FILAMENT_VECTOR_KEYS = new Set(
+  PRUSA_FILAMENT_OPTION_KEYS.filter(
+    (key) => key !== 'compatible_prints' && key !== 'compatible_printers',
+  ),
+);
+
+/**
+ * Preset::normalize: a filament preset holds one value per filament, and an
+ * empty vector is filled from FullPrintConfig's default.
+ */
+function normalizedFilamentValue(key: string, value: unknown): unknown {
+  if (!Array.isArray(value) || value.length > 0 || !FILAMENT_VECTOR_KEYS.has(key)) return value;
+  const defaultValue = PRUSA_PROFILE_CONFIG_DEFS[key]?.defaultValue;
+  if (defaultValue === undefined) return value;
+  const parsed = parsePrusaValue(key, defaultValue);
+  return Array.isArray(parsed) ? parsed.slice(0, 1) : value;
+}
+
+function parseLevel(
+  kind: ProfileKind,
+  data: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [
-      key,
-      typeof value === 'string' ? parsePrusaValue(key, value) : value,
-    ]),
+    Object.entries(data).map(([key, value]) => {
+      const parsed = typeof value === 'string' ? parsePrusaValue(key, value) : value;
+      return [key, kind === 'filament' ? normalizedFilamentValue(key, parsed) : parsed];
+    }),
   );
 }
 
@@ -133,8 +199,10 @@ export function prusaDefaultsLevel(kind: ProfileKind): InheritanceChainLevel {
   const keys = kind === 'filament' ? PRUSA_FILAMENT_OPTION_KEYS : PRUSA_PRINT_OPTION_KEYS;
   const data: Record<string, string> = {};
   for (const key of keys) {
-    const defaultValue = PRUSA_PROFILE_CONFIG_DEFS[key]?.defaultValue;
-    if (key !== 'inherits' && defaultValue !== undefined) data[key] = defaultValue;
+    const def = PRUSA_PROFILE_CONFIG_DEFS[key];
+    if (key === 'inherits' || def?.defaultValue === undefined) continue;
+    // PresetBundle sets every nullable filament option to nil in the default preset.
+    data[key] = kind === 'filament' && def.nullable ? NIL : def.defaultValue;
   }
   return { relativePath: PRUSA_DEFAULTS_PATH[kind], data };
 }
@@ -151,7 +219,7 @@ export function toPrusaDisplayChain(
 ): InheritanceChainLevel[] {
   return [prusaDefaultsLevel(kind), ...chain].map((level) => ({
     relativePath: level.relativePath,
-    data: parseLevel(level.data),
+    data: parseLevel(kind, level.data),
   }));
 }
 

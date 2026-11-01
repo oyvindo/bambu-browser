@@ -3,6 +3,11 @@
  * Locale-specific text lives under `localization/tooltips/`.
  */
 
+import { PRUSA_EQUIVALENT_KEYS } from '@/lib/prusa/prusa-key-equivalents';
+import {
+  PRUSA_PROFILE_CONFIG_DEFS,
+  PRUSA_PROFILE_CONFIG_SOURCE,
+} from '@/lib/prusa/prusa-profile-config.generated';
 import {
   PROCESS_TOOLTIP_DEFAULT_EN,
   PROCESS_TOOLTIPS_EN,
@@ -47,12 +52,45 @@ const TABLE_BY_LOCALE: Record<
   nb: PROCESS_TOOLTIPS_NB,
 };
 
+const PRUSA_VERSION = PRUSA_PROFILE_CONFIG_SOURCE.version.replace(/^version_/, '');
+
+/**
+ * PrusaSlicer's own tooltip. In Norwegian, the meaning written for the
+ * equivalent Bambu key is reused (without its Bambu-specific advice).
+ */
+function prusaTooltip(key: string, locale: AppLocale): BambuPropertyTooltip {
+  const tooltip = PRUSA_PROFILE_CONFIG_DEFS[key]?.tooltip;
+  if (locale === 'en') {
+    return {
+      impact:
+        tooltip ??
+        'This PrusaSlicer setting follows the inheritance chain. A value in a derived profile replaces the parent value for this key.',
+      ...(tooltip ? { related: `Description from PrusaSlicer ${PRUSA_VERSION}.` } : {}),
+    };
+  }
+  const equivalent = PRUSA_EQUIVALENT_KEYS[key];
+  const translated = equivalent ? PROCESS_TOOLTIPS_NB[equivalent] : undefined;
+  if (translated) {
+    return {
+      impact: translated.impact,
+      related: `Tilsvarer «${equivalent}» i Bambu Studio. Original beskrivelse fra PrusaSlicer ${PRUSA_VERSION} (engelsk): ${tooltip ?? '—'}`,
+    };
+  }
+  return {
+    impact:
+      tooltip ??
+      'Denne PrusaSlicer-innstillingen følger arvekjeden. En verdi i en avledet profil erstatter forelderens verdi for denne nøkkelen.',
+    ...(tooltip ? { related: `Beskrivelse fra PrusaSlicer ${PRUSA_VERSION} (engelsk).` } : {}),
+  };
+}
+
 export function propertyTooltipForKey(
   key: string,
   locale: AppLocale,
   kind: ProfileKind = 'process',
   slicer: SlicerSource = 'bambu',
 ): BambuPropertyTooltip {
+  if (slicer === 'prusa') return prusaTooltip(key, locale);
   if (slicer === 'orca') {
     const tooltip = ORCA_PROFILE_CONFIG_DEFS[key]?.tooltip;
     return {

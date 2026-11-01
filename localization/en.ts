@@ -57,11 +57,13 @@ export const messagesEn = {
     slicer: 'Slicer',
     slicerBambu: 'Bambu',
     slicerOrca: 'Orca',
+    slicerPrusa: 'Prusa',
+    prusaDefaultAccount: 'PrusaSlicer keeps one set of user presets (print/ and filament/).',
     orcaDefaultAccount: 'OrcaSlicer profiles use the default account.',
   },
   errors: {
     serverCannotReadRoot:
-      'Server cannot read the selected slicer root: {root}. Check BAMBUSTUDIO_ROOT or ORCASLICER_ROOT.',
+      'Server cannot read the selected slicer root: {root}. Check BAMBUSTUDIO_ROOT, ORCASLICER_ROOT or PRUSASLICER_ROOT.',
     cannotReachApi: 'Cannot reach the local API. Run: node server.js (see terminal).',
     loadProfilesFailed: 'Failed to load profiles',
     refreshFailed: 'Refresh failed',
@@ -152,9 +154,14 @@ export const messagesEn = {
     removeAria: 'Remove',
     removeTooltip: 'Remove',
   },
+  resolve: {
+    incompleteChain: 'The inheritance chain is incomplete; showing what could be resolved:',
+  },
   chainColumn: {
     profileFilament: 'Filament profile',
     profileProcess: 'Process profile',
+    profilePrint: 'Print profile',
+    prusaDefaults: 'PrusaSlicer defaults',
     root: 'Root',
     parent: 'Parent',
     level: 'Level {n}',

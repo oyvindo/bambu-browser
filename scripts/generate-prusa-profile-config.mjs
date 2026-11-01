@@ -13,23 +13,26 @@ import {
 /**
  * Reads PrusaSlicer's option definitions (labels, categories, tooltips,
  * limits, enum keys, `ratio_over` and built-in defaults) from PrintConfig.cpp,
- * and which keys a print or filament preset holds from Preset.cpp.
+ * which keys a print or filament preset holds from Preset.cpp, and the
+ * page/group layout of the settings tabs from GUI/Tab.cpp.
  */
 const PRUSA_VERSION = 'version_2.9.6';
-const RAW_BASE = `https://raw.githubusercontent.com/prusa3d/PrusaSlicer/${PRUSA_VERSION}/src/libslic3r`;
+const RAW_SRC = `https://raw.githubusercontent.com/prusa3d/PrusaSlicer/${PRUSA_VERSION}/src`;
+const RAW_BASE = `${RAW_SRC}/libslic3r`;
 const outputPath = path.resolve('lib/prusa/prusa-profile-config.generated.ts');
 
-async function loadSource(envName, fileName) {
+async function loadSource(envName, sourcePath) {
   const local = process.env[envName];
   if (local) return readFile(local, 'utf8');
-  const url = `${RAW_BASE}/${fileName}`;
+  const url = `${RAW_SRC}/${sourcePath}`;
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Could not download ${url}: ${response.status}`);
   return response.text();
 }
 
-const text = await loadSource('PRUSASLICER_PRINTCONFIG', 'PrintConfig.cpp');
-const presetText = await loadSource('PRUSASLICER_PRESET', 'Preset.cpp');
+const text = await loadSource('PRUSASLICER_PRINTCONFIG', 'libslic3r/PrintConfig.cpp');
+const presetText = await loadSource('PRUSASLICER_PRESET', 'libslic3r/Preset.cpp');
+const tabText = await loadSource('PRUSASLICER_TAB', 'slic3r/GUI/Tab.cpp');
 const { numberFrom } = createPrintConfigReader(text);
 
 /** Text between `open` at `start` and its matching closing bracket. */
@@ -103,6 +106,11 @@ for (const match of text.matchAll(/auto\s+(\w+)\s*=\s*L\(([\s\S]*?)\);/g)) {
 }
 
 function textProperty(block, property) {
+  // L_CONTEXT("Top", "Layers"): the second string is a translator context.
+  const contextual = assignment(block, property)
+    ?.trim()
+    .match(/^L_CONTEXT\(\s*("(?:\\.|[^"\\])*")/);
+  if (contextual) return stringsIn(contextual[1])[0];
   const direct = assignedText(block, property);
   if (direct) return direct;
   const variable = assignment(block, property)?.trim();
@@ -248,6 +256,8 @@ for (const [index, match] of additions.entries()) {
     const value = textProperty(block, property);
     if (value) definition[property] = value;
   }
+  const fullLabel = textProperty(block, 'full_label');
+  if (fullLabel) definition.fullLabel = fullLabel;
   const ratioOver = assignedText(block, 'ratio_over');
   if (ratioOver) definition.ratioOver = ratioOver;
   // ConfigOptionDef::mode defaults to comSimple.
@@ -271,7 +281,15 @@ for (const match of text.matchAll(
       throw new Error(`Could not find source definition for filament_${sourceKey}.`);
     }
     const override = { type: forcedType ?? source.type, nullable: true };
-    for (const property of ['label', 'tooltip', 'sidetext', 'advanced', 'min', 'max']) {
+    for (const property of [
+      'label',
+      'fullLabel',
+      'tooltip',
+      'sidetext',
+      'advanced',
+      'min',
+      'max',
+    ]) {
       if (source[property] !== undefined) override[property] = source[property];
     }
     if (source.defaultValue !== undefined) override.defaultValue = source.defaultValue;
@@ -288,6 +306,58 @@ function presetOptionKeys(listName) {
 const printKeys = presetOptionKeys('s_Preset_print_options');
 const filamentKeys = presetOptionKeys('s_Preset_filament_options');
 
+/** Body of `void <name>()` up to the next top-level function. */
+function functionBody(source, name) {
+  const start = source.indexOf(`void ${name}()`);
+  if (start < 0) throw new Error(`Could not find ${name} in Tab.cpp.`);
+  const end = source.indexOf('\nvoid ', start + 1);
+  return source.slice(start, end < 0 ? source.length : end);
+}
+
+const OPTION_CALL =
+  /(?:append_single_option_line|get_option|create_line_with_widget|create_line_with_near_label_widget)\(\s*(?:[\w.()]+,\s*)?"([a-z0-9_]+)"/g;
+
+/**
+ * Pages, option groups and option keys in the order a settings tab shows
+ * them. `add_filament_overrides_page()` expands to `filament_overrides_option_keys`.
+ */
+function tabLayout(body) {
+  const pages = [];
+  const tokens =
+    /add_options_page\(\s*L\("([^"]+)"\)|new_optgroup\(\s*L\("([^"]+)"\)|add_filament_overrides_page\(\)/g;
+  const marks = [...body.matchAll(tokens)];
+  for (const [index, mark] of marks.entries()) {
+    const segment = body.slice(mark.index + mark[0].length, marks[index + 1]?.index ?? body.length);
+    if (mark[1]) {
+      pages.push({ title: mark[1], groups: [] });
+    } else if (mark[2]) {
+      pages.at(-1)?.groups.push({ title: mark[2], keys: [] });
+    } else {
+      pages.push({ title: 'Filament Overrides', groups: filamentOverrideGroups() });
+    }
+    const group = pages.at(-1)?.groups.at(-1);
+    if (!group || !mark[2]) continue;
+    for (const option of segment.matchAll(OPTION_CALL)) {
+      if (!group.keys.includes(option[1])) group.keys.push(option[1]);
+    }
+  }
+  return pages.filter((page) => page.groups.some((group) => group.keys.length > 0));
+}
+
+function filamentOverrideGroups() {
+  const list = tabText.match(/filament_overrides_option_keys\s*\{([\s\S]*?)\n\};/)?.[1];
+  if (!list) throw new Error('Could not find filament_overrides_option_keys in Tab.cpp.');
+  return [...list.matchAll(/\{\s*"([^"]+)"\s*,\s*\{([^}]*)\}/g)].map((group) => ({
+    title: group[1],
+    keys: stringsIn(group[2]),
+  }));
+}
+
+const uiLayout = {
+  print: tabLayout(functionBody(tabText, 'TabPrint::build')),
+  filament: tabLayout(functionBody(tabText, 'TabFilament::build')),
+};
+
 const sorted = Object.fromEntries(
   [...definitions.entries()].sort(([left], [right]) => left.localeCompare(right)),
 );
@@ -297,6 +367,7 @@ const contents = `/**
  * Source: PrusaSlicer ${PRUSA_VERSION}
  * ${RAW_BASE}/PrintConfig.cpp
  * ${RAW_BASE}/Preset.cpp
+ * ${RAW_SRC}/slic3r/GUI/Tab.cpp
  * Do not edit manually.
  */
 export const PRUSA_PROFILE_CONFIG_SOURCE = {
@@ -312,6 +383,8 @@ export type PrusaProfileConfigDef = {
   /** English UI label per enum key. */
   enumLabels?: Readonly<Record<string, string>>;
   label?: string;
+  /** Label shown outside its option group ("Top" → "Top solid layers"). */
+  fullLabel?: string;
   category?: string;
   tooltip?: string;
   sidetext?: string;
@@ -326,6 +399,12 @@ export type PrusaProfileConfigDef = {
 };
 
 export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConfigDef>> = ${JSON.stringify(sorted, null, 2)};
+
+export type PrusaUiGroup = { readonly title: string; readonly keys: readonly string[] };
+export type PrusaUiPage = { readonly title: string; readonly groups: readonly PrusaUiGroup[] };
+
+/** Pages and option groups of PrusaSlicer's Print Settings and Filament Settings tabs. */
+export const PRUSA_UI_LAYOUT: Readonly<Record<'print' | 'filament', readonly PrusaUiPage[]>> = ${JSON.stringify(uiLayout, null, 2)};
 
 /** Keys PrusaSlicer stores in a print preset (Preset::print_options). */
 export const PRUSA_PRINT_OPTION_KEYS: readonly string[] = ${JSON.stringify(printKeys)};

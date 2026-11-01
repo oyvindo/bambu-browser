@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { Download, Server } from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import type { SlicerSource } from '@/lib/bambu/slicer-source';
+import { slicerDataLocation, type SlicerSource } from '@/lib/bambu/slicer-source';
 import { cn } from '@/lib/utils';
 import { useTranslations } from '@/localization/context';
 
@@ -24,11 +24,8 @@ export type DataSourceModalProps = {
 export function DataSourceModal({ open, onOpenChange, onCheckApi, slicer }: DataSourceModalProps) {
   const t = useTranslations();
   const titleId = useId();
-  const isOrca = slicer === 'orca';
-  const macPath = isOrca
-    ? '~/Library/Application Support/OrcaSlicer'
-    : '~/Library/Application Support/BambuStudio';
-  const windowsPath = isOrca ? '%APPDATA%\\OrcaSlicer' : '%APPDATA%\\BambuStudio';
+  const { macPath, windowsPath, envName } = slicerDataLocation(slicer);
+  const directory = macPath.split('/').at(-1);
 
   useEffect(() => {
     if (!open) return;
@@ -149,10 +146,7 @@ export function DataSourceModal({ open, onOpenChange, onCheckApi, slicer }: Data
               </pre>
               <p className='text-muted-foreground mt-2 text-xs'>{t('dataSource.apiOptionalEnv')}</p>
               <pre className='bg-muted mt-1 overflow-x-auto rounded-md p-2 font-mono text-[11px]'>
-                {isOrca
-                  ? 'ORCASLICER_ROOT="/path/to/OrcaSlicer"'
-                  : 'BAMBUSTUDIO_ROOT="/path/to/BambuStudio"'}{' '}
-                PORT=3847 npm run api
+                {`${envName}="/path/to/${directory}"`} PORT=3847 npm run api
               </pre>
               <p className='text-muted-foreground mt-2 text-xs leading-relaxed'>
                 {t('dataSource.runUiLocally')}

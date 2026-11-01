@@ -12,12 +12,12 @@ export function getBambuApiBaseUrl(): string {
 
 export type ApiMeta = {
   root: string;
-  layout: 'users' | 'user' | null;
+  layout: 'users' | 'user' | 'prusa' | null;
   accountCount: number;
 };
 
 export type ApiAccounts = {
-  layout: 'users' | 'user' | null;
+  layout: 'users' | 'user' | 'prusa' | null;
   accounts: string[];
 };
 

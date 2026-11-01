@@ -3,6 +3,7 @@
  * Source: PrusaSlicer version_2.9.6
  * https://raw.githubusercontent.com/prusa3d/PrusaSlicer/version_2.9.6/src/libslic3r/PrintConfig.cpp
  * https://raw.githubusercontent.com/prusa3d/PrusaSlicer/version_2.9.6/src/libslic3r/Preset.cpp
+ * https://raw.githubusercontent.com/prusa3d/PrusaSlicer/version_2.9.6/src/slic3r/GUI/Tab.cpp
  * Do not edit manually.
  */
 export const PRUSA_PROFILE_CONFIG_SOURCE = {
@@ -18,6 +19,8 @@ export type PrusaProfileConfigDef = {
   /** English UI label per enum key. */
   enumLabels?: Readonly<Record<string, string>>;
   label?: string;
+  /** Label shown outside its option group ("Top" → "Top solid layers"). */
+  fullLabel?: string;
   category?: string;
   tooltip?: string;
   sidetext?: string;
@@ -38,6 +41,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Will inflate or deflate the sliced 2D polygons according to the sign of the correction.',
     sidetext: 'mm',
+    fullLabel: 'Printer absolute correction',
     advanced: true,
     defaultValue: '0',
   },
@@ -156,6 +160,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Bed temperature for layers after the first one. Set this to zero to disable bed temperature control commands in the output.',
     sidetext: '°C',
+    fullLabel: 'Bed temperature',
     defaultValue: '0',
   },
   bed_temperature_extruder: {
@@ -227,19 +232,21 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
   bottom_solid_layers: {
     type: 'coInt',
     min: 0,
-    label: 'BottomLayers',
+    label: 'Bottom',
     category: 'Layers and Perimeters',
     tooltip: 'Number of solid layers to generate on bottom surfaces.',
+    fullLabel: 'Bottom solid layers',
     defaultValue: '3',
   },
   bottom_solid_min_thickness: {
     type: 'coFloat',
     min: 0,
-    label: 'BottomLayers',
+    label: 'Bottom',
     category: 'Layers and Perimeters',
     tooltip:
       'The number of bottom solid layers is increased above bottom_solid_layers if necessary to satisfy minimum thickness of bottom shell.',
     sidetext: 'mm',
+    fullLabel: 'Minimum bottom shell thickness',
     defaultValue: '0',
   },
   bridge_acceleration: {
@@ -343,6 +350,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Minimal chamber temperature that the printer waits for before the print starts. This allows to start the print before the nominal chamber temperature is reached.\nWhen set to zero, the minimal chamber temperature is not set in the G-code.',
     sidetext: '°C',
+    fullLabel: 'Chamber minimal temperature',
     advanced: true,
     defaultValue: '0',
   },
@@ -354,6 +362,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Required chamber temperature for the print.\nWhen set to zero, the nominal chamber temperature is not set in the G-code.',
     sidetext: '°C',
+    fullLabel: 'Chamber temperature',
     advanced: true,
     defaultValue: '0',
   },
@@ -570,6 +579,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     max: 30,
     tooltip: 'Delay after exposure before layer separation.',
     sidetext: 's',
+    fullLabel: 'Delay after exposure',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -580,6 +590,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       "Sets a fixed pause before an exposure of the new layer starts. This setting is ignored if 'Dynamic delay before exposure' is enabled.",
     sidetext: 's',
+    fullLabel: 'Delay before exposure',
     advanced: true,
     defaultValue: '3,3',
   },
@@ -590,6 +601,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Defines the pause between the separation movement (tilt down, Z-hop) and the return movement (tilt up). Increasing this time allows the resin more time to fully reflood the peeled-off layer.',
     sidetext: 's',
+    fullLabel: 'Delay to reflood',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -599,6 +611,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'The speed for loading of a filament into extruder after retraction (it only applies to the extruder motor). If left to zero, the retraction speed is used.',
     sidetext: 'mm/s',
+    fullLabel: 'Deretraction Speed',
     advanced: true,
     defaultValue: '0',
   },
@@ -625,6 +638,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coBool',
     label: 'Mirror horizontally',
     tooltip: 'Enable horizontal mirroring of output images',
+    fullLabel: 'Display horizontal mirroring',
     advanced: true,
     defaultValue: '1',
   },
@@ -632,6 +646,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coBool',
     label: 'Mirror vertically',
     tooltip: 'Enable vertical mirroring of output images',
+    fullLabel: 'Display vertical mirroring',
     advanced: true,
     defaultValue: '0',
   },
@@ -653,6 +668,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     min: 100,
     label: 'X',
     tooltip: 'Number of pixels in X',
+    fullLabel: 'Number of pixels in',
     advanced: true,
     defaultValue: '2560',
   },
@@ -724,6 +740,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip:
       'Switches between predefined algorithms that influence how the dynamic delay before exposure function behaves.',
+    fullLabel: 'Dynamic delay before profile',
     advanced: true,
     defaultValue: 'disabled,disabled',
   },
@@ -733,6 +750,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     max: 120,
     tooltip:
       'Sets the maximum allowed time for waiting for the pressure sensors to stabilize during dynamic delay before exposure. Once this timeout expires, the printer starts exposing the next layer regardless of resin pressure stabilization.',
+    fullLabel: 'Dynamic delay before exposure timeout',
     advanced: true,
     defaultValue: '50,50',
   },
@@ -740,6 +758,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip:
       'Switches between predefined algorithms that influence how the dynamic tilt down function behaves.',
+    fullLabel: 'Dynamic tilt down profile',
     advanced: true,
     defaultValue: 'disabled,disabled',
   },
@@ -747,6 +766,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip:
       'Switches between predefined algorithms that influence how the dynamic tilt up function behaves.',
+    fullLabel: 'Dynamic tilt up profile',
     advanced: true,
     defaultValue: 'disabled,disabled',
   },
@@ -1072,6 +1092,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Fast',
     tooltip: 'Time of the fast tilt',
     sidetext: 's',
+    fullLabel: 'Fast tilt',
     advanced: true,
     defaultValue: '5',
   },
@@ -1137,6 +1158,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloats',
     nullable: true,
     label: 'Deretraction Speed',
+    fullLabel: 'Deretraction Speed',
     tooltip:
       'The speed for loading of a filament into extruder after retraction (it only applies to the extruder motor). If left to zero, the retraction speed is used.',
     sidetext: 'mm/s',
@@ -1332,6 +1354,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloats',
     nullable: true,
     label: 'Retraction length',
+    fullLabel: 'Retraction Length',
     tooltip:
       'When retraction is triggered, filament is pulled back by the specified amount (the length is measured on raw filament, before it enters the extruder).',
     sidetext: 'mm (zero to disable)',
@@ -1341,6 +1364,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloats',
     nullable: true,
     label: 'Length',
+    fullLabel: 'Retraction Length (Toolchange)',
     tooltip:
       'When retraction is triggered before changing tool, filament is pulled back by the specified amount (the length is measured on raw filament, before it enters the extruder).',
     sidetext: 'mm (zero to disable)',
@@ -1360,6 +1384,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloats',
     nullable: true,
     label: 'Above Z',
+    fullLabel: 'Only lift Z above',
     tooltip:
       'If you set this to a positive value, Z lift will only take place above the specified absolute Z. You can tune this setting for skipping lift on the first layers.',
     sidetext: 'mm',
@@ -1370,6 +1395,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloats',
     nullable: true,
     label: 'Below Z',
+    fullLabel: 'Only lift Z below',
     tooltip:
       'If you set this to a positive value, Z lift will only take place below the specified absolute Z. You can tune this setting for limiting lift to the first layers.',
     sidetext: 'mm',
@@ -1400,6 +1426,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloats',
     nullable: true,
     label: 'Retraction Speed',
+    fullLabel: 'Retraction Speed',
     tooltip: 'The speed for retractions (it only applies to the extruder motor).',
     sidetext: 'mm/s',
     advanced: true,
@@ -1671,6 +1698,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Heated build plate temperature for the first layer. Set this to zero to disable bed temperature control commands in the output.',
     sidetext: '°C',
+    fullLabel: 'First layer bed temperature',
     defaultValue: '0',
   },
   first_layer_extrusion_width: {
@@ -1752,6 +1780,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Nozzle temperature for the first layer. If you want to control temperature manually during print, set this to zero to disable temperature control commands in the output G-code.',
     sidetext: '°C',
+    fullLabel: 'First layer nozzle temperature',
     defaultValue: '200',
   },
   full_fan_speed_layer: {
@@ -1806,6 +1835,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Printer gamma correction',
     tooltip:
       'This will apply a gamma correction to the rasterized 2D polygons. A gamma value of zero means thresholding with the threshold in the middle. This behaviour eliminates antialiasing without losing holes in polygons.',
+    fullLabel: 'Printer gamma correction',
     advanced: true,
     defaultValue: '1',
   },
@@ -1954,6 +1984,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'High viscosity',
     tooltip: 'Time of the super slow tilt',
     sidetext: 's',
+    fullLabel: 'Tilt for high viscosity resin',
     advanced: true,
     defaultValue: '10',
   },
@@ -2082,6 +2113,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'This feature allows to combine infill and speed up your print by extruding thicker infill layers while preserving thin perimeters, thus accuracy.',
     sidetext: 'layers',
+    fullLabel: 'Combine infill every n layers',
     advanced: true,
     defaultValue: '1',
   },
@@ -2378,6 +2410,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     category: 'Machine limits',
     tooltip: 'How to apply the Machine Limits',
     sidetext: 'mm/s',
+    fullLabel: 'Purpose of Machine Limits',
     advanced: true,
     defaultValue: 'time_estimate_only',
   },
@@ -2387,6 +2420,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     category: 'Machine limits',
     tooltip: 'Maximum acceleration when extruding',
     sidetext: 'mm/s²',
+    fullLabel: 'Maximum acceleration when extruding',
     advanced: true,
     defaultValue: '1500,1250',
   },
@@ -2397,6 +2431,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Maximum acceleration when retracting.\n\nNot used for RepRapFirmware, which does not support it.',
     sidetext: 'mm/s²',
+    fullLabel: 'Maximum acceleration when retracting',
     advanced: true,
     defaultValue: '1500,1250',
   },
@@ -2406,6 +2441,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     category: 'Machine limits',
     tooltip: 'Maximum acceleration for travel moves.',
     sidetext: 'mm/s²',
+    fullLabel: 'Maximum acceleration for travel moves',
     advanced: true,
     defaultValue: '1500,1250',
   },
@@ -2416,6 +2452,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Maximum Junction Deviation (M205 J; applies only if JD > 0 on Marlin).\nWhen enabled, PrusaSlicer uses it for time estimates and G-code Viewer speeds instead of Jerk.',
     sidetext: 'mm',
+    fullLabel: 'Maximum junction deviation',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -2425,6 +2462,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     category: 'Machine limits',
     tooltip: 'Minimum feedrate when extruding (M205 S)',
     sidetext: 'mm/s',
+    fullLabel: 'Minimum feedrate when extruding',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -2434,6 +2472,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     category: 'Machine limits',
     tooltip: 'Minimum travel feedrate (M205 T)',
     sidetext: 'mm/s',
+    fullLabel: 'Minimum travel feedrate',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -2447,6 +2486,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloats',
     min: 0,
     tooltip: 'Correction for expansion',
+    fullLabel: 'Correction for expansion',
     advanced: true,
     defaultValue: '1,1,1',
   },
@@ -2454,6 +2494,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloat',
     min: 0,
     tooltip: 'Correction for expansion in X axis',
+    fullLabel: 'Correction for expansion in X axis',
     advanced: true,
     defaultValue: '1',
   },
@@ -2461,6 +2502,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloat',
     min: 0,
     tooltip: 'Correction for expansion in Y axis',
+    fullLabel: 'Correction for expansion in Y axis',
     advanced: true,
     defaultValue: '1',
   },
@@ -2468,6 +2510,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coFloat',
     min: 0,
     tooltip: 'Correction for expansion in Z axis',
+    fullLabel: 'Correction for expansion in Z axis',
     advanced: true,
     defaultValue: '1',
   },
@@ -3405,6 +3448,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     min: 0,
     label: 'Printer scaling correction',
     tooltip: 'Printer scaling correction',
+    fullLabel: 'Printer scaling correction',
     advanced: true,
     defaultValue: '1,1',
   },
@@ -3413,6 +3457,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     min: 0,
     label: 'Printer scaling correction in X axis',
     tooltip: 'Printer scaling correction in X axis',
+    fullLabel: 'Printer scaling X axis correction',
     advanced: true,
     defaultValue: '1',
   },
@@ -3421,6 +3466,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     min: 0,
     label: 'Printer scaling correction in Y axis',
     tooltip: 'Printer scaling correction in Y axis',
+    fullLabel: 'Printer scaling Y axis correction',
     advanced: true,
     defaultValue: '1',
   },
@@ -3429,6 +3475,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     min: 0,
     label: 'Printer scaling correction in Z axis',
     tooltip: 'Printer scaling correction in Z axis',
+    fullLabel: 'Printer scaling Z axis correction',
     advanced: true,
     defaultValue: '1',
   },
@@ -3480,6 +3527,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'When retraction is triggered, filament is pulled back by the specified amount (the length is measured on raw filament, before it enters the extruder).',
     sidetext: 'mm (zero to disable)',
+    fullLabel: 'Retraction Length',
     defaultValue: '2',
   },
   retract_length_toolchange: {
@@ -3488,6 +3536,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'When retraction is triggered before changing tool, filament is pulled back by the specified amount (the length is measured on raw filament, before it enters the extruder).',
     sidetext: 'mm (zero to disable)',
+    fullLabel: 'Retraction Length (Toolchange)',
     advanced: true,
     defaultValue: '10',
   },
@@ -3505,6 +3554,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'If you set this to a positive value, Z lift will only take place above the specified absolute Z. You can tune this setting for skipping lift on the first layers.',
     sidetext: 'mm',
+    fullLabel: 'Only lift Z above',
     advanced: true,
     defaultValue: '0',
   },
@@ -3514,6 +3564,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'If you set this to a positive value, Z lift will only take place below the specified absolute Z. You can tune this setting for limiting lift to the first layers.',
     sidetext: 'mm',
+    fullLabel: 'Only lift Z below',
     advanced: true,
     defaultValue: '0',
   },
@@ -3540,6 +3591,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Retraction Speed',
     tooltip: 'The speed for retractions (it only applies to the extruder motor).',
     sidetext: 'mm/s',
+    fullLabel: 'Retraction Speed',
     advanced: true,
     defaultValue: '40',
   },
@@ -3677,6 +3729,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Direction',
     tooltip: 'Seam preferred direction',
     sidetext: '°',
+    fullLabel: 'Preferred direction of the seam',
     defaultValue: '0',
   },
   seam_preferred_direction_jitter: {
@@ -3686,6 +3739,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Jitter',
     tooltip: 'Preferred direction of the seam - jitter',
     sidetext: '°',
+    fullLabel: 'Seam preferred direction jitter',
     defaultValue: '30',
   },
   second: {
@@ -3752,6 +3806,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Loops (minimum)',
     tooltip:
       'Number of loops for the skirt. If the Minimum Extrusion Length option is set, the number of loops might be greater than the one configured here. Set this to zero to disable skirt completely.',
+    fullLabel: 'Skirt Loops',
     advanced: true,
     defaultValue: '1',
   },
@@ -3815,6 +3870,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Slow',
     tooltip: 'Time of the slow tilt',
     sidetext: 's',
+    fullLabel: 'Slow tilt',
     advanced: true,
     defaultValue: '8',
   },
@@ -4055,6 +4111,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Generate support material for the specified number of layers counting from bottom, regardless of whether normal support material is enabled or not and regardless of any angle threshold. This is useful for getting more adhesion of objects having a very thin or poor footprint on the build plate.',
     sidetext: 'layers',
+    fullLabel: 'Enforce support for the first n layers',
     advanced: true,
     defaultValue: '0',
   },
@@ -4362,6 +4419,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Nozzle temperature for layers after the first one. Set this to zero to disable temperature control commands in the output G-code.',
     sidetext: '°C',
+    fullLabel: 'Nozzle temperature',
     defaultValue: '200',
   },
   template_custom_gcode: {
@@ -4418,6 +4476,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     min: 0,
     max: 10,
     tooltip: 'Number of cycles to split the rest of the tilt down move.',
+    fullLabel: 'Tilt down cycles',
     advanced: true,
     defaultValue: '1,1',
   },
@@ -4427,6 +4486,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     max: 20,
     tooltip: 'The delay between tilt-down cycles.',
     sidetext: 's',
+    fullLabel: 'Tilt down delay',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -4435,6 +4495,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Sets the final speed for the tilt-down separation move. Too high a speed, especially with less viscous resins, can cause resin to splash out of the tank.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt down finish speed',
     advanced: true,
     defaultValue: 'layer1750,layer1750',
   },
@@ -4442,6 +4503,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip: 'Tilt speed used for the rest of the tilt down move.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt down finish speed',
     advanced: true,
     defaultValue: 'layer160,layer160',
   },
@@ -4450,6 +4512,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Sets the initial speed for the tilt-down separation move. A high speed may negatively affect print quality or success, especially with certain resins or delicate geometries, but it speeds up the overall print time.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt down initial speed',
     advanced: true,
     defaultValue: 'layer1750,layer1750',
   },
@@ -4457,6 +4520,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip: 'Tilt speed used for an initial portion of tilt down move.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt down initial speed',
     advanced: true,
     defaultValue: 'layer160,layer160',
   },
@@ -4466,6 +4530,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     max: 20,
     tooltip: "Delay after the tilt reaches 'tilt_down_offset_steps' position.",
     sidetext: 's',
+    fullLabel: 'Tilt down offset delay',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -4476,6 +4541,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       "Defines the distance (steps) over which the 'Tilt down initial speed' is applied. Once this distance is covered, the tilt moves at the 'Tilt down finish speed'. Setting to 0 immediately applies the finish speed. Maximum distance varies by printer, typically around 12,000 steps.",
     sidetext: 'μ-steps',
+    fullLabel: 'Tilt down offset steps',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -4484,6 +4550,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     min: 0,
     max: 10,
     tooltip: 'Number of cycles to split the rest of the tilt-up.',
+    fullLabel: 'Tilt up cycles',
     advanced: true,
     defaultValue: '1,1',
   },
@@ -4493,6 +4560,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     max: 20,
     tooltip: 'The delay between tilt-up cycles.',
     sidetext: 's',
+    fullLabel: 'Tilt up delay',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -4501,6 +4569,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'Sets the final speed for the tilt-up return movement. Excessive speed, especially with highly viscous resins, can lead to a loss of print quality, or in extreme cases, tilt motor skipping or damage to the print display.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt up finish speed',
     advanced: true,
     defaultValue: 'layer1750,layer1750',
   },
@@ -4508,6 +4577,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip: 'Tilt speed used for the rest of the tilt-up.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt up finish speed',
     advanced: true,
     defaultValue: 'layer160,layer160',
   },
@@ -4515,6 +4585,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip: 'Sets the initial speed for the tilt-up return movement.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt up initial speed',
     advanced: true,
     defaultValue: 'move8000,move8000',
   },
@@ -4522,6 +4593,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coEnums',
     tooltip: 'Tilt speed used for an initial portion of tilt up move.',
     sidetext: 'μ-steps/s',
+    fullLabel: 'Tilt up initial speed',
     advanced: true,
     defaultValue: 'layer160,layer160',
   },
@@ -4531,6 +4603,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     max: 20,
     tooltip: "Delay after the tilt reaches 'tilt_up_offset_steps' position.",
     sidetext: 's',
+    fullLabel: 'Tilt up offset delay',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -4541,6 +4614,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       "Defines the distance over which the 'Tilt up initial speed' is applied. After this distance, the tilt moves at the 'Tilt up finish speed'. Setting to 0 immediately applies the finish speed.",
     sidetext: 'μ-steps',
+    fullLabel: 'Tilt up offset steps',
     advanced: true,
     defaultValue: '1200,1200',
   },
@@ -4656,19 +4730,21 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
   top_solid_layers: {
     type: 'coInt',
     min: 0,
-    label: 'TopLayers',
+    label: 'Top',
     category: 'Layers and Perimeters',
     tooltip: 'Number of solid layers to generate on top surfaces.',
+    fullLabel: 'Top solid layers',
     defaultValue: '3',
   },
   top_solid_min_thickness: {
     type: 'coFloat',
     min: 0,
-    label: 'TopLayers',
+    label: 'Top',
     category: 'Layers and Perimeters',
     tooltip:
       'The number of top solid layers is increased above top_solid_layers if necessary to satisfy minimum thickness of top shell. This is useful to prevent pillowing effect when printing with variable layer height.',
     sidetext: 'mm',
+    fullLabel: 'Minimum top shell thickness',
     defaultValue: '0',
   },
   total_cost: {
@@ -4710,6 +4786,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     tooltip:
       'An alternative separation move to tilting. After layer exposure, the platform lifts by this distance. A minimum of 5mm is recommended if tilting is disabled. If you use tilting, we suggest 0mm, although a combination of both is possible.',
     sidetext: 'mm',
+    fullLabel: 'Tower hop height',
     advanced: true,
     defaultValue: '0,0',
   },
@@ -4743,6 +4820,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     },
     tooltip: 'Tower speed used for tower raise.',
     sidetext: 'mm/s',
+    fullLabel: 'Tower speed',
     advanced: true,
     defaultValue: 'layer22,layer22',
   },
@@ -4841,6 +4919,7 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     type: 'coBools',
     tooltip:
       "Enables or disables the tilting function. If disabled, the layer separation is performed using the 'Tower hop height' parameter.",
+    fullLabel: 'Use tilt',
     advanced: true,
     defaultValue: '1,1',
   },
@@ -5080,6 +5159,597 @@ export const PRUSA_PROFILE_CONFIG_DEFS: Readonly<Record<string, PrusaProfileConf
     label: 'Current z-hop',
     tooltip: 'Contains z-hop present at the beginning of the custom G-code block.',
   },
+};
+
+export type PrusaUiGroup = { readonly title: string; readonly keys: readonly string[] };
+export type PrusaUiPage = { readonly title: string; readonly groups: readonly PrusaUiGroup[] };
+
+/** Pages and option groups of PrusaSlicer's Print Settings and Filament Settings tabs. */
+export const PRUSA_UI_LAYOUT: Readonly<Record<'print' | 'filament', readonly PrusaUiPage[]>> = {
+  print: [
+    {
+      title: 'Layers and perimeters',
+      groups: [
+        {
+          title: 'Layer height',
+          keys: ['layer_height', 'first_layer_height'],
+        },
+        {
+          title: 'Vertical shells',
+          keys: ['perimeters', 'spiral_vase'],
+        },
+        {
+          title: 'Horizontal shells',
+          keys: [
+            'top_solid_layers',
+            'bottom_solid_layers',
+            'top_solid_min_thickness',
+            'bottom_solid_min_thickness',
+          ],
+        },
+        {
+          title: 'Quality (slower slicing)',
+          keys: [
+            'extra_perimeters',
+            'extra_perimeters_on_overhangs',
+            'ensure_vertical_shell_thickness',
+            'avoid_crossing_curled_overhangs',
+            'avoid_crossing_perimeters',
+            'avoid_crossing_perimeters_max_detour',
+            'thin_walls',
+            'thick_bridges',
+            'overhangs',
+          ],
+        },
+        {
+          title: 'Advanced',
+          keys: [
+            'seam_position',
+            'seam_gap_distance',
+            'staggered_inner_seams',
+            'scarf_seam_placement',
+            'scarf_seam_only_on_smooth',
+            'scarf_seam_start_height',
+            'scarf_seam_entire_loop',
+            'scarf_seam_length',
+            'scarf_seam_max_segment_length',
+            'scarf_seam_on_inner_perimeters',
+            'external_perimeters_first',
+            'gap_fill_enabled',
+            'perimeter_generator',
+          ],
+        },
+        {
+          title: 'Fuzzy skin (experimental)',
+          keys: ['fuzzy_skin', 'fuzzy_skin_thickness', 'fuzzy_skin_point_dist'],
+        },
+        {
+          title: 'Only one perimeter',
+          keys: ['top_one_perimeter_type', 'only_one_perimeter_first_layer'],
+        },
+      ],
+    },
+    {
+      title: 'Infill',
+      groups: [
+        {
+          title: 'Infill',
+          keys: [
+            'fill_density',
+            'fill_pattern',
+            'infill_anchor',
+            'infill_anchor_max',
+            'top_fill_pattern',
+            'bottom_fill_pattern',
+          ],
+        },
+        {
+          title: 'Ironing',
+          keys: ['ironing', 'ironing_type', 'ironing_flowrate', 'ironing_spacing'],
+        },
+        {
+          title: 'Reducing printing time',
+          keys: [
+            'automatic_infill_combination',
+            'automatic_infill_combination_max_layer_height',
+            'infill_every_layers',
+          ],
+        },
+        {
+          title: 'Advanced',
+          keys: [
+            'solid_infill_every_layers',
+            'fill_angle',
+            'solid_infill_below_area',
+            'bridge_angle',
+            'only_retract_when_crossing_perimeters',
+            'infill_first',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Skirt and brim',
+      groups: [
+        {
+          title: 'Skirt',
+          keys: ['skirts', 'skirt_distance', 'skirt_height', 'draft_shield', 'min_skirt_length'],
+        },
+        {
+          title: 'Brim',
+          keys: ['brim_type', 'brim_width', 'brim_separation'],
+        },
+      ],
+    },
+    {
+      title: 'Support material',
+      groups: [
+        {
+          title: 'Support material',
+          keys: [
+            'support_material',
+            'support_material_auto',
+            'support_material_threshold',
+            'support_material_enforce_layers',
+            'raft_first_layer_density',
+            'raft_first_layer_expansion',
+          ],
+        },
+        {
+          title: 'Raft',
+          keys: ['raft_layers', 'raft_contact_distance', 'raft_expansion'],
+        },
+        {
+          title: 'Options for support material and raft',
+          keys: [
+            'support_material_style',
+            'support_material_contact_distance',
+            'support_material_bottom_contact_distance',
+            'support_material_pattern',
+            'support_material_with_sheath',
+            'support_material_spacing',
+            'support_material_angle',
+            'support_material_closing_radius',
+            'support_material_interface_layers',
+            'support_material_bottom_interface_layers',
+            'support_material_interface_pattern',
+            'support_material_interface_spacing',
+            'support_material_interface_contact_loops',
+            'support_material_buildplate_only',
+            'support_material_xy_spacing',
+            'dont_support_bridges',
+            'support_material_synchronize_layers',
+          ],
+        },
+        {
+          title: 'Organic supports',
+          keys: [
+            'support_tree_angle',
+            'support_tree_angle_slow',
+            'support_tree_branch_diameter',
+            'support_tree_branch_diameter_angle',
+            'support_tree_branch_diameter_double_wall',
+            'support_tree_tip_diameter',
+            'support_tree_branch_distance',
+            'support_tree_top_rate',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Speed',
+      groups: [
+        {
+          title: 'Speed for print moves',
+          keys: [
+            'perimeter_speed',
+            'small_perimeter_speed',
+            'external_perimeter_speed',
+            'infill_speed',
+            'solid_infill_speed',
+            'top_solid_infill_speed',
+            'support_material_speed',
+            'support_material_interface_speed',
+            'bridge_speed',
+            'over_bridge_speed',
+            'gap_fill_speed',
+            'ironing_speed',
+          ],
+        },
+        {
+          title: 'Dynamic overhang speed',
+          keys: [
+            'enable_dynamic_overhang_speeds',
+            'overhang_speed_0',
+            'overhang_speed_1',
+            'overhang_speed_2',
+            'overhang_speed_3',
+          ],
+        },
+        {
+          title: 'Speed for non-print moves',
+          keys: ['travel_speed', 'travel_speed_z'],
+        },
+        {
+          title: 'Modifiers',
+          keys: ['first_layer_speed', 'first_layer_infill_speed', 'first_layer_speed_over_raft'],
+        },
+        {
+          title: 'Acceleration control (advanced)',
+          keys: [
+            'external_perimeter_acceleration',
+            'perimeter_acceleration',
+            'top_solid_infill_acceleration',
+            'solid_infill_acceleration',
+            'infill_acceleration',
+            'bridge_acceleration',
+            'first_layer_acceleration',
+            'first_layer_acceleration_over_raft',
+            'wipe_tower_acceleration',
+            'travel_acceleration',
+            'travel_short_distance_acceleration',
+            'default_acceleration',
+          ],
+        },
+        {
+          title: 'Autospeed (advanced)',
+          keys: ['max_print_speed', 'max_volumetric_speed'],
+        },
+        {
+          title: 'Pressure equalizer (experimental)',
+          keys: [
+            'max_volumetric_extrusion_rate_slope_positive',
+            'max_volumetric_extrusion_rate_slope_negative',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Multiple Extruders',
+      groups: [
+        {
+          title: 'Extruders',
+          keys: [
+            'perimeter_extruder',
+            'infill_extruder',
+            'solid_infill_extruder',
+            'support_material_extruder',
+            'support_material_interface_extruder',
+            'wipe_tower_extruder',
+            'bed_temperature_extruder',
+          ],
+        },
+        {
+          title: 'Ooze prevention',
+          keys: ['ooze_prevention', 'standby_temperature_delta'],
+        },
+        {
+          title: 'Wipe tower',
+          keys: [
+            'wipe_tower',
+            'wipe_tower_width',
+            'wipe_tower_brim_width',
+            'wipe_tower_bridging',
+            'wipe_tower_cone_angle',
+            'wipe_tower_extra_spacing',
+            'wipe_tower_extra_flow',
+            'wipe_tower_no_sparse_layers',
+            'single_extruder_multi_material_priming',
+          ],
+        },
+        {
+          title: 'Advanced',
+          keys: [
+            'toolchange_ordering',
+            'interface_shells',
+            'mmu_segmented_region_max_width',
+            'mmu_segmented_region_interlocking_depth',
+            'interlocking_beam',
+            'interlocking_beam_width',
+            'interlocking_orientation',
+            'interlocking_beam_layer_count',
+            'interlocking_depth',
+            'interlocking_boundary_avoidance',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Advanced',
+      groups: [
+        {
+          title: 'Extrusion width',
+          keys: [
+            'extrusion_width',
+            'first_layer_extrusion_width',
+            'perimeter_extrusion_width',
+            'external_perimeter_extrusion_width',
+            'infill_extrusion_width',
+            'solid_infill_extrusion_width',
+            'top_infill_extrusion_width',
+            'support_material_extrusion_width',
+            'automatic_extrusion_widths',
+          ],
+        },
+        {
+          title: 'Overlap',
+          keys: ['infill_overlap'],
+        },
+        {
+          title: 'Flow',
+          keys: ['bridge_flow_ratio'],
+        },
+        {
+          title: 'Slicing',
+          keys: [
+            'slice_closing_radius',
+            'slicing_mode',
+            'resolution',
+            'gcode_resolution',
+            'arc_fitting',
+            'xy_size_compensation',
+            'elefant_foot_compensation',
+          ],
+        },
+        {
+          title: 'Arachne perimeter generator',
+          keys: [
+            'wall_transition_angle',
+            'wall_transition_filter_deviation',
+            'wall_transition_length',
+            'wall_distribution_count',
+            'min_bead_width',
+            'min_feature_size',
+          ],
+        },
+        {
+          title: 'Custom parameters',
+          keys: ['custom_parameters_print'],
+        },
+      ],
+    },
+    {
+      title: 'Output options',
+      groups: [
+        {
+          title: 'Sequential printing',
+          keys: ['complete_objects'],
+        },
+        {
+          title: 'Output file',
+          keys: ['gcode_comments', 'gcode_label_objects', 'output_filename_format'],
+        },
+        {
+          title: 'Other',
+          keys: ['gcode_substitutions'],
+        },
+        {
+          title: 'Post-processing scripts',
+          keys: ['post_process'],
+        },
+      ],
+    },
+    {
+      title: 'Notes',
+      groups: [
+        {
+          title: 'Notes',
+          keys: ['notes'],
+        },
+      ],
+    },
+    {
+      title: 'Dependencies',
+      groups: [
+        {
+          title: 'Profile dependencies',
+          keys: ['compatible_printers', 'compatible_printers_condition'],
+        },
+      ],
+    },
+  ],
+  filament: [
+    {
+      title: 'Filament',
+      groups: [
+        {
+          title: 'Filament',
+          keys: [
+            'filament_colour',
+            'filament_diameter',
+            'extrusion_multiplier',
+            'filament_density',
+            'filament_cost',
+            'filament_spool_weight',
+          ],
+        },
+        {
+          title: 'Temperature',
+          keys: [
+            'idle_temperature',
+            'first_layer_temperature',
+            'temperature',
+            'first_layer_bed_temperature',
+            'bed_temperature',
+            'chamber_temperature',
+            'chamber_minimal_temperature',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Cooling',
+      groups: [
+        {
+          title: 'Enable',
+          keys: [
+            'fan_always_on',
+            'cooling',
+            'cooling_slowdown_logic',
+            'cooling_perimeter_transition_distance',
+          ],
+        },
+        {
+          title: 'Fan settings',
+          keys: [
+            'min_fan_speed',
+            'max_fan_speed',
+            'bridge_fan_speed',
+            'disable_fan_first_layers',
+            'full_fan_speed_layer',
+          ],
+        },
+        {
+          title: 'Dynamic fan speeds',
+          keys: [
+            'enable_dynamic_fan_speeds',
+            'overhang_fan_speed_0',
+            'overhang_fan_speed_1',
+            'overhang_fan_speed_2',
+            'overhang_fan_speed_3',
+          ],
+        },
+        {
+          title: 'Cooling thresholds',
+          keys: ['fan_below_layer_time', 'slowdown_below_layer_time', 'min_print_speed'],
+        },
+      ],
+    },
+    {
+      title: 'Advanced',
+      groups: [
+        {
+          title: 'Filament properties',
+          keys: ['filament_type', 'filament_soluble', 'filament_abrasive'],
+        },
+        {
+          title: 'Print speed override',
+          keys: [
+            'filament_max_volumetric_speed',
+            'filament_infill_max_speed',
+            'filament_infill_max_crossing_speed',
+          ],
+        },
+        {
+          title: 'Shrinkage compensation',
+          keys: ['filament_shrinkage_compensation_xy', 'filament_shrinkage_compensation_z'],
+        },
+        {
+          title: 'Wipe tower parameters',
+          keys: ['filament_minimal_purge_on_wipe_tower'],
+        },
+        {
+          title: 'Toolchange parameters with single extruder MM printers',
+          keys: [
+            'filament_loading_speed_start',
+            'filament_loading_speed',
+            'filament_unloading_speed_start',
+            'filament_unloading_speed',
+            'filament_load_time',
+            'filament_unload_time',
+            'filament_toolchange_delay',
+            'filament_cooling_moves',
+            'filament_cooling_initial_speed',
+            'filament_cooling_final_speed',
+            'filament_stamping_loading_speed',
+            'filament_stamping_distance',
+            'filament_purge_multiplier',
+            'filament_ramming_parameters',
+          ],
+        },
+        {
+          title: 'Toolchange parameters with multi extruder MM printers',
+          keys: [
+            'filament_multitool_ramming',
+            'filament_multitool_ramming_volume',
+            'filament_multitool_ramming_flow',
+          ],
+        },
+        {
+          title: 'Flush parameters (experimental)',
+          keys: ['filament_flush_volume', 'filament_flush_speed'],
+        },
+      ],
+    },
+    {
+      title: 'Filament Overrides',
+      groups: [
+        {
+          title: 'Travel lift',
+          keys: [
+            'filament_retract_lift',
+            'filament_travel_ramping_lift',
+            'filament_travel_max_lift',
+            'filament_travel_slope',
+            'filament_travel_lift_before_obstacle',
+            'filament_retract_lift_above',
+            'filament_retract_lift_below',
+          ],
+        },
+        {
+          title: 'Retraction',
+          keys: [
+            'filament_retract_length',
+            'filament_retract_speed',
+            'filament_deretract_speed',
+            'filament_retract_restart_extra',
+            'filament_retract_before_travel',
+            'filament_retract_layer_change',
+            'filament_wipe',
+            'filament_retract_before_wipe',
+          ],
+        },
+        {
+          title: 'Retraction when tool is disabled',
+          keys: ['filament_retract_length_toolchange', 'filament_retract_restart_extra_toolchange'],
+        },
+        {
+          title: 'Seams',
+          keys: ['filament_seam_gap_distance'],
+        },
+      ],
+    },
+    {
+      title: 'Custom G-code',
+      groups: [
+        {
+          title: 'Start G-code',
+          keys: ['start_filament_gcode'],
+        },
+        {
+          title: 'End G-code',
+          keys: ['end_filament_gcode'],
+        },
+        {
+          title: 'Custom parameters',
+          keys: ['custom_parameters_filament'],
+        },
+      ],
+    },
+    {
+      title: 'Notes',
+      groups: [
+        {
+          title: 'Notes',
+          keys: ['filament_notes'],
+        },
+      ],
+    },
+    {
+      title: 'Dependencies',
+      groups: [
+        {
+          title: 'Profile dependencies',
+          keys: [
+            'compatible_printers',
+            'compatible_printers_condition',
+            'compatible_prints',
+            'compatible_prints_condition',
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 /** Keys PrusaSlicer stores in a print preset (Preset::print_options). */

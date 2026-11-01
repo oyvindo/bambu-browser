@@ -1,0 +1,48 @@
+/**
+ * PrusaSlicer key → Bambu Studio / OrcaSlicer key with the same meaning.
+ * Bambu renamed most Slic3r options; this lets PrusaSlicer rows reuse the
+ * Norwegian labels and help text written for Bambu. Only add pairs whose
+ * meaning and unit really match.
+ */
+export const PRUSA_EQUIVALENT_KEYS: Readonly<Record<string, string>> = {
+  bottom_fill_pattern: 'bottom_surface_pattern',
+  bottom_solid_layers: 'bottom_shell_layers',
+  bridge_flow_ratio: 'bridge_flow',
+  disable_fan_first_layers: 'close_fan_the_first_x_layers',
+  external_perimeter_extrusion_width: 'outer_wall_line_width',
+  external_perimeter_speed: 'outer_wall_speed',
+  extrusion_multiplier: 'filament_flow_ratio',
+  extrusion_width: 'line_width',
+  fan_below_layer_time: 'fan_cooling_layer_time',
+  fill_angle: 'infill_direction',
+  fill_density: 'sparse_infill_density',
+  fill_pattern: 'sparse_infill_pattern',
+  first_layer_extrusion_width: 'initial_layer_line_width',
+  first_layer_height: 'initial_layer_print_height',
+  first_layer_speed: 'initial_layer_speed',
+  first_layer_temperature: 'nozzle_temperature_initial_layer',
+  infill_extrusion_width: 'sparse_infill_line_width',
+  infill_overlap: 'infill_wall_overlap',
+  infill_speed: 'sparse_infill_speed',
+  max_fan_speed: 'fan_max_speed',
+  min_fan_speed: 'fan_min_speed',
+  min_print_speed: 'slow_down_min_speed',
+  perimeter_extrusion_width: 'inner_wall_line_width',
+  perimeter_speed: 'inner_wall_speed',
+  perimeters: 'wall_loops',
+  skirts: 'skirt_loops',
+  slowdown_below_layer_time: 'slow_down_layer_time',
+  solid_infill_extrusion_width: 'internal_solid_infill_line_width',
+  solid_infill_speed: 'internal_solid_infill_speed',
+  support_material: 'enable_support',
+  support_material_extrusion_width: 'support_line_width',
+  support_material_threshold: 'support_threshold_angle',
+  temperature: 'nozzle_temperature',
+  thin_walls: 'detect_thin_wall',
+  top_fill_pattern: 'top_surface_pattern',
+  top_infill_extrusion_width: 'top_surface_line_width',
+  top_solid_infill_speed: 'top_surface_speed',
+  top_solid_layers: 'top_shell_layers',
+  wipe_tower: 'enable_prime_tower',
+  xy_size_compensation: 'xy_contour_compensation',
+};

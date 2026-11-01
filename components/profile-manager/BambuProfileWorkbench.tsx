@@ -29,6 +29,7 @@ import { type InheritanceChainLevel } from '@/lib/bambu/resolver';
 import {
   DEFAULT_SLICER_SOURCE,
   isSlicerSource,
+  SLICER_SOURCES,
   slicerDisplayName,
   type SlicerSource,
 } from '@/lib/bambu/slicer-source';
@@ -44,6 +45,12 @@ import { ProfileTreeGrid } from './ProfileTreeGrid';
 import { flattenSidebarRows, type SidebarRow, type SidebarSection } from './sidebarRows';
 
 const SLICER_STORAGE_KEY = 'bambu-browser-slicer';
+
+const SLICER_BUTTON_LABEL = {
+  bambu: 'controls.slicerBambu',
+  orca: 'controls.slicerOrca',
+  prusa: 'controls.slicerPrusa',
+} as const satisfies Record<SlicerSource, string>;
 
 type EditSession = {
   relativePath: string;
@@ -72,7 +79,8 @@ export function BambuProfileWorkbench() {
 
   const [apiOk, setApiOk] = useState<boolean | null>(null);
   const [studioRootLabel, setStudioRootLabel] = useState<string>('');
-  const [layout, setLayout] = useState<'users' | 'user' | null>(null);
+  const [layout, setLayout] = useState<'users' | 'user' | 'prusa' | null>(null);
+  const [resolveWarnings, setResolveWarnings] = useState<readonly string[]>([]);
   const [accountNames, setAccountNames] = useState<string[]>([]);
   const [selectedUsername, setSelectedUsername] = useState<string | null>(null);
 
@@ -146,7 +154,7 @@ export function BambuProfileWorkbench() {
         const { accounts } = await fetchApiAccounts(source);
         setAccountNames(accounts);
         setSelectedUsername((prev) =>
-          source === 'orca' && accounts.includes('default')
+          source !== 'bambu' && accounts.includes('default')
             ? 'default'
             : prev && accounts.includes(prev)
               ? prev
@@ -244,6 +252,7 @@ export function BambuProfileWorkbench() {
     let cancelled = false;
     const compareArg = isCustomFilamentProfile && compareFilamentPath ? compareFilamentPath : null;
     const run = async () => {
+      setResolveWarnings([]);
       if (!selectedPath || apiOk !== true) {
         setChain([]);
         return;
@@ -251,8 +260,11 @@ export function BambuProfileWorkbench() {
       setResolving(true);
       setError(null);
       try {
-        const { chain: c } = await fetchApiResolve(selectedPath, slicer, compareArg);
-        if (!cancelled) setChain(c);
+        const { chain: c, warnings } = await fetchApiResolve(selectedPath, slicer, compareArg);
+        if (!cancelled) {
+          setChain(c);
+          setResolveWarnings(warnings ?? []);
+        }
       } catch (e) {
         if (!cancelled) {
           setChain([]);
@@ -552,6 +564,20 @@ export function BambuProfileWorkbench() {
         </div>
       ) : null}
 
+      {resolveWarnings.length > 0 ? (
+        <div
+          role='status'
+          className='mx-4 mt-3 shrink-0 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200'
+        >
+          <p className='font-medium'>{t('resolve.incompleteChain')}</p>
+          <ul className='mt-1 list-disc pl-5'>
+            {resolveWarnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {apiOk === false ? (
         <div className='text-muted-foreground mx-4 mt-3 shrink-0 rounded-md border border-dashed px-3 py-3 text-sm'>
           <p className='text-foreground font-medium'>
@@ -640,11 +666,11 @@ export function BambuProfileWorkbench() {
             </div>
 
             <div
-              className='border-input grid grid-cols-2 rounded-md border p-0.5'
+              className='border-input grid grid-cols-3 rounded-md border p-0.5'
               role='group'
               aria-label={t('controls.slicer')}
             >
-              {(['bambu', 'orca'] as const).map((source) => (
+              {SLICER_SOURCES.map((source) => (
                 <Button
                   key={source}
                   type='button'
@@ -653,7 +679,7 @@ export function BambuProfileWorkbench() {
                   aria-pressed={slicer === source}
                   onClick={() => handleSlicerChange(source)}
                 >
-                  {source === 'bambu' ? t('controls.slicerBambu') : t('controls.slicerOrca')}
+                  {t(SLICER_BUTTON_LABEL[source])}
                 </Button>
               ))}
             </div>
@@ -684,7 +710,11 @@ export function BambuProfileWorkbench() {
                   </NativeSelectField>
                 </>
               ) : (
-                <p className='text-muted-foreground text-xs'>{t('controls.orcaDefaultAccount')}</p>
+                <p className='text-muted-foreground text-xs'>
+                  {slicer === 'prusa'
+                    ? t('controls.prusaDefaultAccount')
+                    : t('controls.orcaDefaultAccount')}
+                </p>
               )}
               <label className='text-muted-foreground flex cursor-pointer items-center gap-2 pt-1 text-xs'>
                 <input

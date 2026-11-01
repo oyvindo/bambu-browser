@@ -59,11 +59,13 @@ export const messagesNb = {
     slicer: 'Slicer',
     slicerBambu: 'Bambu',
     slicerOrca: 'Orca',
+    slicerPrusa: 'Prusa',
+    prusaDefaultAccount: 'PrusaSlicer har ett sett brukerprofiler (print/ og filament/).',
     orcaDefaultAccount: 'OrcaSlicer-profiler bruker standardkontoen.',
   },
   errors: {
     serverCannotReadRoot:
-      'Serveren kan ikke lese roten til valgt slicer: {root}. Sjekk BAMBUSTUDIO_ROOT eller ORCASLICER_ROOT.',
+      'Serveren kan ikke lese roten til valgt slicer: {root}. Sjekk BAMBUSTUDIO_ROOT, ORCASLICER_ROOT eller PRUSASLICER_ROOT.',
     cannotReachApi: 'Får ikke kontakt med det lokale API-et. Kjør: node server.js (se terminal).',
     loadProfilesFailed: 'Kunne ikke laste profiler',
     refreshFailed: 'Oppdatering mislyktes',
@@ -156,9 +158,14 @@ export const messagesNb = {
     removeAria: 'Fjern',
     removeTooltip: 'Fjern',
   },
+  resolve: {
+    incompleteChain: 'Arvekjeden er ufullstendig; viser det som kunne løses opp:',
+  },
   chainColumn: {
     profileFilament: 'Filamentprofil',
     profileProcess: 'Prosessprofil',
+    profilePrint: 'Utskriftsprofil',
+    prusaDefaults: 'PrusaSlicer-standarder',
     root: 'Rot',
     parent: 'Forelder',
     level: 'Nivå {n}',

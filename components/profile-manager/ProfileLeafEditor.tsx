@@ -85,7 +85,7 @@ function Finding({
       {finding.key ? (
         <div className='flex items-center gap-1 pl-4'>
           <PropertyHelpTooltipLazy
-            label={localizedPropertyLabel(finding.key, finding.key, locale)}
+            label={localizedPropertyLabel(finding.key, finding.key, locale, slicer)}
             propertyKey={finding.key}
             profileKind={kind}
             slicer={slicer}
@@ -644,7 +644,7 @@ export function ProfileLeafEditor({
                 }}
                 onClick={() => revealKey(key)}
               >
-                {localizedPropertyLabel(key, key, locale)}
+                {localizedPropertyLabel(key, key, locale, slicer)}
               </button>
             ))}
           </div>

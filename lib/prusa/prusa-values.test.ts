@@ -32,6 +32,25 @@ describe('parsePrusaValue', () => {
     expect(parsePrusaValue('compatible_printers', '')).toEqual([]);
   });
 
+  it('converts legacy values like PrintConfigDef::handle_legacy', () => {
+    expect(parsePrusaValue('ensure_vertical_shell_thickness', '1')).toBe('enabled');
+    expect(parsePrusaValue('ensure_vertical_shell_thickness', '0')).toBe('partial');
+    expect(parsePrusaValue('gcode_label_objects', '1')).toBe('octoprint');
+    expect(parsePrusaValue('draft_shield', '0')).toBe('disabled');
+    expect(parsePrusaValue('fill_density', '0.15')).toBe('15%');
+    expect(parsePrusaValue('fill_pattern', 'monotonous')).toBe('monotonic');
+    expect(parsePrusaValue('perimeter_acceleration', '25')).toBe('0');
+    expect(parsePrusaValue('support_material_pattern', 'pillars')).toBe('rectilinear');
+  });
+
+  it('writes numbers the way PrusaSlicer does, so 0.20 equals 0.2', () => {
+    expect(parsePrusaValue('layer_height', '0.20')).toBe('0.2');
+    expect(parsePrusaValue('top_infill_extrusion_width', '0.40')).toBe('0.4');
+    expect(parsePrusaValue('fill_density', '15.0%')).toBe('15%');
+    expect(parsePrusaValue('temperature', '215,210.0')).toEqual(['215', '210']);
+    expect(parsePrusaValue('first_layer_height', '0.2')).toBe('0.2');
+  });
+
   it('keeps unknown keys as raw text', () => {
     expect(parsePrusaValue('not_a_prusa_key', 'a,b')).toBe('a,b');
   });
@@ -73,6 +92,23 @@ describe('toPrusaDisplayChain', () => {
     expect(chain[0]?.relativePath).toBe(PRUSA_DEFAULTS_PATH.filament);
     expect(chain[0]?.data).toHaveProperty('temperature');
     expect(chain[0]?.data).not.toHaveProperty('fill_density');
+  });
+
+  it('starts filament overrides as nil, like PresetBundle::null_nullables', () => {
+    const chain = toPrusaDisplayChain('filament', [leaf]);
+    expect(chain[0]?.data.filament_retract_length).toBeNull();
+    expect(chain[0]?.data.idle_temperature).toBeNull();
+    expect(chain[0]?.data.temperature).toEqual(['200']);
+  });
+
+  it('fills empty filament vectors with the default, like Preset::normalize', () => {
+    const bundle: InheritanceChainLevel = {
+      relativePath: 'vendor/Templates.ini#filament:*common*',
+      data: { start_filament_gcode: '', compatible_printers: '' },
+    };
+    const chain = toPrusaDisplayChain('filament', [bundle]);
+    expect(chain[1]?.data.start_filament_gcode).toEqual(['; Filament gcode\n']);
+    expect(chain[1]?.data.compatible_printers).toEqual([]);
   });
 
   it('parses every level', () => {
