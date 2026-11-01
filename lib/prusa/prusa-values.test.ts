@@ -133,7 +133,7 @@ describe('toPrusaDisplayChain', () => {
     };
     const chain = toPrusaDisplayChain('process', [bundle, user]);
     expect(chain[1]?.data).toEqual({ perimeters: '2' });
-    expect(chain[2]?.data).toEqual({ wipe_tower_x: '170', perimeters: '3' });
+    expect(chain[2]?.data).toMatchObject({ wipe_tower_x: '170', perimeters: '3' });
   });
 
   it('parses every level', () => {
@@ -182,11 +182,20 @@ describe('effectivePrusaValue', () => {
     });
   });
 
-  it('cannot compute widths relative to the nozzle without a printer', () => {
-    expect(effectivePrusaValue('extrusion_width', { extrusion_width: '105%' }, 0)).toEqual({
-      basis: ['nozzle_diameter'],
-      unresolved: 'nozzle_diameter',
-    });
+  it('computes percentage widths over the layer height, as PrusaSlicer does', () => {
+    expect(
+      effectivePrusaValue('extrusion_width', { extrusion_width: '105%', layer_height: '0.2' }, 0),
+    ).toEqual({ value: 0.21, unit: 'mm', basis: ['layer_height'] });
+  });
+
+  it('cannot compute a percentage of an automatic width', () => {
+    expect(
+      effectivePrusaValue(
+        'infill_anchor',
+        { infill_anchor: '600%', infill_extrusion_width: '0' },
+        0,
+      ),
+    ).toEqual({ basis: ['infill_extrusion_width'], unresolved: 'auto_width' });
   });
 
   it('returns null for absolute values and plain percentages', () => {
@@ -213,6 +222,7 @@ describe('prusaKindForPath', () => {
     ['filament/F.ini', 'filament'],
     ['vendor/Templates.ini#filament:Esun PLA', 'filament'],
     ['vendor/Creality.ini#print:*common*', 'process'],
+    ['print/A #filament:x.ini', 'process'],
   ] as const)('%s is a %s preset', (path, kind) => {
     expect(prusaKindForPath(path)).toBe(kind);
   });

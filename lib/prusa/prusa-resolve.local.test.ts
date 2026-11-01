@@ -117,8 +117,10 @@ describe.skipIf(!root)('PrusaSlicer presets in PRUSASLICER_ROOT', () => {
       );
       // Printed for a human to compare with PrusaSlicer's "modified" markers.
       process.stdout.write(`${relativePath}: ${changed.join(', ') || '(none)'}\n`);
-      expect(changed).toEqual(
-        Object.keys(prusaLeafOverrides(chain)).filter((key) => key !== 'inherits'),
+      expect([...changed].sort()).toEqual(
+        Object.keys(prusaLeafOverrides(chain))
+          .filter((key) => key !== 'inherits')
+          .sort(),
       );
     });
   }

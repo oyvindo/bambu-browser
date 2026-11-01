@@ -110,7 +110,7 @@ export function buildPrusaUiTree(
 }
 
 const CELL_TEXT = {
-  ofNozzle: ['of nozzle diameter', 'av dysediameteren'],
+  ofAutoWidth: ['of automatic width', 'av automatisk bredde'],
   auto: ['auto', 'auto'],
   disabled: ['off', 'av'],
   noLimit: ['no limit', 'ingen grense'],
@@ -178,7 +178,7 @@ export function formatPrusaCell(
     if (effective && 'value' in effective) {
       return `${raw} → ${effective.value} ${effective.unit}`;
     }
-    if (effective?.unresolved === 'nozzle_diameter') return `${raw} ${text('ofNozzle', locale)}`;
+    if (effective?.unresolved === 'auto_width') return `${raw} ${text('ofAutoWidth', locale)}`;
     if (effective?.unresolved === 'auto') return `${raw} (${text('auto', locale)})`;
     return raw;
   }

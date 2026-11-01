@@ -217,9 +217,13 @@ export function prusaDefaultsLevel(kind: ProfileKind): InheritanceChainLevel {
   return { relativePath: PRUSA_DEFAULTS_PATH[kind], data };
 }
 
+function isUserPresetPath(relativePath: string): boolean {
+  return /^(print|filament)\/[^/]+\.ini$/.test(relativePath);
+}
+
 /** `filament/x.ini` and `vendor/…#filament:…` are filament presets; the rest are print presets. */
 export function prusaKindForPath(relativePath: string): ProfileKind {
-  return /^filament\/|#filament:/.test(relativePath) ? 'filament' : 'process';
+  return /^filament\/|^vendor\/[^/#]+#filament:/.test(relativePath) ? 'filament' : 'process';
 }
 
 /** API chain (raw INI text) → grid chain: defaults root first, values parsed. */
@@ -228,7 +232,16 @@ export function toPrusaDisplayChain(
   chain: readonly InheritanceChainLevel[],
 ): InheritanceChainLevel[] {
   const optionKeys = new Set(presetKeys(kind));
-  return [prusaDefaultsLevel(kind), ...chain].map((level) => {
+  const defaults = prusaDefaultsLevel(kind);
+  return [defaults, ...chain].map((level) => {
+    // A user preset is loaded on top of the defaults, not its parent, so a key
+    // an older PrusaSlicer did not write takes the default value.
+    if (isUserPresetPath(level.relativePath)) {
+      return {
+        relativePath: level.relativePath,
+        data: parseLevel(kind, { ...defaults.data, ...level.data }),
+      };
+    }
     // A preset only keeps the options of its kind; obsolete or printer-level
     // keys in a bundle section are dropped when PrusaSlicer loads it.
     const data = level.relativePath.startsWith('vendor/')
@@ -238,7 +251,7 @@ export function toPrusaDisplayChain(
   });
 }
 
-export type PrusaUnresolvedReason = 'nozzle_diameter' | 'auto' | 'cycle' | 'missing';
+export type PrusaUnresolvedReason = 'auto_width' | 'auto' | 'cycle' | 'missing';
 
 export type PrusaEffectiveValue =
   | { value: number; unit: 'mm' | 'mm/s' | 'mm/s²'; basis: string[] }
@@ -256,9 +269,12 @@ function unitFromSidetext(sidetext: string | undefined): 'mm' | 'mm/s' | 'mm/s²
   return unit === 'mm' || unit === 'mm/s' || unit === 'mm/s²' ? unit : null;
 }
 
-/** Widths without `ratio_over` are a percentage of the nozzle diameter. */
-function isNozzleRelative(key: string, defs: ConfigDefs): boolean {
-  return key.endsWith('extrusion_width') && !defs[key]?.ratioOver;
+/**
+ * Option a percentage is computed over. Extrusion widths without `ratio_over`
+ * are computed over the layer height (Flow::new_from_config_width).
+ */
+function ratioBase(key: string, defs: ConfigDefs): string | undefined {
+  return defs[key]?.ratioOver ?? (key.endsWith('extrusion_width') ? 'layer_height' : undefined);
 }
 
 /**
@@ -274,17 +290,13 @@ export function effectivePrusaValue(
 ): PrusaEffectiveValue | null {
   const raw = textAt(merged[key], extruderIndex);
   if (!raw?.endsWith('%')) return null;
-  if (isNozzleRelative(key, defs)) {
-    return { basis: ['nozzle_diameter'], unresolved: 'nozzle_diameter' };
-  }
-  const def = defs[key];
-  const unit = unitFromSidetext(def?.sidetext);
-  if (!def?.ratioOver || !unit) return null;
+  const unit = unitFromSidetext(defs[key]?.sidetext);
+  let base = ratioBase(key, defs);
+  if (!base || !unit) return null;
 
   let factor = Number.parseFloat(raw) / 100;
   const basis: string[] = [];
   const seen = new Set([key]);
-  let base: string | undefined = def.ratioOver;
   while (base) {
     basis.push(base);
     if (seen.has(base)) return { basis, unresolved: 'cycle' };
@@ -294,18 +306,14 @@ export function effectivePrusaValue(
     const number = Number.parseFloat(text);
     if (!Number.isFinite(number)) return { basis, unresolved: 'missing' };
     if (number === 0 && PRUSA_ZERO_MEANS[base] === 'auto') {
-      return isNozzleRelative(base, defs)
-        ? { basis: [...basis, 'nozzle_diameter'], unresolved: 'nozzle_diameter' }
-        : { basis, unresolved: 'auto' };
+      // Automatic widths come from the nozzle diameter, a printer setting.
+      return { basis, unresolved: base.endsWith('extrusion_width') ? 'auto_width' : 'auto' };
     }
     if (!text.endsWith('%')) {
       return { value: Math.round(factor * number * 1e6) / 1e6, unit, basis };
     }
     factor *= number / 100;
-    if (isNozzleRelative(base, defs)) {
-      return { basis: [...basis, 'nozzle_diameter'], unresolved: 'nozzle_diameter' };
-    }
-    base = defs[base]?.ratioOver;
+    base = ratioBase(base, defs);
   }
   return { basis, unresolved: 'missing' };
 }

@@ -113,3 +113,20 @@ describe('validateProfileJson for PrusaSlicer', () => {
     expect(result.findings).toEqual([]);
   });
 });
+
+describe('a user preset missing a key', () => {
+  // PrusaSlicer loads a user preset on top of its defaults, not its parent.
+  const older = toPrusaDisplayChain('process', [
+    { relativePath: 'vendor/X.ini#print:P', data: { scarf_seam_length: '30' } },
+    { relativePath: 'print/Old.ini', data: { inherits: 'P', perimeters: '3' } },
+  ]);
+
+  it('shows the PrusaSlicer default, not the parent value', () => {
+    expect(older.at(-1)?.data.scarf_seam_length).toBe('20');
+    expect(prusaLeafOverrides(older)).toMatchObject({ scarf_seam_length: '20' });
+  });
+
+  it('keeps that default when the file is saved', () => {
+    expect(buildPrusaFullConfig(older, prusaLeafOverrides(older)).scarf_seam_length).toBe('20');
+  });
+});

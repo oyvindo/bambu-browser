@@ -53,12 +53,16 @@ describe('formatPrusaCell', () => {
     );
   });
 
-  it('explains percentages of the nozzle diameter', () => {
-    expect(formatPrusaCell('extrusion_width', '105%', {}, 'mm', 0, 'en')).toBe(
-      '105% of nozzle diameter',
+  it('computes percentage widths and explains percentages of an automatic width', () => {
+    expect(formatPrusaCell('extrusion_width', '105%', { layer_height: '0.2' }, 'mm', 0, 'en')).toBe(
+      '105% → 0.21 mm',
     );
-    expect(formatPrusaCell('extrusion_width', '105%', {}, 'mm', 0, 'nb')).toBe(
-      '105% av dysediameteren',
+    const autoWidth = { infill_extrusion_width: '0' };
+    expect(formatPrusaCell('infill_anchor', '600%', autoWidth, 'mm', 0, 'en')).toBe(
+      '600% of automatic width',
+    );
+    expect(formatPrusaCell('infill_anchor', '600%', autoWidth, 'mm', 0, 'nb')).toBe(
+      '600% av automatisk bredde',
     );
   });
 
@@ -99,5 +103,6 @@ describe('fileLabel', () => {
   it('shows the preset name of a vendor bundle section', () => {
     expect(fileLabel('vendor/Creality.ini#print:*0.20mm*')).toBe('*0.20mm*');
     expect(fileLabel('print/My profile.ini')).toBe('My profile.ini');
+    expect(fileLabel('filament/Mine #filament:v2.ini')).toBe('Mine #filament:v2.ini');
   });
 });

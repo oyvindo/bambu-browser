@@ -130,6 +130,21 @@ function buildPresetIndex(bundles, kind) {
   return index;
 }
 
+const sectionMaps = new WeakMap();
+
+/** Section name → preset of one kind in one bundle. */
+function sectionLookup(bundle, kind) {
+  let byKind = sectionMaps.get(bundle);
+  if (!byKind) {
+    byKind = {};
+    sectionMaps.set(bundle, byKind);
+  }
+  byKind[kind] ??= new Map(
+    [...bundle.presets[kind].values()].map((preset) => [preset.sectionName, preset]),
+  );
+  return byKind[kind];
+}
+
 function vendorPresetPath(bundle, kind, preset) {
   return `vendor/${bundle.fileName}#${kind}:${preset.sectionName}`;
 }
@@ -158,7 +173,9 @@ function linearizeBundlePreset(bundle, kind, preset, warnings, stack = new Set()
   stack.add(preset.name);
   const ordered = [];
   for (const parentName of preset.inherits) {
-    const parent = bundle.presets[kind].get(parentName);
+    // Inside a bundle, `inherits` names raw sections: PrusaSlicer flattens the
+    // hierarchy before it appends " @Template" to template filament names.
+    const parent = sectionLookup(bundle, kind).get(parentName);
     if (!parent) {
       warnings.push(
         `Parent profile "${parentName}" of "${preset.name}" was not found in ${bundle.fileName}.`,
