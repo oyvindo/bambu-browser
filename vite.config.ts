@@ -13,6 +13,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // Worktrees hold other branches; their tests resolve `@/` against this checkout.
+    exclude: ['**/node_modules/**', '**/.git/**', '.worktrees/**'],
   },
   staged: {
     '*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}': 'vp check --fix',
